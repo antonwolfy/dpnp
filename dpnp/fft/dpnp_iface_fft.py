@@ -100,7 +100,7 @@ def fft(x1, n=None, axis=-1, norm=None):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1)
+    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc:
         norm_ = get_validated_norm(norm)
 
@@ -497,7 +497,7 @@ def irfft(x1, n=None, axis=-1, norm=None):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1)
+    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc and 0:
         norm_ = get_validated_norm(norm)
 
@@ -621,7 +621,7 @@ def rfft(x1, n=None, axis=-1, norm=None):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1)
+    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc:
         norm_ = get_validated_norm(norm)
 
