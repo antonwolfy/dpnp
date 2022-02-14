@@ -221,7 +221,12 @@ def get_dpnp_descriptor(ext_obj, copy_when_strides=True, copy_when_nondefault_qu
             ext_obj_offset = 0
 
         if ext_obj.strides != shape_offsets or ext_obj_offset != 0:
-            ext_obj = array(ext_obj)
+            # DPCTL will create a copy of array with default sycl queue
+            # if both sycl_queue and device parameters are None.
+            # While it is required to create the copy on the same device
+            # to be compliant with compute follows data approach.
+            arr_obj = unwrap_array(ext_obj)
+            ext_obj = array(ext_obj, sycl_queue = getattr(arr_obj, "sycl_queue", None))
 
     # while dpnp functions are based on DPNP_QUEUE
     # we need to create a copy on device associated with DPNP_QUEUE

@@ -10,10 +10,10 @@ import numpy
 def test_fft(type, norm):
     # 1 dim array
     data = numpy.arange(100, dtype=numpy.dtype(type))
-    # TODO:
-    # doesn't work correct with `complex64` (not supported)
-    # dpnp_data = dpnp.arange(100, dtype=dpnp.dtype(type))
-    dpnp_data = dpnp.array(data)
+    # It doesn't work properly without passing dtype explicitly:
+    # DPCTL creates an array of 'float32' from numpy data of 'float64',
+    # in case when device.has(sycl::aspect::fp64) is False on target host
+    dpnp_data = dpnp.array(data, dtype=dpnp.dtype(type))
 
     np_res = numpy.fft.fft(data, norm=norm)
     dpnp_res = dpnp.asnumpy(dpnp.fft.fft(dpnp_data, norm=norm))
