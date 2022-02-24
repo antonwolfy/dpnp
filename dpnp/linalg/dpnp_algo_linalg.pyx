@@ -485,8 +485,7 @@ cpdef tuple dpnp_qr(utils.dpnp_descriptor x1, str mode):
                                                     tau.get_data(),
                                                     size_m,
                                                     size_n,
-                                                    NULL)
-                                                     # dep_events_ref
+                                                    NULL)  # dep_events_ref
 
     with nogil: c_dpctl.DPCTLEvent_WaitAndThrow(event_ref)
     c_dpctl.DPCTLEvent_Delete(event_ref)
