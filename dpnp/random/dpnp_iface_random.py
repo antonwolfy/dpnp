@@ -656,7 +656,6 @@ def multinomial(n, pvals, size=None):
 
     if not use_origin_backend(n):
         pvals_sum = sum(pvals)
-        pvals_desc = dpnp.get_dpnp_descriptor(dpnp.array(pvals))
         d = len(pvals)
         if n < 0:
             pass
@@ -675,7 +674,7 @@ def multinomial(n, pvals, size=None):
                 except:
                     shape = tuple(size) + (d,)
 
-            return dpnp_rng_multinomial(int(n), pvals_desc, shape).get_pyobj()
+            return dpnp_rng_multinomial(int(n), pvals, shape).get_pyobj()
 
     return call_origin(numpy.random.multinomial, n, pvals, size)
 
@@ -704,8 +703,8 @@ def multivariate_normal(mean, cov, size=None, check_valid='warn', tol=1e-8):
     """
 
     if not use_origin_backend(mean):
-        mean_ = dpnp.get_dpnp_descriptor(dpnp.array(mean, dtype=numpy.float64))
-        cov_ = dpnp.get_dpnp_descriptor(dpnp.array(cov, dtype=numpy.float64))
+        mean_ = numpy.array(mean, dtype=numpy.float64, order='C')
+        cov_ = numpy.array(cov, dtype=numpy.float64, order='C')
         if size is None:
             shape = []
         elif isinstance(size, (int, numpy.integer)):
