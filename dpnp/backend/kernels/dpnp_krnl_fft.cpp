@@ -242,22 +242,23 @@ template <typename _KernelNameSpecialization1, typename _KernelNameSpecializatio
 class dpnp_fft_fft_mathlib_real_to_cmplx_c_kernel;
 
 template <typename _DataType_input, typename _DataType_output, typename _Descriptor_type>
-void dpnp_fft_fft_mathlib_real_to_cmplx_c(DPCTLSyclQueueRef q_ref,
-                                          const void* array1_in,
-                                          void* result_out,
-                                          const shape_elem_type* input_shape,
-                                          const shape_elem_type* result_shape,
-                                          const size_t shape_size,
-                                          const size_t input_size,
-                                          const size_t result_size,
-                                          _Descriptor_type& desc,
-                                          size_t inverse,
-                                          const size_t norm,
-                                          const size_t real)
+DPCTLSyclEventRef dpnp_fft_fft_mathlib_real_to_cmplx_c(DPCTLSyclQueueRef q_ref,
+                                                       const void* array1_in,
+                                                       void* result_out,
+                                                       const shape_elem_type* input_shape,
+                                                       const shape_elem_type* result_shape,
+                                                       const size_t shape_size,
+                                                       const size_t input_size,
+                                                       const size_t result_size,
+                                                       _Descriptor_type& desc,
+                                                       size_t inverse,
+                                                       const size_t norm,
+                                                       const size_t real)
 {
+    DPCTLSyclEventRef event_ref = nullptr;;
     if (!shape_size)
     {
-        return;
+        return event_ref;
     }
 
     DPNPC_ptr_adapter<_DataType_input> input1_ptr(q_ref, array1_in, input_size);
@@ -308,7 +309,7 @@ void dpnp_fft_fft_mathlib_real_to_cmplx_c(DPCTLSyclQueueRef q_ref,
     sycl::event::wait(fft_events);
 
     if (real) { // the output size of the rfft function is input_size/2 + 1 so we don't need to fill the second half of the output
-        return;
+        return event_ref;
     }
 
     size_t n_conj = result_shift % 2 == 0 ? result_shift / 2 - 1 : result_shift / 2;
@@ -333,14 +334,15 @@ void dpnp_fft_fft_mathlib_real_to_cmplx_c(DPCTLSyclQueueRef q_ref,
     };
 
     event = queue.submit(kernel_func);
-    event.wait();
 
     if (inverse) {
-        event = oneapi::mkl::vm::conj(queue, result_size, reinterpret_cast<std::complex<_DataType_output>*>(result), reinterpret_cast<std::complex<_DataType_output>*>(result));
         event.wait();
+        event = oneapi::mkl::vm::conj(queue, result_size, reinterpret_cast<std::complex<_DataType_output>*>(result), reinterpret_cast<std::complex<_DataType_output>*>(result));
     }
 
-    return;
+    event_ref = reinterpret_cast<DPCTLSyclEventRef>(&event);
+
+    return DPCTLEvent_Copy(event_ref);
 }
 
 template <typename _DataType_input, typename _DataType_output>
@@ -394,7 +396,7 @@ DPCTLSyclEventRef dpnp_fft_fft_c(DPCTLSyclQueueRef q_ref,
         {
             desc_dp_real_t desc(dim);
 
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, double, desc_dp_real_t>(
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, double, desc_dp_real_t>(
                 q_ref, array1_in, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 0);
         }
         /* real-to-complex, single precision */
@@ -402,7 +404,8 @@ DPCTLSyclEventRef dpnp_fft_fft_c(DPCTLSyclQueueRef q_ref,
                            std::is_same<_DataType_output, std::complex<float>>::value)
         {
             desc_sp_real_t desc(dim); // try: 2 * result_size
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, float, desc_sp_real_t>(
+
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, float, desc_sp_real_t>(
                 q_ref, array1_in, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 0);
         }
         else if constexpr (std::is_same<_DataType_input, int32_t>::value ||
@@ -419,8 +422,10 @@ DPCTLSyclEventRef dpnp_fft_fft_c(DPCTLSyclQueueRef q_ref,
                                                    array1_in, input_size, copy_shape_size, copy_shape, copy_strides, NULL, dep_event_vec_ref);
 
             desc_dp_real_t desc(dim);
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<double, double, desc_dp_real_t>(
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<double, double, desc_dp_real_t>(
                 q_ref, array1_copy, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 0);
+
+            DPCTLEvent_WaitAndThrow(event_ref);
 
             dpnp_memory_free_c(q_ref, array1_copy);
             dpnp_memory_free_c(q_ref, copy_strides);
@@ -533,7 +538,7 @@ DPCTLSyclEventRef dpnp_fft_rfft_c(DPCTLSyclQueueRef q_ref,
         {
             desc_dp_real_t desc(dim);
 
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, double, desc_dp_real_t>(
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, double, desc_dp_real_t>(
                 q_ref, array1_in, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 1);
         }
         /* real-to-complex, single precision */
@@ -541,7 +546,7 @@ DPCTLSyclEventRef dpnp_fft_rfft_c(DPCTLSyclQueueRef q_ref,
                            std::is_same<_DataType_output, std::complex<float>>::value)
         {
             desc_sp_real_t desc(dim); // try: 2 * result_size
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, float, desc_sp_real_t>(
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<_DataType_input, float, desc_sp_real_t>(
                 q_ref, array1_in, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 1);
         }
         else if constexpr (std::is_same<_DataType_input, int32_t>::value ||
@@ -558,8 +563,10 @@ DPCTLSyclEventRef dpnp_fft_rfft_c(DPCTLSyclQueueRef q_ref,
                                                    array1_in, input_size, copy_shape_size, copy_shape, copy_strides, NULL, dep_event_vec_ref);
 
             desc_dp_real_t desc(dim);
-            dpnp_fft_fft_mathlib_real_to_cmplx_c<double, double, desc_dp_real_t>(
+            event_ref = dpnp_fft_fft_mathlib_real_to_cmplx_c<double, double, desc_dp_real_t>(
                 q_ref, array1_copy, result_out, input_shape, result_shape, shape_size, input_size, result_size, desc, inverse, norm, 1);
+
+            DPCTLEvent_WaitAndThrow(event_ref);
 
             dpnp_memory_free_c(q_ref, array1_copy);
             dpnp_memory_free_c(q_ref, copy_strides);
@@ -667,5 +674,6 @@ void func_map_init_fft_func(func_map_t& fmap)
         eft_C64, (void*)dpnp_fft_rfft_ext_c<float, std::complex<float>>};
     fmap[DPNPFuncName::DPNP_FN_FFT_RFFT_EXT][eft_DBL][eft_DBL] = {
         eft_C128, (void*)dpnp_fft_rfft_ext_c<double, std::complex<double>>};
+
     return;
 }
