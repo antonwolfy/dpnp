@@ -67,11 +67,12 @@ jobs:
 
       - name: Test step
         run: |
+          set -x
           echo "GITHUB_WORKSPACE is $GITHUB_WORKSPACE"
           echo "DPLROOT is $DPLROOT"
           echo "DPLROOT is ${DPLROOT}"
-          echo 'DPLROOT is $DPLROOT'
-          echo 'DPLROOT is ${DPLROOT}'
+          echo "DPLROOT is \'${DPLROOT}\'"
+          echo "DPLROOT is \"${DPLROOT}\""
         env:
           DPLROOT: '$GITHUB_WORKSPACE/oneDPL'
 
