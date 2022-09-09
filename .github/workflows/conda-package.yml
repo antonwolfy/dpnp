@@ -65,6 +65,13 @@ jobs:
       - name: Install conda-build
         run: conda install conda-build
 
+      - name: Test step
+        run: |
+          echo "GITHUB_WORKSPACE is $GITHUB_WORKSPACE"
+          echo "DPLROOT is $DPLROOT"
+        env:
+          DPLROOT: '$GITHUB_WORKSPACE/oneDPL'
+
       - name: Build conda package
         run: ./scripts/build_conda_package.sh ${{ matrix.python }} $GITHUB_WORKSPACE/oneDPL
 
