@@ -65,27 +65,10 @@ jobs:
       - name: Install conda-build
         run: conda install conda-build
 
-      - name: Test step
-        run: |
-          set -x
-          echo "GITHUB_WORKSPACE is $GITHUB_WORKSPACE"
-          echo "github.workspace is ${{ github.workspace }}"
-          echo "DPLROOT is $DPLROOT"
-          echo "DPLROOT is ${DPLROOT}"
-          echo "DPLROOT2 is $DPLROOT2"
-          echo "DPLROOT2 is ${DPLROOT2}"
-          echo "DPLROOT3 is $DPLROOT3"
-          echo "DPLROOT3 is ${DPLROOT3}"
-          echo "DPLROOT4 is $DPLROOT4"
-          echo "DPLROOT4 is ${DPLROOT4}"
-        env:
-          DPLROOT: '$GITHUB_WORKSPACE/oneDPL'
-          DPLROOT2: $GITHUB_WORKSPACE/oneDPL
-          DPLROOT3: ${{ github.workspace }}/oneDPL
-          DPLROOT4: '${{ github.workspace }}/oneDPL'
-
       - name: Build conda package
-        run: ./scripts/build_conda_package.sh ${{ matrix.python }} $GITHUB_WORKSPACE/oneDPL
+        run: conda build --no-test --python ${{ matrix.python }} ${{ env.CHANNELS }} conda-recipe
+        env:
+          DPLROOT: '${{ github.workspace }}/oneDPL'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
@@ -144,18 +127,6 @@ jobs:
 
       - name: Install conda-build
         run: conda install conda-build
-
-      - name: Test step
-        run: |
-          echo "GITHUB_WORKSPACE is %GITHUB_WORKSPACE%"
-          echo "github.workspace is ${{ github.workspace }}"
-          echo "DPLROOT is %DPLROOT%"
-          echo "DPLROOT3 is %DPLROOT3%"
-          echo "DPLROOT4 is %DPLROOT4%"
-        env:
-          DPLROOT: '%GITHUB_WORKSPACE%/oneDPL'
-          DPLROOT3: ${{ github.workspace }}/oneDPL
-          DPLROOT4: '${{ github.workspace }}/oneDPL'
 
       - name: Build conda package
         run: conda build --no-test --python ${{ matrix.python }} -c dppy/label/dev -c intel -c defaults --override-channels conda-recipe
