@@ -78,17 +78,11 @@ jobs:
           echo "DPLROOT3 is ${DPLROOT3}"
           echo "DPLROOT4 is $DPLROOT4"
           echo "DPLROOT4 is ${DPLROOT4}"
-          echo "DPLROOT5 is $DPLROOT5"
-          echo "DPLROOT5 is ${DPLROOT5}"
-          echo "DPLROOT6 is $DPLROOT6"
-          echo "DPLROOT6 is ${DPLROOT6}"
         env:
           DPLROOT: '$GITHUB_WORKSPACE/oneDPL'
           DPLROOT2: $GITHUB_WORKSPACE/oneDPL
           DPLROOT3: ${{ github.workspace }}/oneDPL
           DPLROOT4: '${{ github.workspace }}/oneDPL'
-          DPLROOT5: ${{ GITHUB_WORKSPACE }}/oneDPL
-          DPLROOT6: '${{ GITHUB_WORKSPACE }}/oneDPL'
 
       - name: Build conda package
         run: ./scripts/build_conda_package.sh ${{ matrix.python }} $GITHUB_WORKSPACE/oneDPL
