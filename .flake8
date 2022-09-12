@@ -1,0 +1,32 @@
+[flake8]
+ignore =
+    E203, # whitespace before ':'
+    E402, # module level import not at top of file
+    E501, # line too long
+    E711, # comparison to None should be 'cond is None:' 
+    E712, # comparison to true should be 'if cond is true:' or 'if cond:'
+    E722, # do not use bare 'except'
+    E741, # do not use variables named 'I', 'O', or 'l'
+    F401, # module imported but unused
+    F403, # ‘from module import *’ used; unable to detect undefined names
+    F405, # name may be undefined, or defined from star imports: module
+    F541, # f-string without any placeholders
+    F811, # redefinition of unused name from line N
+    F821, # undefined name name
+    F841, # local variable name is assigned to but never used
+    W503, # line break before binary operator
+    W505  # doc line too long (105 > 80 characters)
+
+filename = *.py, *.pyx
+max_line_length = 80
+max-doc-length = 80
+show-source = True
+
+exclude =
+    .git,
+    __pycache__,
+    version.py
+
+# Print detailed statistic if any issue detected
+count = True
+statistics = True

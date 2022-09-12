@@ -24,9 +24,15 @@ repos:
     -   id: isort
         name: isort (python)
         args: ["--check-only", "--diff"]
-        additional_dependencies: ["colorama"]
+        additional_dependencies: [colorama]
     -   id: isort
         name: isort (cython)
         types: [cython]
         args: ["--check-only", "--diff"]
-        additional_dependencies: ["colorama"]
+        additional_dependencies: [colorama]
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+    -   id: flake8
+        args: ["--config=.flake8"]
+        #additional_dependencies: [flake8-docstrings]
