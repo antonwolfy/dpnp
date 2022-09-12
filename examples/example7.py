@@ -1,7 +1,7 @@
 # cython: language_level=3
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2020, Intel Corporation
+# Copyright (c) 2016-2022, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,9 @@ import time
 
 
 def run_function(executor, name, size, test_type, repetition):
-    x = executor.reshape(executor.arange(size * size, dtype=test_type), (size, size))
+    x = executor.reshape(
+        executor.arange(size * size, dtype=test_type), (size, size)
+    )
 
     times = []
     for iteration in range(repetition):
@@ -66,15 +68,21 @@ def run_function(executor, name, size, test_type, repetition):
     return execution_time, result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_repetition = 5
     for test_type in [numpy.float64, numpy.float32, numpy.int64, numpy.int32]:
         type_name = numpy.dtype(test_type).name
-        print(f"...Test data type is {test_type}, each test repetitions {test_repetition}")
+        print(
+            f"...Test data type is {test_type}, each test repetitions {test_repetition}"
+        )
 
         for size in [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]:
-            time_python, result_python = run_function(numpy, "<NumPy>", size, test_type, test_repetition)
-            time_mkl, result_mkl = run_function(dpnp, " <DPNP>", size, test_type, test_repetition)
+            time_python, result_python = run_function(
+                numpy, "<NumPy>", size, test_type, test_repetition
+            )
+            time_mkl, result_mkl = run_function(
+                dpnp, " <DPNP>", size, test_type, test_repetition
+            )
 
             if result_mkl == result_python:
                 verification = True

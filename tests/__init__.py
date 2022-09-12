@@ -16,13 +16,18 @@ orig_shaped_arange = cupy_testing.shaped_arange
 orig_shaped_reverse_arange = cupy_testing.shaped_reverse_arange
 
 
-def _shaped_arange(shape, xp=dpnp, dtype=dpnp.float64, order='C'):
-    res = xp.array(orig_shaped_arange(shape, xp=numpy, dtype=dtype, order=order), dtype=dtype)
+def _shaped_arange(shape, xp=dpnp, dtype=dpnp.float64, order="C"):
+    res = xp.array(
+        orig_shaped_arange(shape, xp=numpy, dtype=dtype, order=order),
+        dtype=dtype,
+    )
     return res
 
 
 def _shaped_reverse_arange(shape, xp=dpnp, dtype=dpnp.float32):
-    res = xp.array(orig_shaped_reverse_arange(shape, xp=numpy, dtype=dtype), dtype=dtype)
+    res = xp.array(
+        orig_shaped_reverse_arange(shape, xp=numpy, dtype=dtype), dtype=dtype
+    )
     return res
 
 

@@ -16,4 +16,4 @@ repos:
     rev: 22.8.0
     hooks:
     -   id: black
-        args: ["--check", "--diff", "--line-length", "80"]
+        args: ["--check", "--diff", "--color", "--line-length", "80"]

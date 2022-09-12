@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2020, Intel Corporation
+# Copyright (c) 2016-2022, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,7 @@ class flatiter:
     def __init__(self, X):
         if type(X) is not dpnp.ndarray:
             raise TypeError(
-                "Argument must be of type dpnp.ndarray, got {}".format(
-                    type(X)
-                )
+                "Argument must be of type dpnp.ndarray, got {}".format(type(X))
             )
         self.arr_ = X
         self.size_ = X.size

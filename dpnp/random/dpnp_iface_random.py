@@ -1,7 +1,7 @@
 # cython: language_level=3
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2020, Intel Corporation
+# Copyright (c) 2016-2022, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,54 +46,54 @@ import operator
 
 
 __all__ = [
-    'beta',
-    'binomial',
-    'bytes',
-    'chisquare',
-    'choice',
-    'dirichlet',
-    'exponential',
-    'f',
-    'gamma',
-    'geometric',
-    'gumbel',
-    'hypergeometric',
-    'laplace',
-    'logistic',
-    'lognormal',
-    'logseries',
-    'multinomial',
-    'multivariate_normal',
-    'negative_binomial',
-    'normal',
-    'noncentral_chisquare',
-    'noncentral_f',
-    'pareto',
-    'permutation',
-    'poisson',
-    'power',
-    'rand',
-    'randint',
-    'randn',
-    'random',
-    'random_integers',
-    'random_sample',
-    'ranf',
-    'rayleigh',
-    'sample',
-    'shuffle',
-    'seed',
-    'standard_cauchy',
-    'standard_exponential',
-    'standard_gamma',
-    'standard_normal',
-    'standard_t',
-    'triangular',
-    'uniform',
-    'vonmises',
-    'wald',
-    'weibull',
-    'zipf'
+    "beta",
+    "binomial",
+    "bytes",
+    "chisquare",
+    "choice",
+    "dirichlet",
+    "exponential",
+    "f",
+    "gamma",
+    "geometric",
+    "gumbel",
+    "hypergeometric",
+    "laplace",
+    "logistic",
+    "lognormal",
+    "logseries",
+    "multinomial",
+    "multivariate_normal",
+    "negative_binomial",
+    "normal",
+    "noncentral_chisquare",
+    "noncentral_f",
+    "pareto",
+    "permutation",
+    "poisson",
+    "power",
+    "rand",
+    "randint",
+    "randn",
+    "random",
+    "random_integers",
+    "random_sample",
+    "ranf",
+    "rayleigh",
+    "sample",
+    "shuffle",
+    "seed",
+    "standard_cauchy",
+    "standard_exponential",
+    "standard_gamma",
+    "standard_normal",
+    "standard_t",
+    "triangular",
+    "uniform",
+    "vonmises",
+    "wald",
+    "weibull",
+    "zipf",
 ]
 
 
@@ -680,7 +680,7 @@ def multinomial(n, pvals, size=None):
     return call_origin(numpy.random.multinomial, n, pvals, size)
 
 
-def multivariate_normal(mean, cov, size=None, check_valid='warn', tol=1e-8):
+def multivariate_normal(mean, cov, size=None, check_valid="warn", tol=1e-8):
     """Multivariate normal distributions.
 
     Draw random samples from a multivariate normal distribution.
@@ -721,9 +721,13 @@ def multivariate_normal(mean, cov, size=None, check_valid='warn', tol=1e-8):
         else:
             final_shape = list(shape[:])
             final_shape.append(mean_.shape[0])
-            return dpnp_rng_multivariate_normal(mean_, cov_, final_shape).get_pyobj()
+            return dpnp_rng_multivariate_normal(
+                mean_, cov_, final_shape
+            ).get_pyobj()
 
-    return call_origin(numpy.random.multivariate_normal, mean, cov, size, check_valid, tol)
+    return call_origin(
+        numpy.random.multivariate_normal, mean, cov, size, check_valid, tol
+    )
 
 
 def negative_binomial(n, p, size=None):
@@ -1567,7 +1571,9 @@ def uniform(low=0.0, high=1.0, size=None):
         else:
             if low > high:
                 low, high = high, low
-            return dpnp_rng_uniform(low, high, size, dtype=numpy.float64).get_pyobj()
+            return dpnp_rng_uniform(
+                low, high, size, dtype=numpy.float64
+            ).get_pyobj()
 
     return call_origin(numpy.random.uniform, low, high, size)
 
