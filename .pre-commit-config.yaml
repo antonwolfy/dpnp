@@ -17,3 +17,4 @@ repos:
     hooks:
     -   id: black
         args: ["--check", "--diff", "--color", "--line-length", "80"]
+        language_version: python3.9
