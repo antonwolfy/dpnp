@@ -3,7 +3,7 @@ ignore =
     E203, # whitespace before ':'
     E402, # module level import not at top of file
     E501, # line too long
-    E711, # comparison to None should be 'cond is None:' 
+    E711, # comparison to None should be 'cond is None:'
     E712, # comparison to true should be 'if cond is true:' or 'if cond:'
     E722, # do not use bare 'except'
     E741, # do not use variables named 'I', 'O', or 'l'
