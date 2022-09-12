@@ -91,4 +91,4 @@ class source_clean(Command):
                         log.info(f"rm {rfile}")
                         os.remove(rfile)
 
-        log.info(f"DPNP: cleaning finished")
+        log.info("DPNP: cleaning finished")

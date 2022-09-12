@@ -100,7 +100,7 @@ class DPNPTestPerfBase:
         exec_times = []
         for iteration in range(self.repeat):
             start_time = time.perf_counter()
-            result = examine_function(*args, **kwargs)
+            examine_function(*args, **kwargs)
             end_time = time.perf_counter()
 
             exec_times.append(end_time - start_time)
@@ -111,13 +111,13 @@ class DPNPTestPerfBase:
         print()
         pw = self.print_width
         pwn = self.print_num_width
-        print(f"Function".center(pw[0]), end=self.sep)
-        print(f"type".center(pw[1]), end=self.sep)
-        print(f"lib".center(pw[2]), end=self.sep)
-        print(f"size".center(pw[3]), end=self.sep)
-        print(f"median".center(pwn), end=self.sep)
-        print(f"min".center(pwn), end=self.sep)
-        print(f"max".center(pwn), end=self.sep)
+        print("Function".center(pw[0]), end=self.sep)
+        print("type".center(pw[1]), end=self.sep)
+        print("lib".center(pw[2]), end=self.sep)
+        print("size".center(pw[3]), end=self.sep)
+        print("median".center(pwn), end=self.sep)
+        print("min".center(pwn), end=self.sep)
+        print("max".center(pwn), end=self.sep)
         print()
 
     def print_csv(self):

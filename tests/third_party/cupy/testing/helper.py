@@ -798,7 +798,7 @@ def for_dtypes(dtypes, name="dtype"):
                 try:
                     kw[name] = numpy.dtype(dtype).type
                     impl(self, *args, **kw)
-                except unittest.SkipTest as e:
+                except unittest.SkipTest:
                     pass  # print(f"Function decorator(): skipped: name={name} dtype={dtype} error={e}")
                 except Exception:
                     # print(f"Function decorator(): name={name} dtype={dtype}")

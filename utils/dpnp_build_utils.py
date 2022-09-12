@@ -419,7 +419,7 @@ def find_omp(verbose=False):
 
     if not omp_include or not omp_libpath:
         raise EnvironmentError(
-            f"DPNP: Unable to find omp. Please install Intel OneAPI environment"
+            "DPNP: Unable to find omp. Please install Intel OneAPI environment"
         )
 
     return omp_include, omp_libpath
@@ -465,6 +465,6 @@ def find_python_env(verbose=False):
     env_include += [os.path.join(os.getenv(conda_root_var), "include")]
 
     if not env_include or not env_path:
-        raise EnvironmentError(f"DPNP: Unable to find Python environment paths")
+        raise EnvironmentError("DPNP: Unable to find Python environment paths")
 
     return env_include, env_path

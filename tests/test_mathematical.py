@@ -494,31 +494,6 @@ class TestGradient:
         numpy.testing.assert_array_equal(expected, result)
 
 
-class TestGradient:
-    @pytest.mark.parametrize(
-        "array", [[2, 3, 6, 8, 4, 9], [3.0, 4.0, 7.5, 9.0], [2, 6, 8, 10]]
-    )
-    def test_gradient_y1(self, array):
-        np_y = numpy.array(array)
-        dpnp_y = dpnp.array(array)
-
-        result = dpnp.gradient(dpnp_y)
-        expected = numpy.gradient(np_y)
-        numpy.testing.assert_array_equal(expected, result)
-
-    @pytest.mark.parametrize(
-        "array", [[2, 3, 6, 8, 4, 9], [3.0, 4.0, 7.5, 9.0], [2, 6, 8, 10]]
-    )
-    @pytest.mark.parametrize("dx", [2, 3.5])
-    def test_gradient_y1_dx(self, array, dx):
-        np_y = numpy.array(array)
-        dpnp_y = dpnp.array(array)
-
-        result = dpnp.gradient(dpnp_y, dx)
-        expected = numpy.gradient(np_y, dx)
-        numpy.testing.assert_array_equal(expected, result)
-
-
 class TestCeil:
     def test_ceil(self):
         array_data = numpy.arange(10)

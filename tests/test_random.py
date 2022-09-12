@@ -137,7 +137,6 @@ def test_randn_normal_distribution():
 
     seed = 28041995
     pts = 10**5
-    alpha = 0.05
     expected_mean = 0.0
     expected_var = 1.0
 
@@ -248,7 +247,6 @@ class TestDistributionsF(TestDistribution):
         )
 
     def test_invalid_args(self):
-        size = 10
         dfnum = -1.0  # positive `dfnum` is expected
         dfden = 1.0  # OK
         self.check_invalid_args("f", {"dfnum": dfnum, "dfden": dfden})
@@ -276,7 +274,6 @@ class TestDistributionsGamma(TestDistribution):
         )
 
     def test_invalid_args(self):
-        size = 10
         shape = -1  # non-negative `shape` is expected
         self.check_invalid_args("gamma", {"shape": shape})
         shape = 1.0  # OK
@@ -301,7 +298,6 @@ class TestDistributionsGeometric(TestDistribution):
         self.check_moments("geometric", expected_mean, expected_var, {"p": p})
 
     def test_invalid_args(self):
-        size = 10
         p = -1.0  # `p` is expected from (0, 1]
         self.check_invalid_args("geometric", {"p": p})
 
@@ -329,7 +325,6 @@ class TestDistributionsGumbel(TestDistribution):
         )
 
     def test_invalid_args(self):
-        size = 10
         loc = 3.0  # OK
         scale = -1.0  # non-negative `scale` is expected
         self.check_invalid_args("gumbel", {"loc": loc, "scale": scale})
@@ -379,7 +374,6 @@ class TestDistributionsHypergeometric(TestDistribution):
         )
 
     def test_invalid_args(self):
-        size = 10
         ngood = 100  # OK
         nbad = 2  # OK
         nsample = -10  # non-negative `nsamp` is expected
@@ -521,7 +515,6 @@ class TestDistributionsMultinomial(TestDistribution):
     def test_moments(self):
         n = 10
         pvals = [1 / 6.0] * 6
-        size = 10**5
         expected_mean = n * pvals[0]
         expected_var = n * pvals[0] * (1 - pvals[0])
         self.check_moments(
@@ -592,7 +585,6 @@ class TestDistributionsMultivariateNormal(TestDistribution):
 
     def test_output_shape_check(self):
         seed = 28041990
-        size = 100
         mean = [2.56, 3.23]
         cov = [[1, 0], [0, 1]]
         expected_shape = (100, 2)
@@ -717,7 +709,6 @@ class TestDistributionsPareto(TestDistribution):
         self.check_moments("pareto", expected_mean, expected_var, {"a": a})
 
     def test_invalid_args(self):
-        size = 10
         a = -1.0  # positive `a` is expected
         self.check_invalid_args("pareto", {"a": a})
 
@@ -755,7 +746,6 @@ class TestDistributionsPower(TestDistribution):
         self.check_moments("power", expected_mean, expected_var, {"a": a})
 
     def test_invalid_args(self):
-        size = 10
         a = -1.0  # positive `a` is expected
         self.check_invalid_args("power", {"a": a})
 
@@ -793,7 +783,6 @@ class TestDistributionsStandardCauchy(TestDistribution):
 
 class TestDistributionsStandardExponential(TestDistribution):
     def test_moments(self):
-        shape = 0.8
         expected_mean = 1.0
         expected_var = 1.0
         self.check_moments(
@@ -975,7 +964,6 @@ class TestDistributionsWald(TestDistribution):
         )
 
     def test_invalid_args(self):
-        size = 10
         mean = -1.0  # positive `mean` is expected
         scale = 1.0  # OK
         self.check_invalid_args("wald", {"mean": mean, "scale": scale})

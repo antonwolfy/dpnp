@@ -369,7 +369,7 @@ class custom_build_clib(build_clib.build_clib):
             sources = build_info.get("sources")
             if sources is None or not isinstance(sources, (list, tuple)):
                 err_msg = f"in 'libraries' option (library '{lib_name}'),"
-                err_msg += f" 'sources' must be present and must be a list of source filenames"
+                err_msg += " 'sources' must be present and must be a list of source filenames"
                 raise DistutilsSetupError(err_msg)
 
             sources = list(sources)

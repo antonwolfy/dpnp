@@ -40,7 +40,7 @@ NNUMBERS = 2**26
     "function", [dpnp.random.beta, np.random.beta], ids=["dpnp", "numpy"]
 )
 def test_beta(benchmark, function):
-    result = benchmark.pedantic(
+    benchmark.pedantic(
         target=function,
         args=(
             4.0,
@@ -58,7 +58,7 @@ def test_beta(benchmark, function):
     ids=["dpnp", "numpy"],
 )
 def test_exponential(benchmark, function):
-    result = benchmark.pedantic(
+    benchmark.pedantic(
         target=function,
         args=(
             4.0,
@@ -73,7 +73,7 @@ def test_exponential(benchmark, function):
     "function", [dpnp.random.gamma, np.random.gamma], ids=["dpnp", "numpy"]
 )
 def test_gamma(benchmark, function):
-    result = benchmark.pedantic(
+    benchmark.pedantic(
         target=function,
         args=(
             2.0,
@@ -89,7 +89,7 @@ def test_gamma(benchmark, function):
     "function", [dpnp.random.normal, np.random.normal], ids=["dpnp", "numpy"]
 )
 def test_normal(benchmark, function):
-    result = benchmark.pedantic(
+    benchmark.pedantic(
         target=function,
         args=(
             0.0,
@@ -105,7 +105,7 @@ def test_normal(benchmark, function):
     "function", [dpnp.random.uniform, np.random.uniform], ids=["dpnp", "numpy"]
 )
 def test_uniform(benchmark, function):
-    result = benchmark.pedantic(
+    benchmark.pedantic(
         target=function,
         args=(
             0.0,

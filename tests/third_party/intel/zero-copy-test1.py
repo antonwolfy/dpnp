@@ -64,7 +64,7 @@ def test_dppy_array_pass():
 
     if dpctl.has_gpu_queues(dpctl.backend_type.level_zero):
         print("\nScheduling on OpenCL GPU\n")
-        with dpctl.device_context("opencl:gpu") as gpu_queue:
+        with dpctl.device_context("opencl:gpu"):
             dppy_f[global_size, dppy.DEFAULT_LOCAL_SIZE](da)
     else:
         print("\nSkip scheduling on OpenCL GPU\n")
