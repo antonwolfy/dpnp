@@ -25,9 +25,10 @@
 # *****************************************************************************
 
 import dpctl.tensor as dpt
-from dpctl.tensor._device import normalize_queue_device
-import dpnp
 import numpy
+from dpctl.tensor._device import normalize_queue_device
+
+import dpnp
 
 
 class dpnp_array:

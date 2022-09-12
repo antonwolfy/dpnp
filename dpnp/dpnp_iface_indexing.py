@@ -42,12 +42,11 @@ it contains:
 
 import collections
 
-from dpnp.dpnp_algo import *
-from dpnp.dpnp_utils import *
-
-import dpnp
 import numpy
 
+import dpnp
+from dpnp.dpnp_algo import *
+from dpnp.dpnp_utils import *
 
 __all__ = [
     "choose",

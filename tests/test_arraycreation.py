@@ -1,10 +1,9 @@
+import tempfile
+
+import numpy
 import pytest
 
 import dpnp
-
-import numpy
-
-import tempfile
 
 
 @pytest.mark.parametrize(

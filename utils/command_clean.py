@@ -25,10 +25,11 @@
 # *****************************************************************************
 
 import os
-from setuptools import Command
+from distutils import log
 from fnmatch import fnmatch
 from shutil import rmtree
-from distutils import log
+
+from setuptools import Command
 
 
 class source_clean(Command):

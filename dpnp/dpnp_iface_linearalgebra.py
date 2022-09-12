@@ -40,13 +40,12 @@ it contains:
 """
 
 
-from dpnp.dpnp_algo import *
-from dpnp.dpnp_utils import *
-import dpnp
-import dpnp.config as config
-
 import numpy
 
+import dpnp
+import dpnp.config as config
+from dpnp.dpnp_algo import *
+from dpnp.dpnp_utils import *
 
 __all__ = [
     "dot",

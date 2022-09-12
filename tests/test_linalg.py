@@ -1,8 +1,7 @@
+import numpy
 import pytest
 
 import dpnp as inp
-
-import numpy
 
 
 def vvsort(val, vec, size, xp):

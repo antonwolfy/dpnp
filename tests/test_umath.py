@@ -1,6 +1,6 @@
+import numpy
 import pytest
 
-import numpy
 import dpnp
 
 # full list of umaths

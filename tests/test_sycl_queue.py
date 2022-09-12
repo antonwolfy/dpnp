@@ -1,9 +1,8 @@
+import dpctl
+import numpy
 import pytest
 
 import dpnp
-import dpctl
-import numpy
-
 
 list_of_backend_str = [
     "host",

@@ -1,6 +1,7 @@
-import dpnp
 import numpy
 import pytest
+
+import dpnp
 
 
 @pytest.mark.parametrize(

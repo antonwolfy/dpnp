@@ -34,16 +34,14 @@ This module contains code and dependency on diffrent containers used in DPNP
 """
 
 
+import dpctl.tensor as dpt
+import numpy
+from dpctl.tensor._device import normalize_queue_device
+
 import dpnp.config as config
 
 # from dpnp.dparray import dparray
 from dpnp.dpnp_array import dpnp_array
-
-import numpy
-
-import dpctl.tensor as dpt
-from dpctl.tensor._device import normalize_queue_device
-
 
 if config.__DPNP_OUTPUT_DPCTL__:
     try:

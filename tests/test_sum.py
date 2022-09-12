@@ -1,6 +1,6 @@
-import dpnp
-
 import numpy
+
+import dpnp
 
 
 def test_sum_float64():

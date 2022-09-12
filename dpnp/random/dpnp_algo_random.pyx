@@ -34,13 +34,13 @@ and the rest of the library
 
 
 import numpy
-import dpnp.config as config
-from dpnp.dpnp_algo cimport *
 
-cimport dpnp.dpnp_utils as utils
+import dpnp.config as config
 
 cimport numpy
 
+cimport dpnp.dpnp_utils as utils
+from dpnp.dpnp_algo cimport *
 
 __all__ = [
     "dpnp_rng_beta",

@@ -38,27 +38,26 @@ It provides:
 """
 
 import importlib.machinery as imm  # Python 3 is required
-import sys
 import os
+import sys
+
 import dpctl
 import numpy
-
-from setuptools import setup, Extension
 from Cython.Build import cythonize
 from Cython.Compiler import Options as cython_options
+from setuptools import Extension, setup
 
-from utils.command_style import source_style
-from utils.command_clean import source_clean
 from utils.command_build_clib import (
+    IS_WIN,
+    _project_backend_dir,
+    _project_extra_link_args,
+    _sdl_cflags,
     custom_build_clib,
     dpnp_backend_c_description,
-    _project_backend_dir,
-    _sdl_cflags,
-    _project_extra_link_args,
-    IS_WIN,
 )
 from utils.command_build_cmake_clib import custom_build_cmake_clib
-
+from utils.command_clean import source_clean
+from utils.command_style import source_style
 
 """
 Python version check

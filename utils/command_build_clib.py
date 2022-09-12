@@ -35,11 +35,11 @@ This modification add:
 
 import os
 import sys
-
-from setuptools.command import build_clib
 from distutils import log
 from distutils.dep_util import newer_group
 from distutils.file_util import copy_file
+
+from setuptools.command import build_clib
 
 from utils.dpnp_build_utils import (
     find_cmplr,

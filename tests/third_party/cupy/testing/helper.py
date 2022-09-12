@@ -14,8 +14,7 @@ import dpnp as cupy
 import dpnp as cupyx
 
 # from dpnp.core import internal
-from tests.third_party.cupy.testing import array
-from tests.third_party.cupy.testing import parameterized
+from tests.third_party.cupy.testing import array, parameterized
 
 # import dpnp
 # import dpnp.scipy.sparse

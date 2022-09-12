@@ -42,10 +42,9 @@ it contains:
 
 import numpy
 
+import dpnp
 from dpnp.dpnp_algo import *
 from dpnp.dpnp_utils import *
-import dpnp
-
 
 __all__ = [
     "amax",

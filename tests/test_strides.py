@@ -1,8 +1,9 @@
 import math
+
+import numpy
 import pytest
 
 import dpnp
-import numpy
 
 
 def _getattr(ex, str_):

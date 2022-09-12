@@ -28,7 +28,6 @@
 import os
 import sys
 
-
 IS_CONDA_BUILD = os.environ.get("CONDA_BUILD") == "1"
 
 

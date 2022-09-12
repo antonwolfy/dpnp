@@ -29,11 +29,11 @@ Module to call cmake based procedure by build_cmake_clib command
 """
 
 import os
-import sys
 import pathlib
-from setuptools.command import build_clib
+import sys
 from distutils import log
 
+from setuptools.command import build_clib
 
 """
 Detect platform

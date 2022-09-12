@@ -25,8 +25,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # *****************************************************************************
 
-import os
 import inspect
+import os
 
 name_dict = {}
 module_names_set = dict()

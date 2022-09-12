@@ -40,13 +40,12 @@ it contains:
 """
 
 
-import dpnp
 import numpy
 
-from dpnp.dpnp_utils import *
+import dpnp
 from dpnp.dpnp_algo import *
+from dpnp.dpnp_utils import *
 from dpnp.linalg.dpnp_algo_linalg import *
-
 
 __all__ = [
     "cholesky",

@@ -35,15 +35,14 @@ Set of functions to implement NumPy random module API
 """
 
 
-import dpnp
+import operator
+
 import numpy
 
+import dpnp
 from dpnp.dpnp_algo import *
 from dpnp.dpnp_utils import *
 from dpnp.random.dpnp_algo_random import *
-
-import operator
-
 
 __all__ = [
     "beta",

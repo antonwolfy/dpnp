@@ -1,7 +1,7 @@
-import pytest
 import numpy
-import dpnp
+import pytest
 
+import dpnp
 
 testdata = []
 testdata += [

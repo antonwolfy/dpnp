@@ -1,8 +1,7 @@
+import numpy
 import pytest
 
 import dpnp
-
-import numpy
 
 
 def test_choose():
