@@ -494,9 +494,9 @@ def hypergeometric(ngood, nbad, nsample, size=None):
             pass
         else:
             m = int(ngood)
-            l = int(ngood) + int(nbad)
+            p = int(ngood) + int(nbad)
             s = int(nsample)
-            return dpnp_rng_hypergeometric(l, s, m, size).get_pyobj()
+            return dpnp_rng_hypergeometric(p, s, m, size).get_pyobj()
 
     return call_origin(numpy.random.hypergeometric, ngood, nbad, nsample, size)
 
@@ -568,7 +568,7 @@ def logistic(loc=0.0, scale=1.0, size=None):
             pass
         else:
             result = dpnp_rng_logistic(loc, scale, size).get_pyobj()
-            if size == None or size == 1:
+            if size is None or size == 1:
                 return result[0]
             else:
                 return result

@@ -477,11 +477,11 @@ def svd(x1, full_matrices=True, compute_uv=True, hermitian=False):
     if x1_desc:
         if not x1_desc.ndim == 2:
             pass
-        elif not full_matrices == True:
+        elif not full_matrices:
             pass
-        elif not compute_uv == True:
+        elif not compute_uv:
             pass
-        elif not hermitian == False:
+        elif hermitian:
             pass
         else:
             result_tup = dpnp_svd(x1_desc, full_matrices, compute_uv, hermitian)

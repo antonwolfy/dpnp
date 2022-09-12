@@ -1,12 +1,7 @@
 [flake8]
-ignore =
-    E203, # whitespace before ':'
-    E402, # module level import not at top of file
+extend-ignore =
+    E203, # whitespace before ':' (currently conflicts with black formatting)
     E501, # line too long
-    E711, # comparison to None should be 'cond is None:'
-    E712, # comparison to true should be 'if cond is true:' or 'if cond:'
-    E722, # do not use bare 'except'
-    E741, # do not use variables named 'I', 'O', or 'l'
     F401, # module imported but unused
     F403, # ‘from module import *’ used; unable to detect undefined names
     F405, # name may be undefined, or defined from star imports: module
@@ -16,6 +11,12 @@ ignore =
     F841, # local variable name is assigned to but never used
     W503, # line break before binary operator
     W505  # doc line too long (105 > 80 characters)
+
+per-file-ignores =
+    # module level import not at top of file:
+    __init__.py: E402
+    # do not use bare 'except':
+    dpnp/random/dpnp_iface_random.py: E722
 
 filename = *.py, *.pyx
 max_line_length = 80
