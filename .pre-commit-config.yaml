@@ -16,5 +16,17 @@ repos:
     rev: 22.8.0
     hooks:
     -   id: black
-        args: ["--check", "--diff", "--color", "--line-length", "80"]
+        args: ["--check", "--diff", "--color"]
         language_version: python3.9
+-   repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+    -   id: isort
+        name: isort (python)
+        args: ["--check-only", "--diff"]
+        additional_dependencies: ["colorama"]
+    -   id: isort
+        name: isort (cython)
+        types: [cython]
+        args: ["--check-only", "--diff"]
+        additional_dependencies: ["colorama"]
