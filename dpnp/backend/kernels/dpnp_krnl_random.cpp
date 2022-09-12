@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2016-2020, Intel Corporation
+// Copyright (c) 2016-2022, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -2776,7 +2776,7 @@ void func_map_init_random(func_map_t& fmap)
                                                                   (void*)dpnp_rng_binomial_default_c<int32_t>};
 
     fmap[DPNPFuncName::DPNP_FN_RNG_BINOMIAL_EXT][eft_INT][eft_INT] = {eft_INT,
-                                                                      (void*)dpnp_rng_binomial_ext_c<int32_t>};         
+                                                                      (void*)dpnp_rng_binomial_ext_c<int32_t>};
 
     fmap[DPNPFuncName::DPNP_FN_RNG_CHISQUARE][eft_DBL][eft_DBL] = {eft_DBL,
                                                                    (void*)dpnp_rng_chisquare_default_c<double>};
