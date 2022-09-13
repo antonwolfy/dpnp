@@ -567,7 +567,7 @@ class TestDistributionsPower(RandomDistributionsTestCase):
         a = numpy.full(self.a_shape, -0.5, dtype=a_dtype)
         with self.assertRaises(ValueError):
             cp_params = {"a": cupy.asarray(a)}
-            getattr(_distributions, "power")(size=self.shape, **cp_params)
+            _distributions.power(size=self.shape, **cp_params)
 
 
 @testing.parameterize(
@@ -810,7 +810,7 @@ class TestDistributionsWeibull(RandomDistributionsTestCase):
         a = numpy.full(self.a_shape, -0.5, dtype=a_dtype)
         with self.assertRaises(ValueError):
             cp_params = {"a": cupy.asarray(a)}
-            getattr(_distributions, "weibull")(size=self.shape, **cp_params)
+            _distributions.weibull(size=self.shape, **cp_params)
 
 
 @testing.parameterize(

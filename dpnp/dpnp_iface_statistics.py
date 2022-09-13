@@ -306,7 +306,9 @@ def cov(
 def histogram(a, bins=10, range=None, normed=None, weights=None, density=None):
     """
     Compute the histogram of a dataset.
+
     For full documentation refer to :obj:`numpy.histogram`.
+
     Examples
     --------
     >>> import dpnp

@@ -72,8 +72,8 @@ class source_style(Command):
             for excluded_dir in self._project_directory_excluded
         ]
 
-        # r=root, d=directories, f = files
-        for r, d, f in os.walk(path):
+        # r=root, _=directories, f=files
+        for r, _, f in os.walk(path):
             # match exclude pattern in current directory
             found = False
             for excluded_dir in exluded_directories_full_path:
@@ -84,7 +84,7 @@ class source_style(Command):
                 continue
 
             for file in f:
-                filename, extention = os.path.splitext(file)
+                _, extention = os.path.splitext(file)
                 if extention in search_extentions:
                     files.append(os.path.join(r, file))
 

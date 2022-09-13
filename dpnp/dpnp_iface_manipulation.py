@@ -102,6 +102,7 @@ def asfarray(x1, dtype=numpy.float64):
 def atleast_1d(*arys):
     """
     Convert inputs to arrays with at least one dimension.
+
     Scalar inputs are converted to 1-dimensional arrays, whilst
     higher-dimensional inputs are preserved.
 

@@ -56,7 +56,7 @@ def repeat_with_success_at_least(times, min_success):
                 ins = type(instance)(instance._testMethodName)
                 suite.addTest(
                     unittest.FunctionTestCase(
-                        lambda: f(ins, *args[1:], **kwargs),
+                        lambda ins=ins: f(ins, *args[1:], **kwargs),
                         setUp=ins.setUp,
                         tearDown=ins.tearDown,
                     )

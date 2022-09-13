@@ -26,6 +26,7 @@
 
 """
 To run numpy tests under dpnp.
+
 >>> python -m tests.third_party.numpy_ext
 to run specific test suite:
 >>> python -m tests.third_party.numpy_ext core/tests/test_umath.py

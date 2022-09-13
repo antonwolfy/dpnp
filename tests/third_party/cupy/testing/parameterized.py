@@ -61,9 +61,7 @@ def _parameterize_test_case(base, i, param):
     for k, v in sorted(param.items()):
         if isinstance(v, types.FunctionType):
 
-            def create_new_v():
-                f = v
-
+            def create_new_v(f=v):
                 def new_v(self, *args, **kwargs):
                     return f(*args, **kwargs)
 

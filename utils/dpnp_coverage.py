@@ -41,7 +41,7 @@ col2_width = 60
 def print_header_line():
     print(f"{'='*col0_width}", end=sep)
     print(f"{'='*col1_width}", end=sep)
-    for mod_name in module_names_set.keys():
+    for _ in module_names_set.keys():
         print(f"{'='*col2_width}", end=sep)
     print()
 
@@ -93,7 +93,7 @@ def fill_data(module_name, module_obj, parent_module_name=""):
             continue
 
         item_name = os.path.join(parent_module_name, item_name_raw)
-        if getattr(item_val, "__call__", False):
+        if callable(item_val):
             str_item = item_val
             try:
                 str_item = inspect.signature(item_val)

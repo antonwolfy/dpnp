@@ -997,8 +997,7 @@ def power(a, size=None):
 
 def rand(d0, *dn):
     """
-    Create an array of the given shape and populate it
-    with random samples from a uniform distribution over [0, 1).
+    Create an array of the given shape and populate it with random samples from a uniform distribution over [0, 1).
 
     For full documentation refer to :obj:`numpy.random.rand`.
 
@@ -1121,8 +1120,8 @@ def randn(d0, *dn):
 def random(size):
     """
     Return random floats in the half-open interval [0.0, 1.0).
-    Alias for random_sample.
 
+    Alias for random_sample.
     For full documentation refer to :obj:`numpy.random.random`.
 
     Limitations
@@ -1208,8 +1207,8 @@ def random_sample(size):
 def ranf(size):
     """
     Return random floats in the half-open interval [0.0, 1.0).
-    This is an alias of random_sample.
 
+    This is an alias of random_sample.
     For full documentation refer to :obj:`numpy.random.ranf`.
 
     Limitations
@@ -1269,8 +1268,8 @@ def rayleigh(scale=1.0, size=None):
 def sample(size):
     """
     Return random floats in the half-open interval [0.0, 1.0).
-    This is an alias of random_sample.
 
+    This is an alias of random_sample.
     For full documentation refer to :obj:`numpy.random.sample`.
 
     Limitations
@@ -1578,7 +1577,7 @@ def uniform(low=0.0, high=1.0, size=None):
 
 
 def vonmises(mu, kappa, size=None):
-    """von Mises distribution.
+    """
 
     Draw samples from a von Mises distribution.
 

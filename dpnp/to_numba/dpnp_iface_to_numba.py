@@ -54,7 +54,7 @@ def choose_kernel(name, all_signatures):
         for signature in all_signatures:
             if args == signature:
                 f = name_and_types_to_pointer[(name, *signature)]
-                return lambda *args: f(*args)
+                return lambda *args, f=f: f(*args)
 
     return choice_function
 

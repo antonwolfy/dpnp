@@ -42,7 +42,7 @@ else:
 
     def _dummy_callable(*args, **kwargs):
         check_available()
-        assert False  # Not reachable
+        raise AssertionError()  # Not reachable
 
     cudnn = _dummy_callable
     slow = _dummy_callable

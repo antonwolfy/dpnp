@@ -98,7 +98,7 @@ class DPNPTestPerfBase:
             examine_function = custom_fptr
 
         exec_times = []
-        for iteration in range(self.repeat):
+        for _ in range(self.repeat):
             start_time = time.perf_counter()
             examine_function(*args, **kwargs)
             end_time = time.perf_counter()

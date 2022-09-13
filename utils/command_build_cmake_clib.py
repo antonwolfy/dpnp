@@ -24,9 +24,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # *****************************************************************************
 
-"""
-Module to call cmake based procedure by build_cmake_clib command
-"""
+"""Module to call cmake based procedure by build_cmake_clib command."""
 
 import os
 import pathlib

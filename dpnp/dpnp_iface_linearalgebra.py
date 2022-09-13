@@ -147,8 +147,7 @@ def einsum(*args, **kwargs):
 
 def einsum_path(*args, **kwargs):
     """
-    Evaluates the lowest cost contraction order for an einsum expression
-    by considering the creation of intermediate arrays.
+    Evaluates the lowest cost contraction order for an einsum expression by considering the creation of intermediate arrays.
 
     For full documentation refer to :obj:`numpy.einsum_path`.
 

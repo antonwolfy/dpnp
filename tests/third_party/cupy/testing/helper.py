@@ -142,7 +142,7 @@ def _fail_test_with_unexpected_errors(
         testcase.fail(msg)
     except AssertionError as e:
         raise e.with_traceback(cupy_tb or numpy_tb)
-    assert False  # never reach
+    raise AssertionError()  # never reach
 
 
 def _check_cupy_numpy_error(
@@ -1229,7 +1229,7 @@ def numpy_satisfies(version_range):
 
 
 def shaped_arange(shape, xp=dpnp, dtype=numpy.float64, order="C"):
-    """Returns an array with given shape, array module, and dtype.
+    r"""Returns an array with given shape, array module, and dtype.
 
     Args:
          shape(tuple of int): Shape of returned ndarray.
@@ -1256,7 +1256,7 @@ def shaped_arange(shape, xp=dpnp, dtype=numpy.float64, order="C"):
 
 
 def shaped_reverse_arange(shape, xp=dpnp, dtype=numpy.float32):
-    """Returns an array filled with decreasing numbers.
+    r"""Returns an array filled with decreasing numbers.
 
     Args:
          shape(tuple of int): Shape of returned ndarray.

@@ -28,6 +28,7 @@
 
 """
 Script to run numpy tests under dpnp.
+
 >>> python -m tests_external.numpy.runtests
 to run specific test suite:
 >>> python -m tests_external.numpy.runtests core/tests/test_umath.py

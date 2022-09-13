@@ -111,7 +111,6 @@ def arange(start, stop=None, step=1, dtype=None):
 
     Examples
     --------
-
     >>> import dpnp as np
     >>> [i for i in np.arange(3)]
     [0, 1, 2]
@@ -586,6 +585,7 @@ def empty_like(prototype, dtype=None, order="C", subok=False, shape=None):
 def eye(N, M=None, k=0, dtype=None, order="C", **kwargs):
     """
     Return a 2-D array with ones on the diagonal and zeros elsewhere.
+
     For full documentation refer to :obj:`numpy.eye`.
 
     Limitations
@@ -905,7 +905,7 @@ def linspace(
 
 
 def loadtxt(fname, **kwargs):
-    """
+    r"""
     Load data from a text file.
 
     Each row in the text file must have the same number of values.

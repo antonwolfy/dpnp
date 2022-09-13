@@ -99,9 +99,7 @@ class dpnp_array:
             return dpnp.transpose(self)
 
     def to_device(self, target_device):
-        """
-        Transfer array to target device
-        """
+        """Transfer array to target device."""
 
         return dpnp_array(
             shape=self.shape, buffer=self.get_array().to_device(target_device)
@@ -212,9 +210,7 @@ class dpnp_array:
         return dpnp.less_equal(self, other)
 
     def __len__(self):
-        """
-        Performs the operation __len__.
-        """
+        """Performs the operation __len__."""
 
         return self._array_obj.__len__()
 
@@ -284,7 +280,8 @@ class dpnp_array:
     # '__sizeof__',
 
     def __str__(self):
-        """Output values from the array to standard output
+        """
+        Output values from the array to standard output.
 
         Example:
           [[ 136.  136.  136.]
@@ -390,8 +387,7 @@ class dpnp_array:
 
     def argsort(self, axis=-1, kind=None, order=None):
         """
-        Return an ndarray of indices that sort the array along the
-        specified axis.
+        Return an ndarray of indices that sort the array along the specified axis.
 
         Parameters
         ----------
@@ -431,7 +427,8 @@ class dpnp_array:
         return dpnp.argsort(self, axis, kind, order)
 
     def astype(self, dtype, order="K", casting="unsafe", subok=True, copy=True):
-        """Copy the array with data type casting.
+        """
+        Copy the array with data type casting.
 
         Args:
             dtype: Target type.
@@ -458,10 +455,7 @@ class dpnp_array:
     # 'byteswap',
 
     def choose(input, choices, out=None, mode="raise"):
-        """
-        Construct an array from an index array and a set of arrays to choose from.
-
-        """
+        """Construct an array from an index array and a set of arrays to choose from."""
 
         return dpnp.choose(input, choices, out, mode)
 
@@ -528,7 +522,7 @@ class dpnp_array:
 
     @property
     def dtype(self):
-        """ """
+        """Return data type of an object."""
 
         return self._array_obj.dtype
 
@@ -564,10 +558,7 @@ class dpnp_array:
 
     @property
     def flat(self):
-        """
-        Return a flat iterator, or set a flattened version of self to value.
-
-        """
+        """Return a flat iterator, or set a flattened version of self to value."""
 
         return dpnp.flatiter(self)
 
@@ -654,7 +645,6 @@ class dpnp_array:
     @property
     def itemsize(self):
         """ """
-
         return self._array_obj.itemsize
 
     def max(
@@ -665,16 +655,12 @@ class dpnp_array:
         initial=numpy._NoValue,
         where=numpy._NoValue,
     ):
-        """
-        Return the maximum along an axis.
-        """
+        """Return the maximum along an axis."""
 
         return dpnp.max(self, axis, out, keepdims, initial, where)
 
     def mean(self, axis=None):
-        """
-        Returns the average of the array elements.
-        """
+        """Returns the average of the array elements."""
 
         return dpnp.mean(self, axis)
 
@@ -686,9 +672,7 @@ class dpnp_array:
         initial=numpy._NoValue,
         where=numpy._NoValue,
     ):
-        """
-        Return the minimum along a given axis.
-        """
+        """Return the minimum along a given axis."""
 
         return dpnp.min(self, axis, out, keepdims, initial, where)
 
@@ -792,7 +776,10 @@ class dpnp_array:
 
     @shape.setter
     def shape(self, newshape):
-        """Set new lengths of axes. A tuple of numbers represents size of each dimention.
+        """
+        Set new lengths of axes.
+
+        A tuple of numbers represents size of each dimention.
         It involves reshaping without copy. If the array cannot be reshaped without copy,
         it raises an exception.
 

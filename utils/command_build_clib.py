@@ -24,7 +24,9 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # *****************************************************************************
 
-"""Module to customize build_clib command
+"""
+Module to customize build_clib command.
+
 Originally, 'build_clib' command produce static C library only.
 This modification add:
  - build shared C library
@@ -355,9 +357,7 @@ def _compiler_compile(
 
 class custom_build_clib(build_clib.build_clib):
     def build_libraries(self, libraries):
-        """
-        This function is overloaded to the original function in build_clib.py file
-        """
+        """This function is overloaded to the original function in build_clib.py file."""
 
         for (lib_name, build_info) in libraries:
             c_library_name = self.compiler.library_filename(

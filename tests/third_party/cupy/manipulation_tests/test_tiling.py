@@ -44,8 +44,8 @@ class TestRepeatRepeatsNdarray(unittest.TestCase):
 )
 @testing.gpu
 class TestRepeatListBroadcast(unittest.TestCase):
-
-    """Test for `repeats` argument using single element list.
+    """
+    Test for `repeats` argument using single element list.
 
     This feature is only supported in NumPy 1.10 or later.
     """
@@ -77,7 +77,6 @@ class TestRepeat1D(unittest.TestCase):
 )
 @testing.gpu
 class TestRepeat1DListBroadcast(unittest.TestCase):
-
     """See comment in TestRepeatListBroadcast class."""
 
     @testing.numpy_cupy_array_equal()

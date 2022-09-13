@@ -129,11 +129,7 @@ def test_seed(func):
 
 
 def test_randn_normal_distribution():
-    """
-    Check the moments of the normal distribution sample obtained
-    from ``dpnp.random.randn``.
-
-    """
+    """Check the moments of the normal distribution sample obtained from ``dpnp.random.randn``."""
 
     seed = 28041995
     pts = 10**5

@@ -95,9 +95,7 @@ void = numpy.void
 
 
 def is_type_supported(obj_type):
-    """
-    Return True if type is supported by DPNP python level.
-    """
+    """Return True if type is supported by DPNP python level."""
 
     if (
         obj_type == float64

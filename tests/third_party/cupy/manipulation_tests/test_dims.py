@@ -254,7 +254,7 @@ class TestDims(unittest.TestCase):
                 a.squeeze(axis=-2)
 
     def test_squeeze_scalar_failure4(self):
-        for xp in (numpy, cupy):
+        for _ in (numpy, cupy):
             a = testing.shaped_arange((), cupy)
             with pytest.raises(numpy.AxisError):
                 a.squeeze(axis=1)

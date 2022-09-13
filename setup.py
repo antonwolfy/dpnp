@@ -25,7 +25,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # *****************************************************************************
 
-""" NumPy is the fundamental package for array computing with Python.
+"""
+NumPy is the fundamental package for array computing with Python.
 
 It provides:
 
