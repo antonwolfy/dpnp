@@ -33,8 +33,8 @@ jobs:
       channel-path: '$GITHUB_WORKSPACE/channel'
       channel-path2: '${{ github.workspace }}/channel'
       pkg-path-in-channel: '$GITHUB_WORKSPACE/channel/linux-64'
-      pkg-path-in-channel2: '${{ channel-path }}/linux-64'
-      pkg-path-in-channel3: '${{ channel-path2 }}/linux-64'
+      pkg-path-in-channel2: '${channel-path}/linux-64'
+      pkg-path-in-channel3: '${channel-path2}/linux-64'
       ver-json-path: '$GITHUB_WORKSPACE/$VER_JSON_NAME'
       ver-json-path2: '$GITHUB_WORKSPACE/${VER_JSON_NAME}'
 
@@ -48,6 +48,7 @@ jobs:
           echo "pkg-path-in-channel3 is ${{ env.pkg-path-in-channel3 }}"
           echo "ver-json-path is ${{ env.ver-json-path }}"
           echo "ver-json-path2 is ${{ env.ver-json-path2 }}"
+          echo "VER_SCRIPT1 is $VER_SCRIPT1"
 
       - name: Checkout DPNP repo
         uses: actions/checkout@v3
