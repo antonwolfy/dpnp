@@ -151,10 +151,13 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ${{ build_linux.strategy.matrix.python }}
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
+
+    env:
+      conda-pkgs: '/home/runner/conda_pkgs_dir/'
 
     steps:
       - name: Download artifact
