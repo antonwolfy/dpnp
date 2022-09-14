@@ -33,21 +33,21 @@ jobs:
       channel-path: '$GITHUB_WORKSPACE/channel'
       channel-path2: '${{ github.workspace }}/channel'
       pkg-path-in-channel: '$GITHUB_WORKSPACE/channel/linux-64'
-      pkg-path-in-channel2: '${channel-path}/linux-64'
-      pkg-path-in-channel3: '${channel-path2}/linux-64'
+      pkg-path-in-channel2: '${{ channel-path }}/linux-64'
+      pkg-path-in-channel3: '${{ channel-path2 }}/linux-64'
       ver-json-path: '$GITHUB_WORKSPACE/$VER_JSON_NAME'
       ver-json-path2: '$GITHUB_WORKSPACE/${VER_JSON_NAME}'
 
     steps:
       - name: Test
         run: |
-          echo "channel-path is ${{ env.channel-path}}"
-          echo "channel-path2 is ${{ env.channel-path2}}"
-          echo "pkg-path-in-channel is ${{ env.pkg-path-in-channel}}"
-          echo "pkg-path-in-channel3 is ${{ env.pkg-path-in-channel2}}"
-          echo "pkg-path-in-channel2 is ${{ env.pkg-path-in-channel3}}"
-          echo "ver-json-path is ${{ env.ver-json-path}}"
-          echo "ver-json-path2 is ${{ env.ver-json-path2}}"
+          echo "channel-path is ${{ env.channel-path }}"
+          echo "channel-path2 is ${{ env.channel-path2 }}"
+          echo "pkg-path-in-channel is ${{ env.pkg-path-in-channel }}"
+          echo "pkg-path-in-channel2 is ${{ env.pkg-path-in-channel2 }}"
+          echo "pkg-path-in-channel3 is ${{ env.pkg-path-in-channel3 }}"
+          echo "ver-json-path is ${{ env.ver-json-path }}"
+          echo "ver-json-path2 is ${{ env.ver-json-path2 }}"
 
       - name: Checkout DPNP repo
         uses: actions/checkout@v3
