@@ -165,7 +165,7 @@ jobs:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
       channel-path: '${{ github.workspace }}/channel'
       pkg-path-in-channel: '${{ github.workspace }}/channel/linux-64'
-      ver-json-path: '${{ github.workspace }}/${VER_JSON_NAME}'
+      ver-json-path: '${{ github.workspace }}/version.json'
 
     steps:
       - name: Download artifact
@@ -233,7 +233,10 @@ jobs:
           export SYCL_ENABLE_HOST_DEVICE=1
           # clinfo -l
           # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
-          python -m pytest -q -ra --disable-warnings  -vv
+          conda list
+          ls -la
+          pwd
+          python -m pytest -q -ra --disable-warnings --pyargs dpnp -vv
 
   upload_linux:
     needs: test_linux
