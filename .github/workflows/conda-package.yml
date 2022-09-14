@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
+        python: ['3.8', '3.9']
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
@@ -143,7 +143,7 @@ jobs:
   test_linux:
     needs: build_linux
 
-    runs-on:  ${{ matrix.runner }}
+    runs-on: ubuntu-latest
 
     defaults:
       run:
@@ -151,9 +151,8 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
+        python: ['3.8', '3.9']
         experimental: [false]
-        runner: [ubuntu-latest]
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -226,7 +225,7 @@ jobs:
           python -m pytest -p no:faulthandler --pyargs $MODULE_NAME
 
   upload_linux:
-    needs: build_linux
+    needs: test_linux
 
     if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
 
