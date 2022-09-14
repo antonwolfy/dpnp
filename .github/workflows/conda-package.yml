@@ -163,9 +163,9 @@ jobs:
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
-      channel-path: '$GITHUB_WORKSPACE/channel'
-      pkg-path-in-channel: '$GITHUB_WORKSPACE/channel/linux-64'
-      ver-json-path: '$GITHUB_WORKSPACE/$VER_JSON_NAME'
+      channel-path: '${{ github.workspace }}/channel'
+      pkg-path-in-channel: '${{ github.workspace }}/channel/linux-64'
+      ver-json-path: '${{ github.workspace }}/$VER_JSON_NAME'
 
     steps:
       - name: Download artifact
