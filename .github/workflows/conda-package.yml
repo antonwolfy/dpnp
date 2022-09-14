@@ -11,7 +11,7 @@ env:
   MODULE_NAME: dpnp
   CHANNELS: '-c dppy/label/dev -c intel -c defaults --override-channels'
   VER_JSON_NAME: 'version.json'
-  VER_SCRIPT1: "import json; f = open(${{ env.VER_JSON_NAME }}, 'r'); j = json.load(f); f.close(); "
+  VER_SCRIPT1: "import json; f = open(${{ VER_JSON_NAME }}, 'r'); j = json.load(f); f.close(); "
   VER_SCRIPT2: "d = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))"
 
 jobs:
