@@ -10,8 +10,9 @@ env:
   PACKAGE_NAME: dpnp
   MODULE_NAME: dpnp
   CHANNELS: '-c dppy/label/dev -c intel -c defaults --override-channels'
-  VER_SCRIPT1: "import json; f = open('ver.json', 'r'); j = json.load(f); f.close(); "
-  VER_SCRIPT2: "d = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))"
+  VER_JSON_NAME: 'version.json'
+  VER_SCRIPT1: 'import json; f = open(${{ env.VER_JSON_NAME }}, 'r'); j = json.load(f); f.close(); '
+  VER_SCRIPT2: 'd = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))'
 
 jobs:
   build_linux:
@@ -151,19 +152,23 @@ jobs:
 
     strategy:
       matrix:
-        python: ${{ build_linux.strategy.matrix.python }}
+        python: ['3.8', '3.9']
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
+      channel-path: '$GITHUB_WORKSPACE/channel'
+      pkg-path-in-channel: '${{ env.channel-path }}/linux-64'
+      ver-json: '$GITHUB_WORKSPACE/${{ env.VER_JSON_NAME }}'
 
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
+          path: ${{ env.pkg-path-in-channel }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -178,20 +183,18 @@ jobs:
         run: conda install conda-build
 
       - name: Create conda channel
+        run: conda index ${{ env.channel-path }} || exit 1
+
+      - name: Test conda channel
         run: |
-          mkdir -p $GITHUB_WORKSPACE/channel/linux-64
-          conda index $GITHUB_WORKSPACE/channel || exit 1
-          mv ${PACKAGE_NAME}-*.tar.bz2 $GITHUB_WORKSPACE/channel/linux-64 || exit 1
-          conda index $GITHUB_WORKSPACE/channel || exit 1
-          # Test channel
-          conda search $PACKAGE_NAME -c $GITHUB_WORKSPACE/channel --override-channels --info --json > $GITHUB_WORKSPACE/ver.json
-          cat ver.json
+          conda search ${{ env.PACKAGE_NAME }} -c ${{ env.channel-path }} --override-channels --info --json > ${{ env.ver-json }}
+          cat ${{ env.ver-json }}
 
       - name: Collect dependencies
         run: |
-          CHANNELS="-c $GITHUB_WORKSPACE/channel ${{ env.CHANNELS }}"
+          CHANNELS="-c ${{ env.channel-path }} ${{ env.CHANNELS }}"
           export PACKAGE_VERSION=$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")
-          conda install $PACKAGE_NAME=${PACKAGE_VERSION} python=${{ matrix.python }} $CHANNELS --only-deps --dry-run > lockfile
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} python=${{ matrix.python }} $CHANNELS --only-deps --dry-run > lockfile
           cat lockfile
 
       - name: Cache conda packages
@@ -208,9 +211,9 @@ jobs:
 
       - name: Install dpnp
         run: |
-          CHANNELS="-c $GITHUB_WORKSPACE/channel ${{ env.CHANNELS }}"
+          CHANNELS="-c ${{ env.channel-path }} ${{ env.CHANNELS }}"
           export PACKAGE_VERSION=$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")
-          conda install $PACKAGE_NAME=${PACKAGE_VERSION} pytest python=${{ matrix.python }} $CHANNELS
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} pytest python=${{ matrix.python }} $CHANNELS
           # Test installed packages
           conda list
 
@@ -225,7 +228,7 @@ jobs:
           export OCL_ICD_FILENAMES=libintelocl.so
           export SYCL_ENABLE_HOST_DEVICE=1
           # clinfo -l
-          python -m pytest -p no:faulthandler --pyargs $MODULE_NAME
+          python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
 
   upload_linux:
     needs: test_linux
