@@ -161,7 +161,7 @@ jobs:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
       channel-path: '$GITHUB_WORKSPACE/channel'
       pkg-path-in-channel: '${env.channel-path}/linux-64'
-      ver-json: '$GITHUB_WORKSPACE/${{ env.VER_JSON_NAME }}'
+      ver-json-path: '$GITHUB_WORKSPACE/${VER_JSON_NAME}'
 
     steps:
       - name: Download artifact
@@ -187,8 +187,8 @@ jobs:
 
       - name: Test conda channel
         run: |
-          conda search ${{ env.PACKAGE_NAME }} -c ${{ env.channel-path }} --override-channels --info --json > ${{ env.ver-json }}
-          cat ${{ env.ver-json }}
+          conda search ${{ env.PACKAGE_NAME }} -c ${{ env.channel-path }} --override-channels --info --json > ${{ env.ver-json-path }}
+          cat ${{ env.ver-json-path }}
 
       - name: Collect dependencies
         run: |
