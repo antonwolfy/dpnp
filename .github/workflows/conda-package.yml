@@ -18,15 +18,14 @@ jobs:
   build_linux:
     runs-on: ubuntu-latest
 
-    if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
-
     defaults:
       run:
         shell: bash -l {0}
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        # python: ['3.8', '3.9']
+        python: ['3.9']
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
@@ -146,7 +145,7 @@ jobs:
           path: ${{ env.conda-bld }}${{ env.PACKAGE_NAME }}-*.tar.bz2
 
   test_linux:
-    # needs: build_linux
+    needs: build_linux
 
     runs-on: ubuntu-latest
 
@@ -156,7 +155,8 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        # python: ['3.8', '3.9']
+        python: ['3.9']
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
