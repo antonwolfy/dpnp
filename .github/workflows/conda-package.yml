@@ -38,6 +38,40 @@ jobs:
           mkdir -p ${{ env.extracted-pkg-path }}
           tar -xvf ${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
 
+      - name: Install system deps
+        run: |
+          sudo apt-get install -y aptitude
+          echo ========================= install Intel repository =======================
+          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+          sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
+          sudo apt-get update
+          echo ========================= alternatives status =======================
+          update-alternatives --get-selections
+          echo ========================= install Intel OneAPI ===========================
+          sudo aptitude install -y intel-oneapi-mkl                \
+                                  intel-oneapi-mkl-devel          \
+                                  intel-oneapi-compiler-dpcpp-cpp
+          echo ========================= list /opt/intel/oneapi/ ========================
+          ls -l /opt/intel/oneapi/
+          echo ========================= install extra packages ==========================
+          sudo aptitude install -y cmake valgrind libgtest-dev
+
+      - name: Print system info
+        run: |
+          sudo apt list --installed
+          gcc --version
+          which gcc
+          g++ --version
+          which g++
+          clang++ --version
+          which clang++
+          dpcpp --version
+          which dpcpp
+          valgrind --version
+          which valgrind
+
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -58,13 +92,22 @@ jobs:
           export SYCL_ENABLE_HOST_DEVICE=1
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
+      - name: Install valgrind
+        run: |
+          pip3 install pytest-valgrind
+          conda list
+
       - name: Testing
         run: |
           export OCL_ICD_FILENAMES=libintelocl.so
           export SYCL_ENABLE_HOST_DEVICE=1
           conda list
-          which valgrind
-          valgrind python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
+          echo "Running valgrind ..."
+          export PYTHONMALLOC=malloc
+          valgrind --show-leak-kinds=definite --log-file=/tmp/valgrind-output \
+            python -m pytest -q -ra --disable-warnings -vv \
+            --valgrind --valgrind-log=/tmp/valgrind-output \
+            ${{ env.tests-path }}/tests/test_logic.py
 
       - name: Run tests
         run: |
