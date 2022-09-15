@@ -170,22 +170,14 @@ jobs:
       ver-json-path: '${{ github.workspace }}/version.json'
 
     steps:
-      - name: Checkout DPNP repo
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
           path: ${{ env.pkg-path-in-channel }}
 
-      - name: Extract archive
-        uses: ihiroky/extract-action@v1
-        with:
-          file_path: ${{ env.pkg-path-in-channel }}/${{ env.PACKAGE_NAME }}-*.tar.bz2
-          extract_dir: ${{ env.extracted-pkg-path }}
+      - name: Extract DPNP package archive
+        run: tar xvf ${{ env.pkg-path-in-channel }}/${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
