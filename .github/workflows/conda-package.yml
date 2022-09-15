@@ -244,6 +244,8 @@ jobs:
           conda list
           ls -la
           pwd
+          env
+          clinfo -l
           python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
 
   upload_linux:
