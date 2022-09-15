@@ -157,6 +157,7 @@ jobs:
       matrix:
         # python: ['3.8', '3.9']
         python: ['3.9']
+        dpctl: ['0.13.0']
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
@@ -176,7 +177,7 @@ jobs:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
           path: ${{ env.pkg-path-in-channel }}
 
-      - name: Extract DPNP package archive
+      - name: Extract package archive
         run: |
           mkdir -p ${{ env.extracted-pkg-path }}
           tar -xvf ${{ env.pkg-path-in-channel }}/${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
@@ -224,7 +225,7 @@ jobs:
         run: |
           CHANNELS="-c ${{ env.channel-path }} ${{ env.CHANNELS }}"
           export PACKAGE_VERSION=$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")
-          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} pytest python=${{ matrix.python }} $CHANNELS
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} $CHANNELS
           # Test installed packages
           conda list
 
