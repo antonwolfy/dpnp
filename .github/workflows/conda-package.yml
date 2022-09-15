@@ -92,22 +92,22 @@ jobs:
           export SYCL_ENABLE_HOST_DEVICE=1
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
-      - name: Install valgrind
-        run: |
-          pip3 install pytest-valgrind
-          conda list
+      # - name: Install valgrind
+      #   run: |
+      #     pip3 install pytest-valgrind
+      #     conda list
 
-      - name: Testing
-        run: |
-          export OCL_ICD_FILENAMES=libintelocl.so
-          export SYCL_ENABLE_HOST_DEVICE=1
-          conda list
-          echo "Running valgrind ..."
-          export PYTHONMALLOC=malloc
-          valgrind --show-leak-kinds=definite --log-file=/tmp/valgrind-output \
-            python -m pytest -q -ra --disable-warnings -vv \
-            --valgrind --valgrind-log=/tmp/valgrind-output \
-            ${{ env.tests-path }}/tests/test_logic.py
+      # - name: Testing
+      #   run: |
+      #     export OCL_ICD_FILENAMES=libintelocl.so
+      #     export SYCL_ENABLE_HOST_DEVICE=1
+      #     conda list
+      #     echo "Running valgrind ..."
+      #     export PYTHONMALLOC=malloc
+      #     valgrind --show-leak-kinds=definite --log-file=/tmp/valgrind-output \
+      #       python -m pytest -q -ra --disable-warnings -vv \
+      #       --valgrind --valgrind-log=/tmp/valgrind-output \
+      #       ${{ env.tests-path }}/tests/test_logic.py
 
       - name: Run tests
         run: |
