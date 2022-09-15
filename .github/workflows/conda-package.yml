@@ -58,6 +58,14 @@ jobs:
           export SYCL_ENABLE_HOST_DEVICE=1
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
+      - name: Testing
+        run: |
+          export OCL_ICD_FILENAMES=libintelocl.so
+          export SYCL_ENABLE_HOST_DEVICE=1
+          conda list
+          which valgrind
+          valgrind python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
+
       - name: Run tests
         run: |
           export OCL_ICD_FILENAMES=libintelocl.so
