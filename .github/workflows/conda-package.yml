@@ -30,6 +30,7 @@ jobs:
       extracted-pkg-path: '${{ github.workspace }}/pkg/'
       tests-path: '${{ github.workspace }}/pkg/info/test/'
 
+    steps:
       - name: Download pkg
         run: |
           wget https://anaconda.org/dppy/dpnp/0.10.1/download/linux-64/dpnp-0.10.1-py39h2bc3f7f_38.tar.bz2
