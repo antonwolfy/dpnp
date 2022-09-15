@@ -177,7 +177,9 @@ jobs:
           path: ${{ env.pkg-path-in-channel }}
 
       - name: Extract DPNP package archive
-        run: tar xvf ${{ env.pkg-path-in-channel }}/${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
+        run: |
+          mkdir -p ${{ env.extracted-pkg-path }}
+          tar -xvf ${{ env.pkg-path-in-channel }}/${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
