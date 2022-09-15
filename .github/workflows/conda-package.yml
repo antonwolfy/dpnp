@@ -88,8 +88,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          export OCL_ICD_FILENAMES=libintelocl.so
-          export SYCL_ENABLE_HOST_DEVICE=1
+          # export OCL_ICD_FILENAMES=libintelocl.so
+          # export SYCL_ENABLE_HOST_DEVICE=1
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       # - name: Install valgrind
@@ -111,8 +111,8 @@ jobs:
 
       - name: Run tests
         run: |
-          export OCL_ICD_FILENAMES=libintelocl.so
-          export SYCL_ENABLE_HOST_DEVICE=1
+          # export OCL_ICD_FILENAMES=libintelocl.so
+          # export SYCL_ENABLE_HOST_DEVICE=1
           # clinfo -l
           # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
           conda list
