@@ -15,8 +15,62 @@ env:
   VER_SCRIPT2: "d = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))"
 
 jobs:
+  test_job_linux:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      matrix:
+        python: ['3.9']
+
+    env:
+      extracted-pkg-path: '${{ github.workspace }}/pkg/'
+      tests-path: '${{ github.workspace }}/pkg/info/test/'
+
+      - name: Download pkg
+        run: |
+          wget https://anaconda.org/dppy/dpnp/0.10.1/download/linux-64/dpnp-0.10.1-py39h2bc3f7f_38.tar.bz2
+          mkdir -p ${{ env.extracted-pkg-path }}
+          tar -xvf ${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
+
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python }}
+          miniconda-version: 'latest'
+          activate-environment: 'test_test'
+
+      - name: Install dpnp
+        run: |
+          conda install ${{ env.PACKAGE_NAME }}=0.10.1 dpctl=0.13.0=py39h8c27c75_4 pytest python=3.9 ${{ env.CHANNELS }}
+          # Test installed packages
+          conda list
+
+      - name: Smoke test
+        run: |
+          export OCL_ICD_FILENAMES=libintelocl.so
+          export SYCL_ENABLE_HOST_DEVICE=1
+          python -c "import dpnp, dpctl; dpctl.lsplatform()"
+
+      - name: Run tests
+        run: |
+          export OCL_ICD_FILENAMES=libintelocl.so
+          export SYCL_ENABLE_HOST_DEVICE=1
+          # clinfo -l
+          # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
+          conda list
+          ls -la
+          pwd
+          env
+          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
+
   build_linux:
     runs-on: ubuntu-latest
+    needs: test_job_linux
 
     defaults:
       run:
@@ -237,8 +291,8 @@ jobs:
 
       - name: Run tests
         run: |
-          # export OCL_ICD_FILENAMES=libintelocl.so
-          # export SYCL_ENABLE_HOST_DEVICE=1
+          export OCL_ICD_FILENAMES=libintelocl.so
+          export SYCL_ENABLE_HOST_DEVICE=1
           # clinfo -l
           # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
           conda list
