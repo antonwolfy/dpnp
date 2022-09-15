@@ -29,6 +29,7 @@ jobs:
     env:
       extracted-pkg-path: '${{ github.workspace }}/pkg/'
       tests-path: '${{ github.workspace }}/pkg/info/test/'
+      TEST_CHANNELS: '-c dppy/label/dev -c intel -c main -c defaults --override-channels'
 
     steps:
       - name: Download pkg
@@ -47,7 +48,7 @@ jobs:
 
       - name: Install dpnp
         run: |
-          conda install ${{ env.PACKAGE_NAME }}=0.10.1 dpctl=0.13.0=py39h8c27c75_4 pytest python=3.9 ${{ env.CHANNELS }}
+          conda install ${{ env.PACKAGE_NAME }}=0.10.1 dpctl=0.13.0=py39h8c27c75_4 pytest python=3.9 ${{ env.TEST_CHANNELS }}
           # Test installed packages
           conda list
 
