@@ -204,11 +204,11 @@ jobs:
 
       - name: Collect dependencies
         run: |
+          export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
           conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} python=${{ matrix.python }} ${{ env.TEST_CHANNELS }} --only-deps --dry-run > lockfile
           cat lockfile
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
-          PACKAGE_VERSION: '$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")'
 
       - name: Cache conda packages
         uses: actions/cache@v3
@@ -223,15 +223,23 @@ jobs:
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
 
       - name: Install dpnp
-        run: conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        run: |
+          echo $PACKAGE_VERSION
+          export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           OCL_ICD_FILENAMES: 'libintelocl.so'
           SYCL_ENABLE_HOST_DEVICE: '1'
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
-          PACKAGE_VERSION: '$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")'
 
       - name: List installed packages
         run: conda list
+
+      - name: Smoke test without env
+        run: |
+          echo $OCL_ICD_FILENAMES
+          echo $SYCL_ENABLE_HOST_DEVICE
+          python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
