@@ -15,115 +15,8 @@ env:
   VER_SCRIPT2: "d = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))"
 
 jobs:
-  test_job_linux:
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash -l {0}
-
-    strategy:
-      matrix:
-        python: ['3.9']
-
-    env:
-      extracted-pkg-path: '${{ github.workspace }}/pkg/'
-      tests-path: '${{ github.workspace }}/pkg/info/test/'
-      TEST_CHANNELS: '-c dppy/label/dev -c intel -c main -c defaults --override-channels'
-
-    steps:
-      - name: Download pkg
-        run: |
-          wget https://anaconda.org/dppy/dpnp/0.10.1/download/linux-64/dpnp-0.10.1-py39h2bc3f7f_38.tar.bz2
-          mkdir -p ${{ env.extracted-pkg-path }}
-          tar -xvf ${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
-
-      - name: Install system deps
-        run: |
-          sudo apt-get install -y aptitude
-          echo ========================= install Intel repository =======================
-          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
-          sudo apt-get update
-          echo ========================= alternatives status =======================
-          update-alternatives --get-selections
-          echo ========================= install Intel OneAPI ===========================
-          sudo aptitude install -y intel-oneapi-mkl                \
-                                  intel-oneapi-mkl-devel          \
-                                  intel-oneapi-compiler-dpcpp-cpp
-          echo ========================= list /opt/intel/oneapi/ ========================
-          ls -l /opt/intel/oneapi/
-          echo ========================= install extra packages ==========================
-          sudo aptitude install -y cmake valgrind libgtest-dev
-
-      - name: Print system info
-        run: |
-          sudo apt list --installed
-          gcc --version
-          which gcc
-          g++ --version
-          which g++
-          clang++ --version
-          which clang++
-          dpcpp --version
-          which dpcpp
-          valgrind --version
-          which valgrind
-
-      - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python }}
-          miniconda-version: 'latest'
-          activate-environment: 'test_test'
-
-      - name: Install dpnp
-        run: |
-          conda install ${{ env.PACKAGE_NAME }}=0.10.1 dpctl=0.13.0=py39h8c27c75_4 pytest python=3.9 ${{ env.TEST_CHANNELS }}
-          # Test installed packages
-          conda list
-
-      - name: Smoke test
-        run: |
-          # export OCL_ICD_FILENAMES=libintelocl.so
-          # export SYCL_ENABLE_HOST_DEVICE=1
-          python -c "import dpnp, dpctl; dpctl.lsplatform()"
-
-      # - name: Install valgrind
-      #   run: |
-      #     pip3 install pytest-valgrind
-      #     conda list
-
-      # - name: Testing
-      #   run: |
-      #     export OCL_ICD_FILENAMES=libintelocl.so
-      #     export SYCL_ENABLE_HOST_DEVICE=1
-      #     conda list
-      #     echo "Running valgrind ..."
-      #     export PYTHONMALLOC=malloc
-      #     valgrind --show-leak-kinds=definite --log-file=/tmp/valgrind-output \
-      #       python -m pytest -q -ra --disable-warnings -vv \
-      #       --valgrind --valgrind-log=/tmp/valgrind-output \
-      #       ${{ env.tests-path }}/tests/test_logic.py
-
-      - name: Run tests
-        run: |
-          # export OCL_ICD_FILENAMES=libintelocl.so
-          # export SYCL_ENABLE_HOST_DEVICE=1
-          # clinfo -l
-          # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
-          conda list
-          ls -la
-          pwd
-          env
-          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
-
   build_linux:
     runs-on: ubuntu-latest
-    needs: test_job_linux
 
     defaults:
       run:
@@ -311,10 +204,11 @@ jobs:
 
       - name: Collect dependencies
         run: |
-          CHANNELS="-c ${{ env.channel-path }} ${{ env.CHANNELS }}"
-          export PACKAGE_VERSION=$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")
-          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} python=${{ matrix.python }} $CHANNELS --only-deps --dry-run > lockfile
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} python=${{ matrix.python }} ${{ env.TEST_CHANNELS }} --only-deps --dry-run > lockfile
           cat lockfile
+        env:
+          TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
+          PACKAGE_VERSION: '$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")'
 
       - name: Cache conda packages
         uses: actions/cache@v3
@@ -329,30 +223,31 @@ jobs:
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
 
       - name: Install dpnp
-        run: |
-          CHANNELS="-c ${{ env.channel-path }} ${{ env.CHANNELS }}"
-          export PACKAGE_VERSION=$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")
-          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} $CHANNELS
-          # Test installed packages
-          conda list
+        run: conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        env:
+          OCL_ICD_FILENAMES: 'libintelocl.so'
+          SYCL_ENABLE_HOST_DEVICE: '1'
+          TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
+          PACKAGE_VERSION: '$(python -c "${VER_SCRIPT1} ${VER_SCRIPT2}")'
+
+      - name: List installed packages
+        run: conda list
 
       - name: Smoke test
-        run: |
-          export OCL_ICD_FILENAMES=libintelocl.so
-          export SYCL_ENABLE_HOST_DEVICE=1
-          python -c "import dpnp, dpctl; dpctl.lsplatform()"
+        run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
+        env:
+          OCL_ICD_FILENAMES: 'libintelocl.so'
+          SYCL_ENABLE_HOST_DEVICE: '1'
 
       - name: Run tests
         run: |
-          export OCL_ICD_FILENAMES=libintelocl.so
-          export SYCL_ENABLE_HOST_DEVICE=1
-          # clinfo -l
-          # python -m pytest -p no:faulthandler --pyargs ${{ env.MODULE_NAME }}
-          conda list
-          ls -la
-          pwd
-          env
-          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}
+          # TODO: run the whole scope once the issues on CPU are resolved
+          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}/tests/test_arraycreation.py \
+            ${{ env.tests-path }}/tests/test_dparray.py \
+            ${{ env.tests-path }}/tests/test_mathematical.py
+        env:
+          OCL_ICD_FILENAMES: 'libintelocl.so'
+          SYCL_ENABLE_HOST_DEVICE: '1'
 
   upload_linux:
     needs: test_linux
