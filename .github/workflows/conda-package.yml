@@ -24,8 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
-    continue-on-error: true
+        python: ['3.8', '3.9']
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
@@ -81,8 +80,6 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
-
-    if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
 
     defaults:
       run:
@@ -156,7 +153,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8', '3.9']
-        experimental: [false]
+        experimental: [true]
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -222,12 +219,9 @@ jobs:
 
       - name: Install dpnp
         run: |
-          echo $PACKAGE_VERSION
           export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
-          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
-          OCL_ICD_FILENAMES: 'libintelocl.so'
-          SYCL_ENABLE_HOST_DEVICE: '1'
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
 
       - name: List installed packages
@@ -242,6 +236,112 @@ jobs:
           python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}/tests/test_arraycreation.py \
             ${{ env.tests-path }}/tests/test_dparray.py \
             ${{ env.tests-path }}/tests/test_mathematical.py
+        env:
+          SYCL_ENABLE_HOST_DEVICE: '1'
+
+  test_windows:
+    needs: build_windows
+
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: cmd /C CALL {0}
+
+    strategy:
+      matrix:
+        python: ['3.8', '3.9']
+        experimental: [true]
+
+    continue-on-error: ${{ matrix.experimental }}
+
+    env:
+      conda-pkgs: 'C:\Users\runneradmin\conda_pkgs_dir\'
+      channel-path: '${{ github.workspace }}\channel\'
+      pkg-path-in-channel: '${{ github.workspace }}\channel\linux-64\'
+      extracted-pkg-path: '${{ github.workspace }}\pkg\'
+      tests-path: '${{ github.workspace }}\pkg\info\test\'
+      ver-json-path: '${{ github.workspace }}\version.json'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
+          path: ${{ env.pkg-path-in-channel }}
+
+      - name: Extract package archive
+        run: |
+          mkdir -p ${{ env.extracted-pkg-path }}
+          tar -xvf ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
+
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python }}
+          miniconda-version: 'latest'
+          activate-environment: 'test'
+
+      # Needed to be able to run conda index
+      - name: Install conda-build
+        run: conda install conda-build
+
+      - name: Create conda channel
+        run: conda index ${{ env.channel-path }} || exit 1
+
+      - name: Test conda channel
+        run: |
+          conda search ${{ env.PACKAGE_NAME }} -c ${{ env.channel-path }} --override-channels --info --json > ${{ env.ver-json-path }}
+          more ${{ env.ver-json-path }}
+
+      - name: Collect dependencies
+        run: |
+          set "SCRIPT=${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}"
+          FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
+             SET PACKAGE_VERSION=%%F
+          )
+          conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% python=${{ matrix.python }} ${{ env.TEST_CHANNELS }} --only-deps --dry-run > lockfile
+          more lockfile
+        env:
+          TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
+
+      - name: Cache conda packages
+        uses: actions/cache@v3
+        env:
+          CACHE_NUMBER: 1  # Increase to reset cache
+        with:
+          path: ${{ env.conda-pkgs }}
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-python-${{ matrix.python }}-${{hashFiles('lockfile') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-python-${{ matrix.python }}-
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
+
+      - name: Install dpnp
+        run: |
+          set "SCRIPT=${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}"
+          FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
+             SET PACKAGE_VERSION=%%F
+          )
+          conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        env:
+          TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
+
+      - name: List installed packages
+        run: conda list
+
+      - name: Smoke test
+        run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
+
+      - name: Run tests
+        run: |
+          # TODO: run the whole scope once the issues on CPU are resolved
+          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}\tests\test_arraycreation.py \
+            ${{ env.tests-path }}\tests\test_dparray.py \
+            ${{ env.tests-path }}\tests\test_mathematical.py
+        env:
+          SYCL_ENABLE_HOST_DEVICE: '1'
 
   upload_linux:
     needs: test_linux
@@ -281,7 +381,7 @@ jobs:
         run: anaconda --token ${{ env.ANACONDA_TOKEN }} upload --user dppy --label dev ${{ env.PACKAGE_NAME }}-*.tar.bz2
 
   upload_windows:
-    needs: build_windows
+    needs: test_windows
 
     if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
 
