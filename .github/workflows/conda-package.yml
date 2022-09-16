@@ -153,6 +153,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8', '3.9']
+        dpctl: ['0.13.0']
         experimental: [true]
 
     continue-on-error: ${{ matrix.experimental }}
@@ -220,7 +221,7 @@ jobs:
       - name: Install dpnp
         run: |
           export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
-          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
 
@@ -251,6 +252,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8', '3.9']
+        dpctl: ['0.13.0']
         experimental: [true]
 
     continue-on-error: ${{ matrix.experimental }}
@@ -324,7 +326,7 @@ jobs:
           FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
              SET PACKAGE_VERSION=%%F
           )
-          conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
 
