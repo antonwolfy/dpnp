@@ -284,8 +284,15 @@ jobs:
           )
           echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
           echo extracted-pkg-path: ${{ env.extracted-pkg-path }}
-          tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
-          dir ${{ env.extracted-pkg-path }}
+          # tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
+          # dir ${{ env.extracted-pkg-path }}
+
+      - name: Extract tgz
+        uses: ihiroky/extract-action@v1
+        with:
+          file_path: "%FULL_PACKAGE_PATH%"
+          extract_dir: "${{ env.extracted-pkg-path }}"
+          verbose: true
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
