@@ -272,23 +272,17 @@ jobs:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
           path: ${{ env.pkg-path-in-channel }}
 
-      - name: Additional actions
+      - name: Extract package archive
         run: |
           mkdir -p ${{ env.extracted-pkg-path }}
           dir ${{ env.pkg-path-in-channel }}
+          dir ${{ env.extracted-pkg-path }}
 
-      - name: Extract tgz
-        uses: ihiroky/extract-action@v1
-        with:
-          file_path: ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2
-          extract_dir: ${{ env.extracted-pkg-path }}
-          verbose: true
-
-      # - name: Extract package archive
-      #   run: |
-      #     mkdir -p ${{ env.extracted-pkg-path }}
-      #     dir ${{ env.pkg-path-in-channel }}
-      #     tar -xvf ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
+          set "SEARCH_SCRIPT=DIR ${{ env.pkg-path-in-channel }} /s/b ^| FINDSTR dpnp-*.tar.bz2"
+          FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
+            SET FULL_PACKAGE_PATH=%%F
+          )
+          tar -xvf %FULL_PACKAGE_PATH% -C ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
