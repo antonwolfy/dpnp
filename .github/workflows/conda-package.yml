@@ -282,7 +282,9 @@ jobs:
           FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
             SET FULL_PACKAGE_PATH=%%F
           )
-          tar -xvf %FULL_PACKAGE_PATH% -C ${{ env.extracted-pkg-path }}
+          echo "%FULL_PACKAGE_PATH%""
+          echo "${{ env.extracted-pkg-path }}"
+          tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
