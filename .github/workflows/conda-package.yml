@@ -278,12 +278,8 @@ jobs:
           dir ${{ env.pkg-path-in-channel }}
           dir ${{ env.extracted-pkg-path }}
 
-          dir ${{ env.pkg-path-in-channel }} /s/b ^| findstr dpnp-*.tar.bz2
-          echo 11111111111
-          ECHO 22222222222
-          set "SEARCH_SCRIPT=DIR ${{ env.pkg-path-in-channel }} /s/b ^| FINDSTR dpnp-*.tar.bz2"
-          # FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
-          FOR /F "tokens=*" %%F IN (`%SEARCH_SCRIPT%`) DO (
+          set SEARCH_SCRIPT="DIR ${{ env.pkg-path-in-channel }} /s/b | FINDSTR /r "dpnp-.*\.tar\.bz2""
+          FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
             SET FULL_PACKAGE_PATH=%%F
           )
           echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
