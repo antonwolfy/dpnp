@@ -272,11 +272,23 @@ jobs:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
           path: ${{ env.pkg-path-in-channel }}
 
-      - name: Extract package archive
+      - name: Additional actions
         run: |
           mkdir -p ${{ env.extracted-pkg-path }}
           dir ${{ env.pkg-path-in-channel }}
-          tar -xvf ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
+
+      - name: Extract tgz
+        uses: ihiroky/extract-action@v1
+        with:
+          file_path: ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2
+          extract_dir: ${{ env.extracted-pkg-path }}
+          verbose: true
+
+      # - name: Extract package archive
+      #   run: |
+      #     mkdir -p ${{ env.extracted-pkg-path }}
+      #     dir ${{ env.pkg-path-in-channel }}
+      #     tar -xvf ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
