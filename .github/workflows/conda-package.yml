@@ -282,7 +282,7 @@ jobs:
           FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
             SET FULL_PACKAGE_PATH=%%F
           )
-          echo "%FULL_PACKAGE_PATH%""
+          echo "%FULL_PACKAGE_PATH%"
           echo "${{ env.extracted-pkg-path }}"
           tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
 
