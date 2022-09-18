@@ -260,7 +260,7 @@ jobs:
     env:
       conda-pkgs: 'C:\Users\runneradmin\conda_pkgs_dir\'
       channel-path: '${{ github.workspace }}\channel\'
-      pkg-path-in-channel: '${{ github.workspace }}\channel\linux-64\'
+      pkg-path-in-channel: '${{ github.workspace }}\channel\win-64\'
       extracted-pkg-path: '${{ github.workspace }}\pkg\'
       tests-path: '${{ github.workspace }}\pkg\info\test\'
       ver-json-path: '${{ github.workspace }}\version.json'
@@ -275,6 +275,7 @@ jobs:
       - name: Extract package archive
         run: |
           mkdir -p ${{ env.extracted-pkg-path }}
+          dir ${{ env.pkg-path-in-channel }}
           tar -xvf ${{ env.pkg-path-in-channel }}\${{ env.PACKAGE_NAME }}-*.tar.bz2 -C ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
