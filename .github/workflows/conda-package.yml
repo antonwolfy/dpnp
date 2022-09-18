@@ -278,13 +278,19 @@ jobs:
           dir ${{ env.pkg-path-in-channel }}
           dir ${{ env.extracted-pkg-path }}
 
+          set "SCRIPT=${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}"
+          FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
+             SET PACKAGE_VERSION=%%F
+          )
+          echo %PACKAGE_VERSION%
+
           set "SEARCH_SCRIPT=DIR ${{ env.pkg-path-in-channel }} /s/b ^| FINDSTR dpnp-*.tar.bz2"
           FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
             SET FULL_PACKAGE_PATH=%%F
           )
-          echo "%FULL_PACKAGE_PATH%"
-          echo "${{ env.extracted-pkg-path }}"
-          tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
+          echo %FULL_PACKAGE_PATH%
+          echo ${{ env.extracted-pkg-path }}
+          tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}\"
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
