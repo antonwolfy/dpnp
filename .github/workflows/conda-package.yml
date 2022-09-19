@@ -94,23 +94,23 @@ jobs:
       conda-bld: 'C:\Miniconda3\envs\build\conda-bld\win-64\'
 
     steps:
-      - name: Create dir
-        run: mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
+      # - name: Create dir
+      #   run: mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
 
-      - name: Download a file
-        uses: carlosperate/download-file-action@v1
-        with:
-          file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
-          location: 'D:\a\dpnp\dpnp\channel\win-64\'
+      # - name: Download a file
+      #   uses: carlosperate/download-file-action@v1
+      #   with:
+      #     file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
+      #     location: 'D:\a\dpnp\dpnp\channel\win-64\'
 
-      - name: Test step for debug
-        run: |
-          dir D:\a\dpnp\dpnp\channel\win-64\
-          dir D:\a\dpnp\dpnp\channel\win-64\unpack\
-          SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2"
-          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
-          dir D:\a\dpnp\dpnp\channel\win-64\
-          dir D:\a\dpnp\dpnp\channel\win-64\unpack\
+      # - name: Test step for debug
+      #   run: |
+      #     dir D:\a\dpnp\dpnp\channel\win-64\
+      #     dir D:\a\dpnp\dpnp\channel\win-64\unpack\
+      #     SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2"
+      #     python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
+      #     dir D:\a\dpnp\dpnp\channel\win-64\
+      #     dir D:\a\dpnp\dpnp\channel\win-64\unpack\
 
       - name: Checkout DPNP repo
         uses: actions/checkout@v3
@@ -304,17 +304,17 @@ jobs:
           echo extracted-pkg-path: ${{ env.extracted-pkg-path }}
 
           echo Extracting archive....
-          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
+          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
       # tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
       # dir ${{ env.extracted-pkg-path }}
 
-      - name: Extract tgz
-        uses: ihiroky/extract-action@v1
-        with:
-          file_path: '${{ env.full-pkg-path }}'
-          # extract_dir: "${{ env.extracted-pkg-path }}"
-          extract_dir: 'D:\a\dpnp\dpnp\pkg'
-          verbose: true
+      # - name: Extract tgz
+      #   uses: ihiroky/extract-action@v1
+      #   with:
+      #     file_path: '${{ env.full-pkg-path }}'
+      #     # extract_dir: "${{ env.extracted-pkg-path }}"
+      #     extract_dir: 'D:\a\dpnp\dpnp\pkg'
+      #     verbose: true
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
