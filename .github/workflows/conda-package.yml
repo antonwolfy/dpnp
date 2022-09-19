@@ -264,6 +264,9 @@ jobs:
       extracted-pkg-path: '${{ github.workspace }}\pkg'
       tests-path: '${{ github.workspace }}\pkg\info\test\'
       ver-json-path: '${{ github.workspace }}\version.json'
+      active-env-name: 'test'
+      miniconda-lib-path: 'C:\Miniconda3\envs\test\Library\lib\'
+      miniconda-bin-path: 'C:\Miniconda3\envs\test\Library\bin\'
 
     steps:
       - name: Download artifact
@@ -291,7 +294,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python }}
           miniconda-version: 'latest'
-          activate-environment: 'test'
+          activate-environment: ${{ env.active-env-name }}
 
       # Needed to be able to run conda index
       - name: Install conda-build
@@ -344,18 +347,14 @@ jobs:
       - name: List installed packages
         run: conda list
 
-      - name: Show OpenCL.dll
-        run: |
-          dir C:\Windows\System32\
-          dir C:\Miniconda
-          dir C:\Miniconda\Library\
-          dir C:\Miniconda\Library\bin\
-          findstr /r /s "OpenCL.dll" C:\Miniconda
-
       - name: Add library
         shell: pwsh
         run: |
-          echo "OCL_ICD_FILENAMES=C:\Miniconda\Library\lib\intelocl64.dll" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          # Make sure the below libraries exist
+          Get-Item -Path ${{ env.miniconda-bin-path }}\OpenCL.dll
+          Get-Item -Path ${{ env.miniconda-lib-path }}\intelocl64.dll
+
+          echo "OCL_ICD_FILENAMES=${{ env.miniconda-lib-path }}\intelocl64.dll" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           try {$list = Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors | Select-Object -ExpandProperty Property } catch {$list=@()}
 
           if ($list.count -eq 0) {
@@ -371,13 +370,13 @@ jobs:
                  New-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors
               }
 
-              New-ItemProperty -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors -Name C:\Miniconda\Library\lib\intelocl64.dll -Value 0
+              New-ItemProperty -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors -Name ${{ env.miniconda-lib-path }}\intelocl64.dll -Value 0
               try {$list = Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors | Select-Object -ExpandProperty Property } catch {$list=@()}
               Write-Output $(Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors)
 
               # Now copy OpenCL.dll into system folder
               $system_ocl_icd_loader="C:\Windows\System32\OpenCL.dll"
-              $python_ocl_icd_loader="C:\Miniconda\Library\bin\OpenCL.dll"
+              $python_ocl_icd_loader="${{ env.miniconda-bin-path }}\OpenCL.dll"
               Copy-Item -Path $python_ocl_icd_loader -Destination $system_ocl_icd_loader
 
               if (Test-Path -Path $system_ocl_icd_loader) {
@@ -389,21 +388,17 @@ jobs:
               }
 
               # Variable assisting OpenCL CPU driver to find TBB DLLs which are not located where it expects them by default
-              echo "TBB_DLL_PATH=C:\Miniconda\Library\bin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+              echo "TBB_DLL_PATH=${{ env.miniconda-bin-path }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           }
 
       - name: Smoke test
         shell: pwsh
         run: |
-          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
+          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + "; ${{ env.miniconda-bin-path }}", [EnvironmentVariableTarget]::Machine) }
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       - name: Run tests
-        shell: pwsh
         run: |
-          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
-
-          # TODO: run the whole scope once the issues on CPU are resolved
           python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}\tests\test_arraycreation.py \
             ${{ env.tests-path }}\tests\test_dparray.py \
             ${{ env.tests-path }}\tests\test_mathematical.py
