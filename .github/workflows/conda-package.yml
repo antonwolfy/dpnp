@@ -344,6 +344,14 @@ jobs:
       - name: List installed packages
         run: conda list
 
+      - name: Show OpenCL.dll
+        run: |
+          dir C:\Windows\System32\
+          dir C:\Miniconda
+          dir C:\Miniconda\Library\
+          dir C:\Miniconda\Library\bin\
+          findstr /r /s "OpenCL.dll" C:\Miniconda
+
       - name: Add library
         shell: pwsh
         run: |
