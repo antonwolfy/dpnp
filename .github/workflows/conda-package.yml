@@ -94,14 +94,24 @@ jobs:
       conda-bld: 'C:\Miniconda3\envs\build\conda-bld\win-64\'
 
     steps:
+      - name: Create dir
+        run: |
+          mkdir -p D:\a\dpnp\dpnp\channel\win-64\
+          mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
+
+      - name: Download a file
+        uses: carlosperate/download-file-action@v1
+        with:
+          file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
+          location: 'D:\a\dpnp\dpnp\channel\win-64\'
+
       - name: Test step for debug
         run: |
-          python -c "import urllib.request; urllib.request.urlretrieve(\"https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2\", \"dpnp-0.10.1-py39h2e52968_38.tar.bz2\")"
-          mkdir -p D:\a\dpnp\dpnp\channel\win-64\
-          dir
           dir D:\a\dpnp\dpnp\channel\win-64\
-          python -c "import shutil; shutil.unpack_archive(dpnp-0.10.1-py39h2e52968_38.tar.bz2, extract_dir=D:\a\dpnp\dpnp\channel\win-64\)"
+          dir D:\a\dpnp\dpnp\channel\win-64\unpack\
+          python -c "import shutil; shutil.unpack_archive(D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2, extract_dir=D:\a\dpnp\dpnp\channel\win-64\unpack\)"
           dir D:\a\dpnp\dpnp\channel\win-64\
+          dir D:\a\dpnp\dpnp\channel\win-64\unpack\
 
       - name: Checkout DPNP repo
         uses: actions/checkout@v3
