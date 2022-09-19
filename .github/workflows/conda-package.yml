@@ -95,9 +95,7 @@ jobs:
 
     steps:
       - name: Create dir
-        run: |
-          mkdir -p D:\a\dpnp\dpnp\channel\win-64\
-          mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
+        run: mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
 
       - name: Download a file
         uses: carlosperate/download-file-action@v1
