@@ -279,7 +279,7 @@ jobs:
       conda-pkgs: 'C:\Users\runneradmin\conda_pkgs_dir\'
       channel-path: '${{ github.workspace }}\channel\'
       pkg-path-in-channel: '${{ github.workspace }}\channel\win-64\'
-      extracted-pkg-path: '${{ github.workspace }}\pkg\'
+      extracted-pkg-path: '${{ github.workspace }}\pkg'
       tests-path: '${{ github.workspace }}\pkg\info\test\'
       ver-json-path: '${{ github.workspace }}\version.json'
 
