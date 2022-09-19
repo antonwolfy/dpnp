@@ -290,8 +290,9 @@ jobs:
       - name: Extract tgz
         uses: ihiroky/extract-action@v1
         with:
-          file_path: "%FULL_PACKAGE_PATH%"
-          extract_dir: "${{ env.extracted-pkg-path }}"
+          file_path: '%FULL_PACKAGE_PATH%'
+          # extract_dir: "${{ env.extracted-pkg-path }}"
+          extract_dir: 'D:\a\dpnp\dpnp\pkg'
           verbose: true
 
       - name: Setup miniconda
