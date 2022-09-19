@@ -284,13 +284,14 @@ jobs:
           )
           echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
           echo extracted-pkg-path: ${{ env.extracted-pkg-path }}
+          echo "full-pkg-path=%FULL_PACKAGE_PATH%" >> $GITHUB_ENV
       # tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
       # dir ${{ env.extracted-pkg-path }}
 
       - name: Extract tgz
         uses: ihiroky/extract-action@v1
         with:
-          file_path: '%FULL_PACKAGE_PATH%'
+          file_path: '{{ env.full-pkg-path }}'
           # extract_dir: "${{ env.extracted-pkg-path }}"
           extract_dir: 'D:\a\dpnp\dpnp\pkg'
           verbose: true
