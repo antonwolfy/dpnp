@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Test step for debug
         run: |
-          curl.exe --output index.html --url https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2
+          curl.exe --url https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2
           mkdir -p D:\a\dpnp\dpnp\channel\win-64\
           dir
           dir D:\a\dpnp\dpnp\channel\win-64\
