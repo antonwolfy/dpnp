@@ -291,7 +291,7 @@ jobs:
       - name: Extract tgz
         uses: ihiroky/extract-action@v1
         with:
-          file_path: '{{ env.full-pkg-path }}'
+          file_path: '${{ env.full-pkg-path }}'
           # extract_dir: "${{ env.extracted-pkg-path }}"
           extract_dir: 'D:\a\dpnp\dpnp\pkg'
           verbose: true
