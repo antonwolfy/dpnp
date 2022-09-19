@@ -94,24 +94,6 @@ jobs:
       conda-bld: 'C:\Miniconda3\envs\build\conda-bld\win-64\'
 
     steps:
-      # - name: Create dir
-      #   run: mkdir -p D:\a\dpnp\dpnp\channel\win-64\unpack\
-
-      # - name: Download a file
-      #   uses: carlosperate/download-file-action@v1
-      #   with:
-      #     file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
-      #     location: 'D:\a\dpnp\dpnp\channel\win-64\'
-
-      # - name: Test step for debug
-      #   run: |
-      #     dir D:\a\dpnp\dpnp\channel\win-64\
-      #     dir D:\a\dpnp\dpnp\channel\win-64\unpack\
-      #     SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2"
-      #     python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
-      #     dir D:\a\dpnp\dpnp\channel\win-64\
-      #     dir D:\a\dpnp\dpnp\channel\win-64\unpack\
-
       - name: Checkout DPNP repo
         uses: actions/checkout@v3
         with:
@@ -293,28 +275,15 @@ jobs:
       - name: Extract package archive
         run: |
           mkdir -p ${{ env.extracted-pkg-path }}
-          dir ${{ env.pkg-path-in-channel }}
-          dir ${{ env.extracted-pkg-path }}
 
           set SEARCH_SCRIPT="DIR ${{ env.pkg-path-in-channel }} /s/b | FINDSTR /r "dpnp-.*\.tar\.bz2""
           FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
             SET FULL_PACKAGE_PATH=%%F
           )
           echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
-          echo extracted-pkg-path: ${{ env.extracted-pkg-path }}
 
-          echo Extracting archive....
           python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
-      # tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
-      # dir ${{ env.extracted-pkg-path }}
-
-      # - name: Extract tgz
-      #   uses: ihiroky/extract-action@v1
-      #   with:
-      #     file_path: '${{ env.full-pkg-path }}'
-      #     # extract_dir: "${{ env.extracted-pkg-path }}"
-      #     extract_dir: 'D:\a\dpnp\dpnp\pkg'
-      #     verbose: true
+          dir ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -359,6 +328,9 @@ jobs:
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-python-${{ matrix.python }}-
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
 
+      - name: Install opencl_rt
+        run: conda install opencl_rt -c intel --override-channels
+
       - name: Install dpnp
         run: |
           set "SCRIPT=${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}"
@@ -372,11 +344,54 @@ jobs:
       - name: List installed packages
         run: conda list
 
+      - name: Add library
+        run: |
+          echo "OCL_ICD_FILENAMES=C:\Miniconda\Library\lib\intelocl64.dll" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          try {$list = Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors | Select-Object -ExpandProperty Property } catch {$list=@()}
+
+          if ($list.count -eq 0) {
+              if (-not (Test-Path -Path HKLM:\SOFTWARE\Khronos)) {
+                 New-Item -Path HKLM:\SOFTWARE\Khronos
+              }
+
+              if (-not (Test-Path -Path HKLM:\SOFTWARE\Khronos\OpenCL)) {
+                 New-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL
+              }
+
+              if (-not (Test-Path -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors)) {
+                 New-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors
+              }
+
+              New-ItemProperty -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors -Name C:\Miniconda\Library\lib\intelocl64.dll -Value 0
+              try {$list = Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors | Select-Object -ExpandProperty Property } catch {$list=@()}
+              Write-Output $(Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors)
+
+              # Now copy OpenCL.dll into system folder
+              $system_ocl_icd_loader="C:\Windows\System32\OpenCL.dll"
+              $python_ocl_icd_loader="C:\Miniconda\Library\bin\OpenCL.dll"
+              Copy-Item -Path $python_ocl_icd_loader -Destination $system_ocl_icd_loader
+
+              if (Test-Path -Path $system_ocl_icd_loader) {
+                 Write-Output "$system_ocl_icd_loader has been copied"
+                 $acl = Get-Acl $system_ocl_icd_loader
+                 Write-Output $acl
+              } else {
+                 Write-Output "OCL-ICD-Loader was not copied"
+              }
+
+              # Variable assisting OpenCL CPU driver to find TBB DLLs which are not located where it expects them by default
+              echo "TBB_DLL_PATH=C:\Miniconda\Library\bin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
       - name: Smoke test
-        run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
+        run: |
+          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
+          python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       - name: Run tests
         run: |
+          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
+
           # TODO: run the whole scope once the issues on CPU are resolved
           python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}\tests\test_arraycreation.py \
             ${{ env.tests-path }}\tests\test_dparray.py \
