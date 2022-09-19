@@ -107,7 +107,7 @@ jobs:
         run: |
           dir D:\a\dpnp\dpnp\channel\win-64\
           dir D:\a\dpnp\dpnp\channel\win-64\unpack\
-          python -c "import shutil; shutil.unpack_archive(r"D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2", extract_dir=r"D:\a\dpnp\dpnp\channel\win-64\unpack")"
+          python -c "import shutil; shutil.unpack_archive(r\"D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
           dir D:\a\dpnp\dpnp\channel\win-64\
           dir D:\a\dpnp\dpnp\channel\win-64\unpack\
 
