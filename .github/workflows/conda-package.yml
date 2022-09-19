@@ -345,7 +345,7 @@ jobs:
         run: conda list
 
       - name: Add library
-        shell: powershell
+        shell: pwsh
         run: |
           echo "OCL_ICD_FILENAMES=C:\Miniconda\Library\lib\intelocl64.dll" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           try {$list = Get-Item -Path HKLM:\SOFTWARE\Khronos\OpenCL\Vendors | Select-Object -ExpandProperty Property } catch {$list=@()}
@@ -385,13 +385,13 @@ jobs:
           }
 
       - name: Smoke test
-        shell: powershell
+        shell: pwsh
         run: |
           & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       - name: Run tests
-        shell: powershell
+        shell: pwsh
         run: |
           & { [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Miniconda\Library\bin\", [EnvironmentVariableTarget]::Machine) }
 
