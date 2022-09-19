@@ -107,7 +107,8 @@ jobs:
         run: |
           dir D:\a\dpnp\dpnp\channel\win-64\
           dir D:\a\dpnp\dpnp\channel\win-64\unpack\
-          python -c "import shutil; shutil.unpack_archive(r\"D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
+          SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2\"
+          python -c "import shutil; shutil.unpack_archive(%FULL_PACKAGE_PATH%, extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
           dir D:\a\dpnp\dpnp\channel\win-64\
           dir D:\a\dpnp\dpnp\channel\win-64\unpack\
 
@@ -301,7 +302,9 @@ jobs:
           )
           echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
           echo extracted-pkg-path: ${{ env.extracted-pkg-path }}
-          echo "full-pkg-path=%FULL_PACKAGE_PATH%" >> $GITHUB_ENV
+
+          echo Extracting archive....
+          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"D:\a\dpnp\dpnp\channel\win-64\unpack\")"
       # tar -xvf "%FULL_PACKAGE_PATH%" -C "${{ env.extracted-pkg-path }}"
       # dir ${{ env.extracted-pkg-path }}
 
