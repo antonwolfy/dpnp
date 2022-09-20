@@ -18,6 +18,8 @@ jobs:
   build_linux:
     runs-on: ubuntu-latest
 
+    if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
+
     defaults:
       run:
         shell: bash -l {0}
@@ -80,6 +82,8 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
+
+    if: ${{github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/release') == true) || github.event_name == 'push' && contains(github.ref, 'refs/tags/')}}
 
     defaults:
       run:
@@ -231,17 +235,20 @@ jobs:
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
-      - name: Run tests
-        run: |
-          # TODO: run the whole scope once the issues on CPU are resolved
-          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}/tests/test_arraycreation.py \
-            ${{ env.tests-path }}/tests/test_dparray.py \
-            ${{ env.tests-path }}/tests/test_mathematical.py
-        env:
-          SYCL_ENABLE_HOST_DEVICE: '1'
+      # - name: Run tests
+      #   run: |
+      #     # TODO: run the whole scope once the issues on CPU are resolved
+      #     python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}/tests/test_arraycreation.py \
+      #       ${{ env.tests-path }}/tests/test_dparray.py \
+      #       ${{ env.tests-path }}/tests/test_mathematical.py
+      #   env:
+      #     SYCL_ENABLE_HOST_DEVICE: '1'
+
+      - name: Debug run tests
+        run: python -m pytest -q -ra --disable-warnings -vv D:\a\dpnp\dpnp\pkg\info\test\tests\test_arraycreation.py
 
   test_windows:
-    needs: build_windows
+    # needs: build_windows
 
     runs-on: windows-latest
 
@@ -251,7 +258,8 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        # python: ['3.8', '3.9']
+        python: ['3.9']
         dpctl: ['0.13.0']
         experimental: [true]
 
@@ -262,31 +270,49 @@ jobs:
       channel-path: '${{ github.workspace }}\channel\'
       pkg-path-in-channel: '${{ github.workspace }}\channel\win-64\'
       extracted-pkg-path: '${{ github.workspace }}\pkg'
-      tests-path: '${{ github.workspace }}\pkg\info\test\'
+      tests-path: '${{ github.workspace }}\pkg\info\test'
       ver-json-path: '${{ github.workspace }}\version.json'
       active-env-name: 'test'
       miniconda-lib-path: 'C:\Miniconda3\envs\test\Library\lib\'
       miniconda-bin-path: 'C:\Miniconda3\envs\test\Library\bin\'
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v2
+      # - name: Download artifact
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
+      #     path: ${{ env.pkg-path-in-channel }}
+
+      - name: Create dir
+        run: mkdir -p ${{ env.extracted-pkg-path }}
+
+      - name: Download a file
+        uses: carlosperate/download-file-action@v1
         with:
-          name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
-          path: ${{ env.pkg-path-in-channel }}
+          file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
+          location: 'D:\a\dpnp\dpnp\channel\win-64\'
 
-      - name: Extract package archive
+      - name: Test extract for debug
         run: |
-          mkdir -p ${{ env.extracted-pkg-path }}
-
-          set SEARCH_SCRIPT="DIR ${{ env.pkg-path-in-channel }} /s/b | FINDSTR /r "dpnp-.*\.tar\.bz2""
-          FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
-            SET FULL_PACKAGE_PATH=%%F
-          )
-          echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
-
-          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
+          dir D:\a\dpnp\dpnp\channel\win-64\
           dir ${{ env.extracted-pkg-path }}
+          SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2"
+          python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
+          dir D:\a\dpnp\dpnp\channel\win-64\
+          dir ${{ env.extracted-pkg-path }}
+
+      # - name: Extract package archive
+      #   run: |
+      #     mkdir -p ${{ env.extracted-pkg-path }}
+
+      #     set SEARCH_SCRIPT="DIR ${{ env.pkg-path-in-channel }} /s/b | FINDSTR /r "dpnp-.*\.tar\.bz2""
+      #     FOR /F "tokens=* USEBACKQ" %%F IN (`%SEARCH_SCRIPT%`) DO (
+      #       SET FULL_PACKAGE_PATH=%%F
+      #     )
+      #     echo FULL_PACKAGE_PATH: %FULL_PACKAGE_PATH%
+
+      #     python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
+      #     dir ${{ env.extracted-pkg-path }}
 
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -314,6 +340,9 @@ jobs:
           FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
              SET PACKAGE_VERSION=%%F
           )
+          echo PACKAGE_VERSION: %PACKAGE_VERSION%
+
+          set PACKAGE_VERSION="0.10.1=py39h2e52968_38"
           conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% python=${{ matrix.python }} ${{ env.TEST_CHANNELS }} --only-deps --dry-run > lockfile
           more lockfile
         env:
@@ -340,6 +369,9 @@ jobs:
           FOR /F "tokens=* USEBACKQ" %%F IN (`python -c "%SCRIPT%"`) DO (
              SET PACKAGE_VERSION=%%F
           )
+          echo PACKAGE_VERSION: %PACKAGE_VERSION%
+
+          set PACKAGE_VERSION="0.10.1=py39h2e52968_38"
           conda install ${{ env.PACKAGE_NAME }}=%PACKAGE_VERSION% dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
@@ -391,11 +423,14 @@ jobs:
               echo "TBB_DLL_PATH=${{ env.miniconda-bin-path }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           }
 
+      # - name: Smoke test
+      #   shell: pwsh
+      #   run: |
+      #     & { [Environment]::SetEnvironmentVariable("Path", $env:Path + "; ${{ env.miniconda-bin-path }}", [EnvironmentVariableTarget]::Machine) }
+      #     python -c "import dpnp, dpctl; dpctl.lsplatform()"
+
       - name: Smoke test
-        shell: pwsh
-        run: |
-          & { [Environment]::SetEnvironmentVariable("Path", $env:Path + "; ${{ env.miniconda-bin-path }}", [EnvironmentVariableTarget]::Machine) }
-          python -c "import dpnp, dpctl; dpctl.lsplatform()"
+        run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
       - name: Run tests
         run: |
