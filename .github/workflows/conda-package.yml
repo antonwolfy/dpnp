@@ -154,7 +154,7 @@ jobs:
       matrix:
         python: ['3.8', '3.9']
         dpctl: ['0.13.0']
-        experimental: [true]
+        experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -201,6 +201,8 @@ jobs:
       - name: Collect dependencies
         run: |
           export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
+          echo PACKAGE_VERSION=${PACKAGE_VERSION}
+
           conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} python=${{ matrix.python }} ${{ env.TEST_CHANNELS }} --only-deps --dry-run > lockfile
           cat lockfile
         env:
@@ -221,6 +223,8 @@ jobs:
       - name: Install dpnp
         run: |
           export PACKAGE_VERSION=$(python -c "${{ env.VER_SCRIPT1 }} ${{ env.VER_SCRIPT2 }}")
+          echo PACKAGE_VERSION=${PACKAGE_VERSION}
+
           conda install ${{ env.PACKAGE_NAME }}=${PACKAGE_VERSION} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
@@ -231,14 +235,12 @@ jobs:
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
+      # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
-        run: |
-          # TODO: run the whole scope once the issues on CPU are resolved
-          python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}/tests/test_arraycreation.py \
-            ${{ env.tests-path }}/tests/test_dparray.py \
-            ${{ env.tests-path }}/tests/test_mathematical.py
+        run: python -m pytest -q -ra --disable-warnings -vv tests/test_arraycreation.py tests/test_dparray.py tests/test_mathematical.py
         env:
           SYCL_ENABLE_HOST_DEVICE: '1'
+        working-directory: ${{ env.tests-path }}
 
   test_windows:
     needs: build_windows
@@ -253,7 +255,7 @@ jobs:
       matrix:
         python: ['3.8', '3.9']
         dpctl: ['0.13.0']
-        experimental: [true]
+        experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -274,24 +276,6 @@ jobs:
         with:
           name: ${{ env.PACKAGE_NAME }} ${{ runner.os }} Python ${{ matrix.python }}
           path: ${{ env.pkg-path-in-channel }}
-
-      # - name: Create dir
-      #   run: mkdir -p ${{ env.extracted-pkg-path }}
-
-      # - name: Download a file
-      #   uses: carlosperate/download-file-action@v1
-      #   with:
-      #     file-url: 'https://anaconda.org/dppy/dpnp/0.10.1/download/win-64/dpnp-0.10.1-py39h2e52968_38.tar.bz2'
-      #     location: 'D:\a\dpnp\dpnp\channel\win-64\'
-
-      # - name: Test extract for debug
-      #   run: |
-      #     dir D:\a\dpnp\dpnp\channel\win-64\
-      #     dir ${{ env.extracted-pkg-path }}
-      #     SET FULL_PACKAGE_PATH="D:\a\dpnp\dpnp\channel\win-64\dpnp-0.10.1-py39h2e52968_38.tar.bz2"
-      #     python -c "import shutil; shutil.unpack_archive(r\"%FULL_PACKAGE_PATH%\", extract_dir=r\"${{ env.extracted-pkg-path }}\")"
-      #     dir D:\a\dpnp\dpnp\channel\win-64\
-      #     dir ${{ env.extracted-pkg-path }}
 
       - name: Extract package archive
         run: |
@@ -424,6 +408,7 @@ jobs:
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
+      # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
         run: python -m pytest -q -ra --disable-warnings -vv tests\test_arraycreation.py tests\test_dparray.py tests\test_mathematical.py
         working-directory: ${{ env.tests-path }}
