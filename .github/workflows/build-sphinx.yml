@@ -67,7 +67,7 @@ jobs:
           channels: intel, conda-forge
 
       - name: Install sphinx dependencies
-        run: conda install sphinx=4.5 sphinx_rtd_theme
+        run: conda install sphinx sphinx_rtd_theme
 
       - name: Install dpnp dependencies
         run: |

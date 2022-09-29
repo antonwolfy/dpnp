@@ -182,9 +182,6 @@ texinfo_documents = [
 
 autosummary_generate = True
 
-autosummary_ignore_module_all=False
-grouped_exception=False
-
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
