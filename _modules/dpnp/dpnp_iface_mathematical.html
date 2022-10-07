@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dpnp.dpnp_iface_mathematical &mdash; dpnp 0.10.0 documentation</title>
+  <title>dpnp.dpnp_iface_mathematical &mdash; dpnp 0.10.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,7 +13,9 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -213,7 +215,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -252,8 +254,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -273,7 +275,7 @@
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">where</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_add</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -308,7 +310,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -348,9 +350,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">dpnp_ceil</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -378,7 +380,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_conjugate</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -430,8 +432,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -482,8 +484,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
@@ -531,7 +533,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_cumprod</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -565,7 +567,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_cumsum</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -585,7 +587,7 @@
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">pass</span>
@@ -595,9 +597,9 @@
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="n">axis</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">prepend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">prepend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">_NoValue</span><span class="p">:</span>
             <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">append</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">append</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">_NoValue</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">dpnp_diff</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
@@ -630,8 +632,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -685,7 +687,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">to_begin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -721,7 +723,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_fabs</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -761,9 +763,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">dpnp_floor</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">floor</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -801,8 +803,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -818,6 +820,7 @@
         <span class="k">elif</span> <span class="n">x2_is_scalar</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x2_desc</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="c1"># TODO: enable broadcasting</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -830,7 +833,7 @@
         <span class="k">elif</span> <span class="n">x1_is_scalar</span> <span class="ow">and</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_floor_divide</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">floor_divide</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -910,8 +913,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -931,7 +934,7 @@
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">where</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_fmod</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">fmod</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -964,7 +967,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">varargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -1010,8 +1013,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -1067,8 +1070,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -1138,7 +1141,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_modf</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span>
 
@@ -1171,8 +1174,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x2_is_scalar</span><span class="p">:</span>
@@ -1225,7 +1228,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_nancumprod</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -1261,7 +1264,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_nancumsum</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -1291,7 +1294,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_nanprod</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -1321,7 +1324,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="n">result_obj</span> <span class="o">=</span> <span class="n">dpnp_nansum</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">convert_single_elem_array_to_scalar</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
@@ -1354,7 +1357,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_negative</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -1395,8 +1398,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -1414,7 +1417,7 @@
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">where</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_power</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">power</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -1441,12 +1444,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="n">result_obj</span> <span class="o">=</span> <span class="n">dpnp_prod</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">convert_single_elem_array_to_scalar</span><span class="p">(</span><span class="n">result_obj</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">)</span>
 
@@ -1487,8 +1490,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -1504,6 +1507,7 @@
         <span class="k">elif</span> <span class="n">x2_is_scalar</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x2_desc</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="c1"># TODO: enable broadcasting</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -1516,7 +1520,7 @@
         <span class="k">elif</span> <span class="n">x1_is_scalar</span> <span class="ow">and</span> <span class="n">x2_desc</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_remainder</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">remainder</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -1559,7 +1563,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dpnp_sign</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
@@ -1591,8 +1595,8 @@
 
     <span class="n">x1_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
     <span class="n">x2_is_scalar</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x2_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="n">x2_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">x1_is_scalar</span><span class="p">:</span>
@@ -1616,7 +1620,7 @@
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">where</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">return</span> <span class="n">dpnp_subtract</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">x2_desc</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out_desc</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">subtract</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -1643,12 +1647,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="n">result_obj</span> <span class="o">=</span> <span class="n">dpnp_sum</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">convert_single_elem_array_to_scalar</span><span class="p">(</span><span class="n">result_obj</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">)</span>
 
@@ -1684,13 +1688,23 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">y_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span>
+    <span class="n">y_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">y_desc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">y_desc</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">x_obj</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">y_desc</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">y_desc</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">if</span> <span class="n">x1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x1</span>
-            <span class="n">x_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x_obj</span><span class="p">)</span>
+            <span class="n">y_obj</span> <span class="o">=</span> <span class="n">y_desc</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">x1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x_obj</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">y_desc</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                   <span class="n">dtype</span><span class="o">=</span><span class="n">y_desc</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                                   <span class="n">device</span><span class="o">=</span><span class="n">y_obj</span><span class="o">.</span><span class="n">sycl_device</span><span class="p">,</span>
+                                   <span class="n">usm_type</span><span class="o">=</span><span class="n">y_obj</span><span class="o">.</span><span class="n">usm_type</span><span class="p">,</span>
+                                   <span class="n">sycl_queue</span><span class="o">=</span><span class="n">y_obj</span><span class="o">.</span><span class="n">sycl_queue</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_obj</span> <span class="o">=</span> <span class="n">x1</span>
+
+            <span class="n">x_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x_obj</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># TODO: change to &quot;not x_desc&quot;</span>
             <span class="k">if</span> <span class="n">x_desc</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="k">elif</span> <span class="n">y_desc</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">x_desc</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
@@ -1751,9 +1765,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_strides</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">out_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">dpnp_trunc</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">out_desc</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">trunc</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
@@ -1766,7 +1780,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2020, Intel.</p>
+    <p>&#169; Copyright 2020-2022, Intel.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

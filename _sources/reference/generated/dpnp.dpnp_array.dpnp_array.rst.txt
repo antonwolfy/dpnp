@@ -1,9 +1,9 @@
-﻿dpnp.dparray.dparray
-====================
+﻿dpnp.dpnp_array.dpnp_array
+==========================
 
-.. currentmodule:: dpnp.dparray
+.. currentmodule:: dpnp.dpnp_array
 
-.. autoclass:: dparray
+.. autoclass:: dpnp_array
 
    ..
       Methods
@@ -26,10 +26,6 @@
    .. automethod:: __len__
 
 
-   .. automethod:: __next__
-
-
-   .. automethod:: __iter__
 
 
    ..
@@ -65,12 +61,6 @@
    .. automethod:: conjugate
 
 
-   .. automethod:: copy
-
-
-   .. automethod:: cumprod
-
-
    .. automethod:: cumsum
 
 
@@ -81,6 +71,9 @@
 
 
    .. automethod:: flatten
+
+
+   .. automethod:: get_array
 
 
    .. automethod:: item
@@ -95,28 +88,13 @@
    .. automethod:: min
 
 
-   .. automethod:: partition
-
-
    .. automethod:: prod
-
-
-   .. automethod:: ptp
-
-
-   .. automethod:: ravel
-
-
-   .. automethod:: repeat
 
 
    .. automethod:: reshape
 
 
    .. automethod:: round
-
-
-   .. automethod:: sort
 
 
    .. automethod:: squeeze
@@ -131,16 +109,7 @@
    .. automethod:: take
 
 
-   .. automethod:: tobytes
-
-
-   .. automethod:: tofile
-
-
-   .. automethod:: tolist
-
-
-   .. automethod:: tostring
+   .. automethod:: to_device
 
 
    .. automethod:: transpose
@@ -182,13 +151,15 @@
 
 
    .. autoattribute:: T
+   .. autoattribute:: device
    .. autoattribute:: dtype
-   .. autoattribute:: flags
    .. autoattribute:: flat
    .. autoattribute:: itemsize
-   .. autoattribute:: nbytes
    .. autoattribute:: ndim
    .. autoattribute:: shape
    .. autoattribute:: size
    .. autoattribute:: strides
+   .. autoattribute:: sycl_context
+   .. autoattribute:: sycl_device
+   .. autoattribute:: sycl_queue
  
