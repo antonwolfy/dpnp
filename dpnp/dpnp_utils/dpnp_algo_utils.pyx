@@ -410,6 +410,7 @@ cdef dpnp_descriptor create_output_descriptor(shape_type_c output_shape,
         if sycl_queue is not None:
             device = None
         result_dtype = dpnp_DPNPFuncType_to_dtype(< size_t > c_type)
+        print(f"create_output_descriptor: result_dtype={result_dtype}")
         result_obj = dpnp_container.empty(output_shape,
                                           dtype=result_dtype,
                                           device=device,
@@ -570,6 +571,8 @@ cdef class dpnp_descriptor:
         self.dpnp_descriptor_data_size = 0
         self.dpnp_descriptor_is_scalar = True
 
+        print("dpnp_descriptor: __init__")
+
         """ Accure DPCTL data container storage """
         self.descriptor = getattr(obj, "__sycl_usm_array_interface__", None)
         if self.descriptor is None:
@@ -581,8 +584,12 @@ cdef class dpnp_descriptor:
 
             if self.descriptor["version"] != 3:
                 return
+        else:
+            print("dpnp_descriptor: has __sycl_usm_array_interface__ attr")
+            print(f"dpnp_descriptor: self.descriptor={self.descriptor}")
 
         self.origin_pyobj = obj
+        print(f"dpnp_descriptor: obj.dtype={obj.dtype}")
 
         """ array size calculation """
         cdef Py_ssize_t shape_it = 0
@@ -630,6 +637,7 @@ cdef class dpnp_descriptor:
     def dtype(self):
         if self.is_valid:
             type_str = self.descriptor["typestr"]
+            print(f"dtype: type_str={type_str}")
             return dpnp.dtype(type_str)
         return None
 

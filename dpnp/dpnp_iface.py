@@ -202,6 +202,8 @@ def get_dpnp_descriptor(ext_obj, copy_when_strides=True, copy_when_nondefault_qu
     # if no_modules_load_doc_build();
     #    return False
 
+    print(f"get_dpnp_descriptor: enter: ext_obj.dtype={ext_obj.dtype}")
+
     if use_origin_backend():
         return False
 
@@ -219,13 +221,20 @@ def get_dpnp_descriptor(ext_obj, copy_when_strides=True, copy_when_nondefault_qu
             ext_obj_offset = 0
 
         if ext_obj.strides != shape_offsets or ext_obj_offset != 0:
+            print("get_dpnp_descriptor: create non-strides copy")
             ext_obj = array(ext_obj)
+        else:
+            print("get_dpnp_descriptor: no need to create non-strides copy")
+
+    print(f"get_dpnp_descriptor: if non-strided copy: ext_obj.dtype={ext_obj.dtype}")
 
     # while dpnp functions are based on DPNP_QUEUE
     # we need to create a copy on device associated with DPNP_QUEUE
     # if function get implementation for different queue
     # then this behavior can be disabled with setting "copy_when_nondefault_queue"
     arr_obj = unwrap_array(ext_obj)
+    print(f"get_dpnp_descriptor: arr_obj.dtype={arr_obj.dtype}")
+
     queue = getattr(arr_obj, "sycl_queue", None)
     if queue is not None and copy_when_nondefault_queue:
         default_queue = dpctl.SyclQueue()
@@ -233,8 +242,11 @@ def get_dpnp_descriptor(ext_obj, copy_when_strides=True, copy_when_nondefault_qu
         if not queue_is_default:
             ext_obj = array(arr_obj, sycl_queue=default_queue)
 
+    print(f"get_dpnp_descriptor: if new queue: arr_obj.dtype={arr_obj.dtype}")
+
     dpnp_desc = dpnp_descriptor(ext_obj)
     if dpnp_desc.is_valid:
+        print(f"get_dpnp_descriptor: return: dpnp_desc.dtype={dpnp_desc.dtype}")
         return dpnp_desc
 
     return False

@@ -273,6 +273,7 @@ cdef DPNPFuncType dpnp_dtype_to_DPNPFuncType(dtype):
     if isinstance(kind, int):
         kind = chr(kind)
     itemsize = numpy.dtype(dtype).itemsize
+    print(f"dpnp_dtype_to_DPNPFuncType: dtype={dtype}, dt_c={dt_c}, kind={kind}, itemsize={itemsize}")
 
     if dt_c == 'd':
         return DPNP_FT_DOUBLE

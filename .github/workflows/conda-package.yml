@@ -229,7 +229,7 @@ jobs:
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
 
       - name: Install dpnp
-        run: conda install ${{ env.PACKAGE_NAME }}=${{ env.PACKAGE_VERSION }} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        run: conda install ${{ env.PACKAGE_NAME }}=${{ env.PACKAGE_VERSION }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
 
@@ -238,6 +238,12 @@ jobs:
 
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
+
+      - name: Run fft tests with debug
+        run: python -m pytest -q -ra --disable-warnings -vv test_fft.py -s
+        env:
+          SYCL_ENABLE_HOST_DEVICE: '1'
+        working-directory: ${{ env.tests-path }}
 
       # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests

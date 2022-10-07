@@ -61,6 +61,7 @@ cpdef utils.dpnp_descriptor dpnp_fft(utils.dpnp_descriptor input,
     output_shape[axis_norm] = output_boundarie
 
     # convert string type names (dtype) to C enum DPNPFuncType
+    print(f"dpnp_fft: input.dtype={input.dtype}")
     cdef DPNPFuncType param1_type = dpnp_dtype_to_DPNPFuncType(input.dtype)
 
     # get the FPTR data structure
