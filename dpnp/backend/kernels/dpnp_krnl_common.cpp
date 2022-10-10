@@ -1112,10 +1112,24 @@ void func_map_init_linalg(func_map_t& fmap)
     fmap[DPNPFuncName::DPNP_FN_EIG][eft_FLT][eft_FLT] = {eft_FLT, (void*)dpnp_eig_default_c<float, float>};
     fmap[DPNPFuncName::DPNP_FN_EIG][eft_DBL][eft_DBL] = {eft_DBL, (void*)dpnp_eig_default_c<double, double>};
 
+    fmap[DPNPFuncName::DPNP_FN_EIG_EXT][eft_INT][eft_INT] = {eft_DBL, (void*)dpnp_eig_ext_c<int32_t, double>};
+    fmap[DPNPFuncName::DPNP_FN_EIG_EXT][eft_LNG][eft_LNG] = {eft_DBL, (void*)dpnp_eig_ext_c<int64_t, double>};
+    fmap[DPNPFuncName::DPNP_FN_EIG_EXT][eft_FLT][eft_FLT] = {eft_FLT, (void*)dpnp_eig_ext_c<float, float>};
+    fmap[DPNPFuncName::DPNP_FN_EIG_EXT][eft_DBL][eft_DBL] = {eft_DBL, (void*)dpnp_eig_ext_c<double, double>};
+
     fmap[DPNPFuncName::DPNP_FN_EIGVALS][eft_INT][eft_INT] = {eft_DBL, (void*)dpnp_eigvals_default_c<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_EIGVALS][eft_LNG][eft_LNG] = {eft_DBL, (void*)dpnp_eigvals_default_c<int64_t, double>};
     fmap[DPNPFuncName::DPNP_FN_EIGVALS][eft_FLT][eft_FLT] = {eft_FLT, (void*)dpnp_eigvals_default_c<float, float>};
     fmap[DPNPFuncName::DPNP_FN_EIGVALS][eft_DBL][eft_DBL] = {eft_DBL, (void*)dpnp_eigvals_default_c<double, double>};
+
+    fmap[DPNPFuncName::DPNP_FN_EIGVALS_EXT][eft_INT][eft_INT] = {eft_DBL,
+                                                                 (void*)dpnp_eigvals_ext_c<int32_t, double>};
+    fmap[DPNPFuncName::DPNP_FN_EIGVALS_EXT][eft_LNG][eft_LNG] = {eft_DBL,
+                                                                 (void*)dpnp_eigvals_ext_c<int64_t, double>};
+    fmap[DPNPFuncName::DPNP_FN_EIGVALS_EXT][eft_FLT][eft_FLT] = {eft_FLT,
+                                                                 (void*)dpnp_eigvals_ext_c<float, float>};
+    fmap[DPNPFuncName::DPNP_FN_EIGVALS_EXT][eft_DBL][eft_DBL] = {eft_DBL,
+                                                                 (void*)dpnp_eigvals_ext_c<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_INITVAL][eft_BLN][eft_BLN] = {eft_BLN, (void*)dpnp_initval_default_c<bool>};
     fmap[DPNPFuncName::DPNP_FN_INITVAL][eft_INT][eft_INT] = {eft_INT, (void*)dpnp_initval_default_c<int32_t>};

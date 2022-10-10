@@ -88,7 +88,7 @@ def cholesky(input):
         matrix object if `input` is a matrix object.
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(input)
+    x1_desc = dpnp.get_dpnp_descriptor(input, copy_when_nondefault_queue=False)
     if x1_desc:
         if x1_desc.shape[-1] != x1_desc.shape[-2]:
             pass
@@ -145,7 +145,7 @@ def det(input):
         Determinant of `input`.
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(input)
+    x1_desc = dpnp.get_dpnp_descriptor(input, copy_when_nondefault_queue=False)
     if x1_desc:
         if x1_desc.shape[-1] == x1_desc.shape[-2]:
             result_obj = dpnp_det(x1_desc).get_pyobj()
@@ -164,7 +164,7 @@ def eig(x1):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1)
+    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc:
         if (x1_desc.size > 0):
             return dpnp_eig(x1_desc)
@@ -191,7 +191,7 @@ def eigvals(input):
         real for real matrices.
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(input)
+    x1_desc = dpnp.get_dpnp_descriptor(input, copy_when_nondefault_queue=False)
     if x1_desc:
         if x1_desc.size > 0:
             return dpnp_eigvals(x1_desc).get_pyobj()
@@ -213,7 +213,7 @@ def inv(input):
         Otherwise the function will be executed sequentially on CPU.
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(input)
+    x1_desc = dpnp.get_dpnp_descriptor(input, copy_when_nondefault_queue=False)
     if x1_desc:
         if x1_desc.ndim == 2 and x1_desc.shape[0] == x1_desc.shape[1] and x1_desc.shape[0] >= 2:
             return dpnp_inv(x1_desc).get_pyobj()
@@ -395,7 +395,7 @@ def qr(x1, mode='reduced'):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1)
+    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc:
         if mode != 'reduced':
             pass

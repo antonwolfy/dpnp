@@ -72,18 +72,38 @@ def asarray(x1,
             usm_type=None,
             sycl_queue=None):
     """Converts `x1` to `dpnp_array`."""
+    print(f"asarray: x1.dtype={x1.dtype}")
+    print(f"asarray: x1={x1}, dtype={dtype}, copy={copy}, order={order}, device={device}, usm_type={usm_type}, sycl_queue={sycl_queue}")
     if isinstance(x1, dpnp_array):
+        print("asarray: instance of dpnp_array?")
         x1_obj = x1.get_array()
     else:
         x1_obj = x1
 
     sycl_queue_normalized = normalize_queue_device(sycl_queue=sycl_queue, device=device)
+    print(f"asarray: sycl_queue_normalized={sycl_queue_normalized}")
+    print(f"asarray: before dpctl: x1_obj.dtype={x1_obj.dtype}")
     array_obj = dpt.asarray(x1_obj,
                             dtype=dtype,
                             copy=copy,
                             order=order,
                             usm_type=usm_type,
                             sycl_queue=sycl_queue_normalized)
+    print(f"asarray: after dpctl: array_obj.dtype={array_obj.dtype}")
+
+    # test dpctl call:
+    obj_no_dtype = dpt.asarray(x1, dtype=None, copy=True, order="C")
+    print(f"dpt.asarray with dtype=None: obj_no_dtype.dtype={obj_no_dtype.dtype}")
+
+    obj_w_dtype = dpt.asarray(x1, dtype=numpy.float64, copy=True, order="C")
+    print(f"dpt.asarray with dtype=numpy.float64: obj_w_dtype.dtype={obj_w_dtype.dtype}")
+
+    try:
+        import dpctl.tensor._tensor_impl as ti
+        dt_from_ti = ti.default_device_fp_type(sycl_queue_normalized)
+        print(f"default_device_fp_type: dt_from_ti={dt_from_ti}")
+    except ImportError as err:
+        print(f"DOCBUILD: Can't load dpctl.tensor._tensor_impl module with error={err}")
 
     return dpnp_array(array_obj.shape, buffer=array_obj, order=order)
 

@@ -239,7 +239,7 @@ jobs:
             ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-
 
       - name: Install dpnp
-        run: conda install ${{ env.PACKAGE_NAME }}=${{ env.PACKAGE_VERSION }} dpctl=${{ matrix.dpctl }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        run: conda install ${{ env.PACKAGE_NAME }}=${{ env.PACKAGE_VERSION }} pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.CHANNELS }}'
 
@@ -249,9 +249,15 @@ jobs:
       - name: Smoke test
         run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
 
+      - name: Run fft tests with debug
+        run: python -m pytest -q -ra --disable-warnings -vv test_fft.py -s
+        env:
+          SYCL_ENABLE_HOST_DEVICE: '1'
+        working-directory: ${{ env.tests-path }}
+
       # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
-        run: python -m pytest -q -ra --disable-warnings -vv test_arraycreation.py test_dparray.py test_mathematical.py test_special.py
+        run: python -m pytest -q -ra --disable-warnings -vv test_arraycreation.py test_dparray.py test_fft.py test_mathematical.py test_special.py
         env:
           SYCL_ENABLE_HOST_DEVICE: '1'
         working-directory: ${{ env.tests-path }}
@@ -426,7 +432,7 @@ jobs:
 
       # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
-        run: python -m pytest -q -ra --disable-warnings -vv test_arraycreation.py test_dparray.py test_mathematical.py test_special.py
+        run: python -m pytest -q -ra --disable-warnings -vv test_arraycreation.py test_dparray.py test_fft.py test_mathematical.py test_special.py
         working-directory: ${{ env.tests-path }}
 
   upload_linux:
