@@ -21,6 +21,13 @@ import tempfile
                          [numpy.complex128, numpy.complex64, numpy.float64, numpy.float32, numpy.float16, numpy.int64, numpy.int32],
                          ids=['complex128', 'complex64', 'float64', 'float32', 'float16', 'int64', 'int32'])
 def test_arange(start, stop, step, dtype):
+    print("")
+    print("================================= Debug =================================")
+    for ty in {"short", "int", "long", "float", "double"}:
+        n_ty = numpy.dtype(ty).type
+        print(f"{ty}={n_ty}")
+    print("================================== End ==================================")
+
     rtol_mult = 2
     if numpy.issubdtype(dtype, numpy.float16):
         # numpy casts to float32 type when computes float16 data
@@ -43,7 +50,33 @@ def test_arange(start, stop, step, dtype):
     res_array = dpnp.asnumpy(dpnp_array)
 
     if numpy.issubdtype(dtype, numpy.floating) or numpy.issubdtype(dtype, numpy.complexfloating):
-        numpy.testing.assert_allclose(exp_array, res_array, rtol=rtol_mult*numpy.finfo(dtype).eps)
+        if exp_array.size > 1000:
+            rtol = rtol_mult*numpy.finfo(dtype).resolution
+            atol = numpy.finfo(dtype).eps
+
+            diff = (numpy.isclose(exp_array, res_array, atol=atol, rtol=rtol) == False)
+            diff_size = numpy.count_nonzero(diff)
+
+            if diff_size > 0:
+                print("================================ Debug 2 ================================")
+                np_miss_arr = exp_array[diff]
+                dp_miss_arr = dpnp_array[diff]
+                res_miss_arr = res_array[diff]
+                for i in range(diff_size):
+                    print("{}: {:.16f} missmatched {:.16f}, orig: {:.16f}".format(i, np_miss_arr[i], res_miss_arr[i], dp_miss_arr[i]))
+                print("================================== End ==================================")
+                raise AssertionError("Actual array missmatched expected")
+            numpy.testing.assert_allclose(exp_array, res_array, atol=atol, rtol=rtol)
+
+            # last_five = exp_array.size - 5
+            # print("================================ Debug 2 ================================")
+            # print(f"exp_array[:5]={exp_array[:5]}, dpnp_array[:5]={dpnp_array[:5]}, res_array[:5]={res_array[:5]}")
+            # print(f"exp_array[5:]={exp_array[5:]}, dpnp_array[5:]={dpnp_array[5:]}, res_array[5:]={res_array[5:]}")
+            # numpy.testing.assert_allclose(exp_array[:5], res_array[:5], rtol=rtol_mult*numpy.finfo(dtype).eps)
+            # numpy.testing.assert_allclose(exp_array[last_five:], res_array[last_five:], rtol=rtol_mult*numpy.finfo(dtype).eps)
+            # print("================================== End ==================================")
+        else:
+            numpy.testing.assert_allclose(exp_array, res_array, rtol=rtol_mult*numpy.finfo(dtype).eps)
     else:
         numpy.testing.assert_array_equal(exp_array, res_array)
 
