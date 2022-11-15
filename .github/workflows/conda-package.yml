@@ -15,19 +15,6 @@ env:
   VER_SCRIPT2: "d = j['dpnp'][0]; print('='.join((d[s] for s in ('version', 'build'))))"
 
 jobs:
-  printJob:    
-    name: Print event
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        echo "$GITHUB_CONTEXT"
-
-
   build_linux:
     runs-on: ubuntu-latest
 
