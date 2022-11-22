@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
 
     env:
       conda-pkgs: '/home/runner/conda_pkgs_dir/'
@@ -94,7 +94,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
 
     env:
       conda-pkgs: 'C:\Users\runneradmin\conda_pkgs_dir\'
@@ -159,7 +159,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
@@ -260,7 +260,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
         experimental: [false]
 
     continue-on-error: ${{ matrix.experimental }}
@@ -437,7 +437,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
 
     steps:
       - name: Download artifact
@@ -476,7 +476,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.8', '3.9', '3.10']
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v3.0.1
