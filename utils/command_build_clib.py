@@ -114,9 +114,8 @@ except ImportError:
 
 # other OS specific
 if IS_WIN:
-    _project_compiler = "dpcpp"
+    _project_compiler = "icx"
     _project_linker = "lld-link"
-    _project_cmplr_flag_sycl = []
     _project_cmplr_flag_stdcpp_static = []
     _project_cmplr_flag_compatibility = []
     _project_cmplr_flag_lib = ["/DLL"]
