@@ -61,6 +61,7 @@ __all__ = [
     "get_axis_indeces",
     "get_axis_offsets",
     "_get_linear_index",
+    "map_dtype_to_device",
     "normalize_axis",
     "_object_to_tuple",
     "unwrap_array",
@@ -203,6 +204,49 @@ def unwrap_array(x1):
         return x1.get_array()
 
     return x1
+
+
+def map_dtype_to_device(dtype, device):
+    """
+    TODO:
+    """
+    dtype = numpy.dtype(dtype)
+    if not hasattr(dtype, 'char'):
+        raise TypeError(f"Invalid type of input dtype={dtype}")
+    elif not isinstance(device, dpctl.SyclDevice):
+        raise TypeError(f"Invalid type of input device={device}")
+
+    dtc = dtype.char
+    if dtc == "?" or numpy.issubdtype(dtype, numpy.integer):
+        # bool or integer type
+        return dtype
+
+    if numpy.issubdtype(dtype, numpy.floating):
+        if dtc == "f":
+            # float32 type
+            return dtype
+        elif dtc == "d":
+            # float64 type
+            if device.has_aspect_fp64:
+                return dtype
+        elif dtc == "e":
+            # float16 type
+            if device.has_aspect_fp16:
+                return dtype
+        # float32 is default floating type
+        return dpnp.dtype("f4")
+
+    if numpy.issubdtype(dtype, numpy.complexfloating):
+        if dtc == "F":
+            # complex64 type
+            return dtype
+        elif dtc == "D":
+            # complex128 type
+            if device.has_aspect_fp64:
+                return dtype
+        # complex64 is default complex type
+        return dpnp.dtype("c8")
+    raise RuntimeError(f"Unrecognized type of input dtype={dtype}")
 
 
 cpdef checker_throw_axis_error(function_name, param_name, param, expected):
