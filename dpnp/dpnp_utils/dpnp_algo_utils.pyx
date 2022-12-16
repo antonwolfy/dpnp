@@ -174,8 +174,10 @@ def call_origin(function, *args, **kwargs):
         if (kwargs_out is None):
             result_dtype = result_origin.dtype
             kwargs_dtype = kwargs.get("dtype", None)
-            if (kwargs_dtype is not None):
+            if kwargs_dtype is not None:
                 result_dtype = kwargs_dtype
+            elif exec_q is not None:
+                result_dtype = map_dtype_to_device(result_origin.dtype, exec_q.sycl_device)
 
             result = dpnp_container.empty(result_origin.shape, dtype=result_dtype, sycl_queue=exec_q)
         else:

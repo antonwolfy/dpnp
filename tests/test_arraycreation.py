@@ -1,11 +1,23 @@
 import pytest
 
 import dpnp
+
+import dpctl
 import dpctl.tensor as dpt
 
 import numpy
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_raises
+)
 
 import tempfile
+
+
+# aspects of default device:
+_def_device = dpctl.SyclQueue().sycl_device
+_def_dev_has_fp64 = _def_device.has_aspect_fp64
 
 
 @pytest.mark.parametrize("start",
@@ -28,13 +40,27 @@ def test_arange(start, stop, step, dtype):
 
     exp_array = numpy.arange(start, stop=stop, step=step, dtype=dtype)
 
+    if dtype in (numpy.complex128, numpy.float64) and not _def_dev_has_fp64:
+        if stop is None:
+            _stop, _start = start, 0
+        else:
+            _stop, _start = stop, start
+        _step = 1 if step is None else step
+
+        if _start == _stop:
+            pass
+        elif (_step < 0) ^ (_start < _stop):
+            # exception is raising when dpctl calls a kernel function, i.e. when resulting array is not empty
+            assert_raises(RuntimeError, dpnp.arange, start, stop=stop, step=step, dtype=dtype)
+            return
+
     dpnp_array = dpnp.arange(start, stop=stop, step=step, dtype=dtype)
-    res_array = dpnp.asnumpy(dpnp_array)
+    res_array = dpnp_array.asnumpy()
 
     if numpy.issubdtype(dtype, numpy.floating) or numpy.issubdtype(dtype, numpy.complexfloating):
-        numpy.testing.assert_allclose(exp_array, res_array, rtol=rtol_mult*numpy.finfo(dtype).eps)
+        assert_allclose(exp_array, res_array, rtol=rtol_mult*numpy.finfo(dtype).eps)
     else:
-        numpy.testing.assert_array_equal(exp_array, res_array)
+        assert_array_equal(exp_array, res_array)
 
 
 @pytest.mark.parametrize("k",
@@ -60,7 +86,7 @@ def test_diag(v, k):
     ia = dpnp.array(a)
     expected = numpy.diag(a, k)
     result = dpnp.diag(ia, k)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("N",
@@ -78,20 +104,24 @@ def test_diag(v, k):
 def test_eye(N, M, k, dtype):
     expected = numpy.eye(N, M=M, k=k, dtype=dtype)
     result = dpnp.eye(N, M=M, k=k, dtype=dtype)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
-@pytest.mark.parametrize("type",
+@pytest.mark.parametrize("dtype",
                          [numpy.float64, numpy.float32, numpy.int64, numpy.int32],
                          ids=['float64', 'float32', 'int64', 'int32'])
-def test_frombuffer(type):
+def test_frombuffer(dtype):
     buffer = b'12345678'
 
-    np_res = numpy.frombuffer(buffer, dtype=type)
-    dpnp_res = dpnp.frombuffer(buffer, dtype=type)
+    if dtype is numpy.float64 and not _def_dev_has_fp64:
+        assert_raises(RuntimeError, dpnp.frombuffer, buffer, dtype=dtype)
+        return
 
-    numpy.testing.assert_array_equal(dpnp_res, np_res)
+    np_res = numpy.frombuffer(buffer, dtype=dtype)
+    dpnp_res = dpnp.frombuffer(buffer, dtype=dtype)
+
+    assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -108,7 +138,7 @@ def test_fromfile(type):
         fh.seek(0)
         dpnp_res = dpnp.fromfile(fh, dtype=type)
 
-        numpy.testing.assert_array_equal(dpnp_res, np_res)
+        assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -124,7 +154,7 @@ def test_fromfunction(type):
     np_res = numpy.fromfunction(func, shape=shape, dtype=type)
     dpnp_res = dpnp.fromfunction(func, shape=shape, dtype=type)
 
-    numpy.testing.assert_array_equal(dpnp_res, np_res)
+    assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -137,7 +167,7 @@ def test_fromiter(type):
     np_res = numpy.fromiter(iter, dtype=type)
     dpnp_res = dpnp.fromiter(iter, dtype=type)
 
-    numpy.testing.assert_array_equal(dpnp_res, np_res)
+    assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -150,7 +180,7 @@ def test_fromstring(type):
     np_res = numpy.fromstring(string, dtype=type, sep=' ')
     dpnp_res = dpnp.fromstring(string, dtype=type, sep=' ')
 
-    numpy.testing.assert_array_equal(dpnp_res, np_res)
+    assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -171,9 +201,9 @@ def test_geomspace(type, num, endpoint):
     # Note that the above may not produce exact integers:
     # (c) https://numpy.org/doc/stable/reference/generated/numpy.geomspace.html
     if type in [numpy.int64, numpy.int32]:
-        numpy.testing.assert_allclose(dpnp_res, np_res, atol=1)
+        assert_allclose(dpnp_res, np_res, atol=1)
     else:
-        numpy.testing.assert_allclose(dpnp_res, np_res)
+        assert_allclose(dpnp_res, np_res)
 
 
 @pytest.mark.parametrize("n",
@@ -186,7 +216,7 @@ def test_geomspace(type, num, endpoint):
 def test_identity(n, type):
     expected = numpy.identity(n, dtype=type)
     result = dpnp.identity(n, dtype=type)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -203,7 +233,7 @@ def test_loadtxt(type):
         fh.seek(0)
         dpnp_res = dpnp.loadtxt(fh, dtype=type)
 
-        numpy.testing.assert_array_equal(dpnp_res, np_res)
+        assert_array_equal(dpnp_res, np_res)
 
 
 @pytest.mark.parametrize("dtype",
@@ -240,7 +270,7 @@ def test_trace(array, offset, type, dtype):
     ia = dpnp.array(array, type)
     expected = numpy.trace(a, offset=offset, dtype=dtype)
     result = dpnp.trace(ia, offset=offset, dtype=dtype)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("N",
@@ -258,13 +288,13 @@ def test_trace(array, offset, type, dtype):
 def test_tri(N, M, k, type):
     expected = numpy.tri(N, M, k, dtype=type)
     result = dpnp.tri(N, M, k, dtype=type)
-    numpy.testing.assert_array_equal(result, expected)
+    assert_array_equal(result, expected)
 
 
 def test_tri_default_dtype():
     expected = numpy.tri(3, 5, -1)
     result = dpnp.tri(3, 5, -1)
-    numpy.testing.assert_array_equal(result, expected)
+    assert_array_equal(result, expected)
 
 
 @pytest.mark.parametrize("k",
@@ -290,7 +320,7 @@ def test_tril(m, k):
     ia = dpnp.array(a)
     expected = numpy.tril(a, k)
     result = dpnp.tril(ia, k)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("k",
@@ -310,7 +340,7 @@ def test_triu(m, k):
     ia = dpnp.array(a)
     expected = numpy.triu(a, k)
     result = dpnp.triu(ia, k)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("k",
@@ -321,7 +351,7 @@ def test_triu_size_null(k):
     ia = dpnp.array(a)
     expected = numpy.triu(a, k)
     result = dpnp.triu(ia, k)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("array",
@@ -347,7 +377,7 @@ def test_vander(array, type, n, increase):
 
     expected = numpy.vander(a_np, N=n, increasing=increase)
     result = dpnp.vander(a_dpnp, N=n, increasing=increase)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("shape",
@@ -364,7 +394,7 @@ def test_full(shape, fill_value, dtype):
     result = dpnp.full(shape, fill_value, dtype=dtype)
 
     assert expected.dtype == result.dtype
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("array",
@@ -382,7 +412,7 @@ def test_full_like(array, fill_value, dtype):
 
     expected = numpy.full_like(a, fill_value, dtype=dtype)
     result = dpnp.full_like(ia, fill_value, dtype=dtype)
-    numpy.testing.assert_array_equal(expected, result)
+    assert_array_equal(expected, result)
 
 
 @pytest.mark.skip(reason="dpnp.ndarray.flags are not implemented")
@@ -406,12 +436,12 @@ def test_full_strides():
     a = numpy.full((3, 3), numpy.arange(3, dtype="i4"))
     ia = dpnp.full((3, 3), dpnp.arange(3, dtype="i4"))
     assert ia.strides == tuple(el // a.itemsize for el in a.strides)
-    numpy.testing.assert_array_equal(dpnp.asnumpy(ia), a)
+    assert_array_equal(dpnp.asnumpy(ia), a)
 
     a = numpy.full((3, 3), numpy.arange(6, dtype="i4")[::2])
     ia = dpnp.full((3, 3), dpnp.arange(6, dtype="i4")[::2])
     assert ia.strides == tuple(el // a.itemsize for el in a.strides)
-    numpy.testing.assert_array_equal(dpnp.asnumpy(ia), a)
+    assert_array_equal(dpnp.asnumpy(ia), a)
 
 
 @pytest.mark.parametrize("fill_value", [[], (), dpnp.full(0, 0)], ids=['[]', '()', 'dpnp.full(0, 0)'])

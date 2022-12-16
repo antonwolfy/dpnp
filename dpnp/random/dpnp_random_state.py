@@ -206,21 +206,20 @@ class RandomState:
             elif not dpnp.isscalar(scale):
                 pass
             else:
-                min_double = numpy.finfo('double').min
-                max_double = numpy.finfo('double').max
+                dtype = self._validate_float_dtype(dtype, (dpnp.float32, dpnp.float64))
+                min_floating = numpy.finfo(dtype).min
+                max_floating = numpy.finfo(dtype).max
 
-                if (loc >= max_double or loc <= min_double) and self._is_finite_scalar(loc):
+                if (loc >= max_floating or loc <= min_floating) and self._is_finite_scalar(loc):
                     raise OverflowError(f"Range of loc={loc} exceeds valid bounds")
 
-                if (scale >= max_double) and self._is_finite_scalar(scale):
+                if (scale >= max_floating) and self._is_finite_scalar(scale):
                     raise OverflowError(f"Range of scale={scale} exceeds valid bounds")
                 # scale = -0.0 is cosidered as negative
                 elif scale < 0 or scale == 0 and self._is_signbit_scalar(scale):
                     raise ValueError(f"scale={scale}, but must be non-negative.")
 
-                dtype = self._validate_float_dtype(dtype, (dpnp.float32, dpnp.float64))
                 dpu.validate_usm_type(usm_type=usm_type, allow_none=False)
-
                 return self._random_state.normal(loc=loc,
                                                  scale=scale,
                                                  size=size,
