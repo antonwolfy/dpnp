@@ -119,7 +119,7 @@ class RandomState:
         if not dtype in supported_types:
             raise TypeError(f"dtype={dtype} is unsupported.")
         elif dtype != map_dtype_to_device(dtype, self._sycl_device):
-            raise TypeError(f"dtype={dtype} is not supported by SYCL device '{self._sycl_device}'")
+            raise RuntimeError(f"dtype={dtype} is not supported by SYCL device '{self._sycl_device}'")
         return dtype
 
 

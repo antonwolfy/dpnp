@@ -49,7 +49,8 @@ class TestNormal:
                                                                        usm_type=usm_type)
 
         if dtype is dpnp.float64 and not _def_dev_has_fp64:
-            assert_raises(TypeError, func)
+            # default device doesn't support 'float64' type
+            assert_raises(RuntimeError, func)
             return
 
         dpnp_data = func()
@@ -82,7 +83,8 @@ class TestNormal:
         func = lambda scale: rs.normal(loc=mean, scale=scale, dtype=dtype, usm_type=usm_type)
 
         if dtype is dpnp.float64 and not _def_dev_has_fp64:
-            assert_raises(TypeError, func)
+            # default device doesn't support 'float64' type
+            assert_raises(RuntimeError, func, scale=0)
             return
 
         # zero scale means full ndarray of mean values
@@ -730,7 +732,8 @@ class TestUniform:
                                                                         usm_type=usm_type)
 
         if dtype is dpnp.float64 and not _def_dev_has_fp64:
-            assert_raises(TypeError, func)
+            # default device doesn't support 'float64' type
+            assert_raises(RuntimeError, func)
             return
 
         # get drawn samples by dpnp
@@ -768,7 +771,8 @@ class TestUniform:
         func = lambda: RandomState(seed).uniform(low=low, high=high, size=shape, dtype=dtype, usm_type=usm_type)
 
         if dtype is dpnp.float64 and not _def_dev_has_fp64:
-            assert_raises(TypeError, func)
+            # default device doesn't support 'float64' type
+            assert_raises(RuntimeError, func)
             return
 
         # get drawn samples by dpnp
