@@ -108,6 +108,7 @@ def all(x1, axis=None, out=None, keepdims=False):
 
     """
 
+    print(f"all x1={x1}")
     x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
     if x1_desc:
         if axis is not None:
@@ -117,8 +118,11 @@ def all(x1, axis=None, out=None, keepdims=False):
         elif keepdims is not False:
             pass
         else:
+            print("all: entire calls")
             result_obj = dpnp_all(x1_desc).get_pyobj()
+            print(f"all: result_obj={result_obj}")
             result = dpnp.convert_single_elem_array_to_scalar(result_obj)
+            print(f"all: result={result}")
 
             return result
 

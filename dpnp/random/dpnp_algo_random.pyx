@@ -309,13 +309,14 @@ cdef class MT19937:
             else:
                 raise ValueError("Seed must be between 0 and 2**32 - 1")
         elif isinstance(seed, (list, tuple, range, numpy.ndarray, dpnp_array)):
+            print(f"MT19937: seed={seed}")
             if len(seed) == 0:
                 raise ValueError("Seed must be non-empty")
             elif numpy.ndim(seed) > 1:
                 raise ValueError("Seed array must be 1-d")
-            elif not all([self.is_integer(item) for item in seed]):
+            elif not numpy.all([self.is_integer(item) for item in seed]):
                 raise TypeError("Seed must be a sequence of unsigned int elements")
-            elif not all([self.is_uint_range(item) for item in seed]):
+            elif not numpy.all([self.is_uint_range(item) for item in seed]):
                 raise ValueError("Seed must be between 0 and 2**32 - 1")
             else:
                 is_vector_seed = True
@@ -323,7 +324,7 @@ cdef class MT19937:
                 if vector_seed_len > 3:
                     raise ValueError(
                         f"{vector_seed_len} length of seed vector isn't supported, "
-                        "the length is limited by 3")
+                         "the length is limited by 3")
 
                 vector_seed = <uint32_t *> malloc(vector_seed_len * sizeof(uint32_t))
                 if (not vector_seed):
@@ -335,6 +336,7 @@ cdef class MT19937:
                         vector_seed[i] = <uint32_t> seed[i]
                 except (ValueError, TypeError) as e:
                     free(vector_seed)
+                    print(f"MT19937: exception raised={e}")
                     raise e
         else:
             raise TypeError("Seed must be an unsigned int, or a sequence of unsigned int elements")
@@ -352,14 +354,29 @@ cdef class MT19937:
 
 
     cdef bint is_integer(self, value):
+        print(f"is_integer: value={value}")
         if isinstance(value, numbers.Number):
-            return isinstance(value, int) or isinstance(value, (numpy.int32, numpy.uint32))
+            print("is_integer: is number")
+            print(f"is_integer: is int={isinstance(value, int)}, is int32={isinstance(value, numpy.int32)}, is uint32={isinstance(value, numpy.uint32)}")
+            return isinstance(value, int) or isinstance(value, numpy.integer)
+        else:
+            print("is_integer: not is number")
         # cover an element of dpnp array:
-        return numpy.ndim(value) == 0 and hasattr(value, "dtype") and numpy.issubdtype(value, (numpy.int32, numpy.uint32))
+        print(f"is_integer: ndim={numpy.ndim(value)}, is dtype={hasattr(value, 'dtype')}, issubdtype int32={numpy.issubdtype(value, numpy.int32)}, issubdtype uint32={numpy.issubdtype(value, numpy.uint32)}")
+        result = numpy.ndim(value) == 0 and hasattr(value, "dtype") and numpy.issubdtype(value, (numpy.int32, numpy.uint32))
+        result2 = numpy.ndim(value) == 0 and hasattr(value, "dtype") and numpy.issubdtype(value, numpy.integer)
+        ch = numpy.issubdtype(value, (numpy.int32, numpy.uint32))
+        ch2 = numpy.issubdtype(value, numpy.integer)
+        print(f"is_integer: check={ch}, ch2={ch2}")
+        print(f"is_integer: result={result}, result2={result2}")
+        return result2
 
 
-    cdef bint is_uint_range(self, value):
-        return value >= 0 and value <= numpy.iinfo(numpy.uint32).max
+    cpdef bint is_uint_range(self, value):
+        print(f"is_uint_range: value={value}, >= 0 is {value >= 0}, <= max is {value <= numpy.iinfo(numpy.uint32).max}, max={numpy.iinfo(numpy.uint32).max}")
+        result = value >= 0 and value <= numpy.iinfo(numpy.uint32).max
+        print(f"is_uint_range: result={result}")
+        return result
 
 
     cdef mt19937_struct * get_mt19937(self):
