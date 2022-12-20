@@ -389,6 +389,38 @@ err:
     throw std::range_error("DPNP Error: validate_axes() failed with axis check");
 }
 
+template <typename T>
+void validate_type_for_device(const sycl::device &d)
+{
+    if constexpr (std::is_same_v<T, double>) {
+        if (!d.has(sycl::aspect::fp64)) {
+            throw std::runtime_error("Device " +
+                                     d.get_info<sycl::info::device::name>() +
+                                     " does not support type 'double'");
+        }
+    }
+    else if constexpr (std::is_same_v<T, std::complex<double>>) {
+        if (!d.has(sycl::aspect::fp64)) {
+            throw std::runtime_error("Device " +
+                                     d.get_info<sycl::info::device::name>() +
+                                     " does not support type 'complex<double>'");
+        }
+    }
+    else if constexpr (std::is_same_v<T, sycl::half>) {
+        if (!d.has(sycl::aspect::fp16)) {
+            throw std::runtime_error("Device " +
+                                     d.get_info<sycl::info::device::name>() +
+                                     " does not support type 'half'");
+        }
+    }
+}
+
+template <typename T>
+void validate_type_for_device(const sycl::queue &q)
+{
+    validate_type_for_device<T>(q.get_device());
+}
+
 /**
  * @ingroup BACKEND_UTILS
  * @brief print std::vector to std::ostream.
