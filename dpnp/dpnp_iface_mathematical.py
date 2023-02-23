@@ -205,13 +205,28 @@ def add(x1,
         # at least either x1 or x2 has to be an array
         pass
     else:
-        # get USM type and queue to copy scalar from the host memory into a USM allocation
-        usm_type, queue = get_usm_allocations([x1, x2]) if dpnp.isscalar(x1) or dpnp.isscalar(x2) else (None, None)
+        x1_desc, x2_desc = get_descriptors(x1, x2)
+        # if not dpnp.isscalar(x1):
+        #     x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_strides=False, copy_when_nondefault_queue=False)
+        #     if x1_desc:
+        #         _x2 = dpnp.asarray(x2, dtype=x1.dtype, sycl_queue=x1.sycl_queue, usm_type=x1.usm_type)
+        #         x2_desc = dpnp.get_dpnp_descriptor(_x2, copy_when_strides=False, copy_when_nondefault_queue=False)
+        # elif not dpnp.isscalar(x1):
+        #     x2_desc = dpnp.get_dpnp_descriptor(x2, copy_when_strides=False, copy_when_nondefault_queue=False)
+        #     if x2_desc:
+        #         _x1 = dpnp.asarray(x1, dtype=x2.dtype, sycl_queue=x2.sycl_queue, usm_type=x2.usm_type)
+        #         x1_desc = dpnp.get_dpnp_descriptor(_x1, copy_when_strides=False, copy_when_nondefault_queue=False)
+        # else:
+        #     x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_strides=False, copy_when_nondefault_queue=False)
+        #     x2_desc = dpnp.get_dpnp_descriptor(x2, copy_when_strides=False, copy_when_nondefault_queue=False)
 
-        x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_strides=False, copy_when_nondefault_queue=False,
-                                           alloc_usm_type=usm_type, alloc_queue=queue)
-        x2_desc = dpnp.get_dpnp_descriptor(x2, copy_when_strides=False, copy_when_nondefault_queue=False,
-                                           alloc_usm_type=usm_type, alloc_queue=queue)
+        # get USM type and queue to copy scalar from the host memory into a USM allocation
+        # usm_type, queue = get_usm_allocations([x1, x2]) if dpnp.isscalar(x1) or dpnp.isscalar(x2) else (None, None)
+
+        # x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_strides=False, copy_when_nondefault_queue=False,
+        #                                    alloc_usm_type=usm_type, alloc_queue=queue)
+        # x2_desc = dpnp.get_dpnp_descriptor(x2, copy_when_strides=False, copy_when_nondefault_queue=False,
+        #                                    alloc_usm_type=usm_type, alloc_queue=queue)
         if x1_desc and x2_desc:
             return dpnp_add(x1_desc, x2_desc, dtype=dtype, out=out, where=where).get_pyobj()
 

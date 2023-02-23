@@ -70,6 +70,7 @@ __all__ = [
     "dpnp_descriptor",
     "get_axis_indeces",
     "get_axis_offsets",
+    "get_descriptors",
     "get_usm_allocations",
     "_get_linear_index",
     "map_dtype_to_device",
@@ -244,6 +245,35 @@ def _get_common_allocation_queue(objects):
     if common_queue is None:
         raise ValueError("Input arrays must be allocated on the same SYCL queue")
     return common_queue
+
+
+def get_descriptors(x1, x2):
+    """
+    TODO
+
+    """
+
+    x1_desc, x2_desc = None, None
+    get_descr = lambda x: dpnp.get_dpnp_descriptor(x, copy_when_strides=False, copy_when_nondefault_queue=False)
+
+    if dpnp.isscalar(x1) and dpnp.isscalar(x2):
+        pass
+    if not dpnp.isscalar(x1):
+        print()
+        print(f"not dpnp.isscalar(x1): dt={x1.dtype}")
+        x1_desc = get_descr(x1)
+        if x1_desc:
+            _x2 = dpnp.asarray(x2, dtype=x1.dtype, sycl_queue=x1.sycl_queue, usm_type=x1.usm_type)
+            x2_desc = get_descr(_x2)
+    elif not dpnp.isscalar(x1):
+        x2_desc = get_descr(x2)
+        if x2_desc:
+            _x1 = dpnp.asarray(x1, dtype=x2.dtype, sycl_queue=x2.sycl_queue, usm_type=x2.usm_type)
+            x1_desc = get_descr(_x1)
+    else:
+        x1_desc = get_descr(x1)
+        x2_desc = get_descr(x2)
+    return (x1_desc, x2_desc)
 
 
 def get_usm_allocations(objects):
