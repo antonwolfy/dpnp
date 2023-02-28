@@ -2,6 +2,15 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-554F8VNE28"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-554F8VNE28');
+    </script>
+    
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dpnp.dpnp_array &mdash; dpnp 0.11.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -249,6 +258,9 @@
  <span class="c1"># &#39;__getattribute__&#39;,</span>
 
 <div class="viewcode-block" id="dpnp_array.__getitem__"><a class="viewcode-back" href="../../reference/generated/dpnp.dpnp_array.dpnp_array.html#dpnp.dpnp_array.dpnp_array.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dpnp_array</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+
         <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_obj</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">dpt</span><span class="o">.</span><span class="n">usm_ndarray</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
@@ -365,6 +377,11 @@
  <span class="c1"># &#39;__setattr__&#39;,</span>
 
 <div class="viewcode-block" id="dpnp_array.__setitem__"><a class="viewcode-back" href="../../reference/generated/dpnp.dpnp_array.dpnp_array.html#dpnp.dpnp_array.dpnp_array.__setitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dpnp_array</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">dpnp_array</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_array_obj</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
 
  <span class="c1"># &#39;__setstate__&#39;,</span>
@@ -1016,7 +1033,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2020-2022, Intel.</p>
+    <p>&#169; Copyright 2020-2023, Intel Corporation.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

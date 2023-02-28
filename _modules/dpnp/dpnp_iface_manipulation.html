@@ -2,6 +2,15 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-554F8VNE28"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-554F8VNE28');
+    </script>
+    
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dpnp.dpnp_iface_manipulation &mdash; dpnp 0.11.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -77,7 +86,7 @@
 <span class="c1"># distutils: language = c++</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># *****************************************************************************</span>
-<span class="c1"># Copyright (c) 2016-2022, Intel Corporation</span>
+<span class="c1"># Copyright (c) 2016-2023, Intel Corporation</span>
 <span class="c1"># All rights reserved.</span>
 <span class="c1">#</span>
 <span class="c1"># Redistribution and use in source and binary forms, with or without</span>
@@ -148,7 +157,7 @@
 <span class="p">]</span>
 
 
-<div class="viewcode-block" id="asfarray"><a class="viewcode-back" href="../../reference/generated/dpnp.asfarray.html#dpnp.asfarray">[docs]</a><span class="k">def</span> <span class="nf">asfarray</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+<div class="viewcode-block" id="asfarray"><a class="viewcode-back" href="../../reference/generated/dpnp.asfarray.html#dpnp.asfarray">[docs]</a><span class="k">def</span> <span class="nf">asfarray</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return an array converted to a float type.</span>
 
@@ -157,14 +166,15 @@
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    This function works exactly the same as :obj:`dpnp.array`.</span>
+<span class="sd">    If dtype is `None`, `bool` or one of the `int` dtypes, it is replaced with</span>
+<span class="sd">    the default floating type in DPNP depending on device capabilities.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
-        <span class="c1"># behavior of original function: int types replaced with float64</span>
-        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">):</span>
-            <span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inexact</span><span class="p">):</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">default_float_type</span><span class="p">(</span><span class="n">sycl_queue</span><span class="o">=</span><span class="n">x1</span><span class="o">.</span><span class="n">sycl_queue</span><span class="p">)</span>
 
         <span class="c1"># if type is the same then same object should be returned</span>
         <span class="k">if</span> <span class="n">x1_desc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">dtype</span><span class="p">:</span>
@@ -803,7 +813,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2020-2022, Intel.</p>
+    <p>&#169; Copyright 2020-2023, Intel Corporation.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
