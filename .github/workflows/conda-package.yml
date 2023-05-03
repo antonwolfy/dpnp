@@ -188,7 +188,19 @@ jobs:
         run: conda list
 
       - name: Smoke test
-        run: python -c "import dpnp, dpctl; dpctl.lsplatform()"
+        run: |
+          python -c "import dpnp, dpctl; dpctl.lsplatform()"
+          python -c "import dpctl; type = dpctl.get_current_device_type(); print(f\"type={type}\")"
+        env:
+          SYCL_ENABLE_HOST_DEVICE: '1'
+          OCL_ICD_FILENAMES: 'libintelocl.so'
+
+      - name: Smoke test2
+        run: |
+          python -c "import dpnp, dpctl; dpctl.lsplatform()"
+          python -c "import dpctl; type = dpctl.get_current_device_type(); print(f\"type={type}\")"
+        env:
+          OCL_ICD_FILENAMES: 'libintelocl.so'
 
       # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
