@@ -32,9 +32,8 @@ from dpnp.dpnp_array import dpnp_array
 from dpnp.dpnp_utils import (
     get_usm_allocations
 )
+import dpnp.backend.extensions.vm._vm_impl as vmi
 
-import dpctl
-import dpctl.tensor as dpt
 from dpctl.tensor._elementwise_common import (
     BinaryElementwiseFunc
 )
@@ -63,12 +62,18 @@ Returns:
         of the returned array is determined by the Type Promotion Rules.
 """
 
+def _call_divide(src1, src2, dst, sycl_queue, depends=[]):
+    if vmi._can_call_div(sycl_queue, src1, src2, dst):
+        # call pybind11 extension for div() function from OneMKL VM
+        return vmi._div(sycl_queue, src1, src2, dst, depends)
+    return ti._divide(src1, src2, dst, sycl_queue, depends)
+
 def dpnp_divide(x1, x2, out=None, order='K'):
 
     x1_usm_or_scalar = dpnp.get_usm_ndarray_or_scalar(x1)
     x2_usm_or_scalar = dpnp.get_usm_ndarray_or_scalar(x2)
     out_usm = None if out is None else dpnp.get_usm_ndarray(out)
 
-    func = BinaryElementwiseFunc("divide", ti._divide_result_type, ti._divide, _divide_docstring_)
+    func = BinaryElementwiseFunc("divide", ti._divide_result_type, _call_divide, _divide_docstring_)
     res_usm = func(x1_usm_or_scalar, x2_usm_or_scalar, out=out_usm, order=order)
     return dpnp_array._create_from_usm_ndarray(res_usm)

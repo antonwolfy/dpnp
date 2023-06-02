@@ -593,7 +593,7 @@ def divide(x1,
            order='K',
            dtype=None,
            subok=True,
-           use_dpctl = True,
+           legacy = False,
            **kwargs):
     """
     Divide arguments element-wise.
@@ -640,16 +640,7 @@ def divide(x1,
         else:
             raise ValueError("order must be one of 'C', 'F', 'A', or 'K' (got '{}')".format(order))
 
-        # return dpnp_divide(x1, x2, out=out, order=order)
-        # use_dpctl = True
-        # if not dpnp.isscalar(x1) and x1.dtype in (dpnp.float32, dpnp.float64, dpnp.complex64, dpnp.complex128):
-        #     if dpnp.isscalar(x2):
-        #         use_dpctl = False
-        #     elif x2.dtype in (dpnp.float32, dpnp.float64, dpnp.complex64, dpnp.complex128):
-        #         use_dpctl = False
-
-        # print("use_dpctl=", use_dpctl)
-        if use_dpctl:
+        if not legacy:
             return dpnp_divide(x1, x2, out=out, order=order)
         else:
             # get USM type and queue to copy scalar from the host memory into a USM allocation
