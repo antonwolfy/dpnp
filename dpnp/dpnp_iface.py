@@ -69,6 +69,7 @@ __all__ = [
     "get_include",
     "get_normalized_queue_device",
     "get_usm_ndarray",
+    "get_usm_ndarray_or_scalar",
     "is_supported_array_type"
 ]
 
@@ -402,6 +403,13 @@ def get_usm_ndarray(a):
     if isinstance(a, dpt.usm_ndarray):
         return a
     raise TypeError("An array must be any of supported type, but got {}".format(type(a)))
+
+
+def get_usm_ndarray_or_scalar(a):
+    """
+    """
+
+    return a if isscalar(a) else get_usm_ndarray(a)
 
 
 def is_supported_array_type(a):
