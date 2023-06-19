@@ -13,7 +13,7 @@
     </script>
     
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dpnp.where &mdash; dpnp 0.11.1 documentation</title>
+  <title>dpnp.where &mdash; dpnp 0.12.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -44,7 +44,7 @@
             dpnp
           </a>
               <div class="version">
-                0.11
+                0.12
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -124,7 +124,7 @@
 <dd><p>Return elements chosen from <cite>x</cite> or <cite>y</cite> depending on <cite>condition</cite>.</p>
 <p>When only <cite>condition</cite> is provided, this function is a shorthand for
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">dpnp.nonzero(condition)</span></code>.</p>
-<p>For full documentation refer to <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.where.html#numpy.where" title="(in NumPy v1.24)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.where</span></code></a>.</p>
+<p>For full documentation refer to <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.where.html#numpy.where" title="(in NumPy v1.25)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.where</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>y</strong> – An array with elements from <cite>x</cite> where <cite>condition</cite> is True, and elements
@@ -135,10 +135,11 @@ from <cite>y</cite> elsewhere.</p>
 </dd>
 </dl>
 <p class="rubric">Limitations</p>
-<p>Parameters <cite>condition</cite>, <cite>x</cite> and <cite>y</cite> are supported as either scalar, <a class="reference internal" href="dpnp.ndarray.html#dpnp.ndarray" title="dpnp.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">dpnp.ndarray</span></code></a>
+<p>Parameter <cite>condition</cite> is supported as either <a class="reference internal" href="dpnp.ndarray.html#dpnp.ndarray" title="dpnp.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">dpnp.ndarray</span></code></a>
 or <code class="xref py py-class docutils literal notranslate"><span class="pre">dpctl.tensor.usm_ndarray</span></code>.
+Parameters <cite>x</cite> and <cite>y</cite> are supported as either scalar, <a class="reference internal" href="dpnp.ndarray.html#dpnp.ndarray" title="dpnp.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">dpnp.ndarray</span></code></a>
+or <code class="xref py py-class docutils literal notranslate"><span class="pre">dpctl.tensor.usm_ndarray</span></code>
 Otherwise the function will be executed sequentially on CPU.
-Data type of <cite>condition</cite> parameter is limited by <code class="xref py py-obj docutils literal notranslate"><span class="pre">dpnp.bool</span></code>.
 Input array data types of <cite>x</cite> and <cite>y</cite> are limited by supported DPNP <a class="reference internal" href="../difference.html#data-types"><span class="std std-ref">Data types</span></a>.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
