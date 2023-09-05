@@ -29,7 +29,8 @@ import os
 mypath = os.path.dirname(os.path.realpath(__file__))
 
 # workaround against hanging in OneMKL calls and in DPCTL
-# os.environ.setdefault("SYCL_QUEUE_THREAD_POOL_SIZE", "60")
+# w/a to comment the line below
+os.environ.setdefault("SYCL_QUEUE_THREAD_POOL_SIZE", "6")
 
 import dpctl
 

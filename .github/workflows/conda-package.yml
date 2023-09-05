@@ -204,7 +204,12 @@ jobs:
       - name: Smoke test
         run: |
           python -c "import dpnp, dpctl; dpctl.lsplatform()"
+          python -c "import dpctl; dpctl.lsplatform(verbosity=2)"
           python -c "import dpnp; print(dpnp.__version__)"
+
+      - name: Run test_join under gdb
+        run: |
+          gdb --batch -ex r -ex 'info sharedlibrary' -ex 'set print elements 1000' -ex bt --args ${CONDA_PREFIX}/bin/python -m pytest -q -ra --disable-warnings -vv third_party/cupy/manipulation_tests/test_join.py || true
 
       # TODO: run the whole scope once the issues on CPU are resolved
       - name: Run tests
