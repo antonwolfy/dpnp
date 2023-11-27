@@ -7,13 +7,36 @@ on:
     types: [opened, synchronize, reopened, closed]
 
 env:
+  GITHUB_BOT_NAME: 'github-actions[bot]'
+  GITHUB_BOT_EMAIL: 'github-actions[bot]@users.noreply.github.com'
   PUBLISH_DIR: doc/_build/html/
+  GH_EVENT_PUSH: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' &&
+                              github.event.ref == 'refs/heads/master' && github.event.repository }}
+  GH_EVENT_PUSH_UPSTREAM: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' &&
+                              github.event.ref == 'refs/heads/master' && github.event.repository && !github.event.repository.fork }}
+  GH_EVENT_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request != null }}
+  GH_EVENT_PR_UPSTREAM: ${{ github.event_name == 'pull_request' && github.event.pull_request && !github.event.pull_request.head.repo.fork }}
 
 defaults:
   run:
     shell: bash -l {0}
 
 jobs:
+  test:
+    if: ${{ env.GH_EVENT_PR }}
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Test step
+        run: |
+          echo "Test job is done"
+
   build-and-deploy:
     name: Build and Deploy Docs
 
@@ -29,11 +52,23 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      - name: Test step
+        if: env.GH_EVENT_PR && github.event.action != 'closed'
+        run: |
+          echo "Test step is done"
+
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           echo "$GITHUB_CONTEXT"
+          echo "GITHUB_BOT_NAME=${{ env.GITHUB_BOT_NAME }}"
+          echo "GITHUB_BOT_EMAIL=${{ env.GITHUB_BOT_EMAIL }}"
+          echo "GH_EVENT_PUSH=${{ env.GH_EVENT_PUSH }}"
+          echo "GH_EVENT_PUSH_UPSTREAM=${{ env.GH_EVENT_PUSH_UPSTREAM }}"
+          echo "GH_EVENT_PR=${{ env.GH_EVENT_PR }}"
+          echo "GH_EVENT_EMPTY_PR=${{ env.GH_EVENT_EMPTY_PR }}"
+          echo "GH_EVENT_PR_UPSTREAM=${{ env.GH_EVENT_PR_UPSTREAM }}"
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -136,6 +171,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ env.PUBLISH_DIR }}
+          user_name: ${{ env.GITHUB_BOT_NAME }}
+          user_email: ${{ env.GITHUB_BOT_EMAIL }}
 
       - name: Publish pull-request docs
         if: |
@@ -149,8 +186,8 @@ jobs:
           keep_files: true
           commit_message: ${{ github.event.head_commit.message }}
           publish_branch: gh-pages
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_name: ${{ env.GITHUB_BOT_NAME }}
+          user_email: ${{ env.GITHUB_BOT_EMAIL }}
 
       - name: Comment with URL to published pull-request docs
         if: |
@@ -185,8 +222,8 @@ jobs:
           git checkout --track tokened_docs/gh-pages
           echo `pwd`
           [ -d pull/${PR_NUM} ] && git rm -rf pull/${PR_NUM}
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name ${{ env.GITHUB_BOT_NAME }}
+          git config --global user.email ${{ env.GITHUB_BOT_EMAIL }}
           git commit -m "Removing docs for closed pull request ${PR_NUM}"
           git push tokened_docs gh-pages
 
