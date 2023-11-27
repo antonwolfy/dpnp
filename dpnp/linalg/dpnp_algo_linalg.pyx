@@ -88,7 +88,7 @@ cpdef utils.dpnp_descriptor dpnp_cholesky(utils.dpnp_descriptor input_):
 
     input_obj = input_.get_array()
 
-    # ceate result array with type given by FPTR data
+    # create result array with type given by FPTR data
     cdef utils.dpnp_descriptor result = utils.create_output_descriptor(input_.shape,
                                                                        kernel_data.return_type,
                                                                        None,
@@ -118,7 +118,8 @@ cpdef utils.dpnp_descriptor dpnp_cholesky(utils.dpnp_descriptor input_):
 
 cpdef object dpnp_cond(object input, object p):
     if p in ('f', 'fro'):
-        input = dpnp.ravel(input, order='K')
+        # TODO: change order='K' when support is implemented
+        input = dpnp.ravel(input, order='C')
         sqnorm = dpnp.dot(input, input)
         res = dpnp.sqrt(sqnorm)
         ret = dpnp.array([res])
@@ -142,15 +143,9 @@ cpdef object dpnp_cond(object input, object p):
 cpdef utils.dpnp_descriptor dpnp_det(utils.dpnp_descriptor input):
     cdef shape_type_c input_shape = input.shape
     cdef size_t n = input.shape[-1]
-    cdef size_t size_out = 1
+    cdef shape_type_c result_shape = (1,)
     if input.ndim != 2:
-        output_shape = tuple((list(input.shape))[:-2])
-        for i in range(len(output_shape)):
-            size_out *= output_shape[i]
-
-    cdef shape_type_c result_shape = (size_out,)
-    if size_out > 1:
-        result_shape = output_shape
+        result_shape = tuple((list(input.shape))[:-2])
 
     cdef DPNPFuncType param1_type = dpnp_dtype_to_DPNPFuncType(input.dtype)
 
@@ -158,7 +153,7 @@ cpdef utils.dpnp_descriptor dpnp_det(utils.dpnp_descriptor input):
 
     input_obj = input.get_array()
 
-    # ceate result array with type given by FPTR data
+    # create result array with type given by FPTR data
     cdef utils.dpnp_descriptor result = utils.create_output_descriptor(result_shape,
                                                                        kernel_data.return_type,
                                                                        None,
@@ -248,7 +243,7 @@ cpdef utils.dpnp_descriptor dpnp_eigvals(utils.dpnp_descriptor input):
     cdef DPNPFuncType return_type = ret_type_and_func[0]
     cdef custom_linalg_1in_1out_with_size_func_ptr_t_ func = < custom_linalg_1in_1out_with_size_func_ptr_t_ > ret_type_and_func[1]
 
-    # ceate result array with type given by FPTR data
+    # create result array with type given by FPTR data
     cdef utils.dpnp_descriptor res_val = utils.create_output_descriptor((size,),
                                                                          return_type,
                                                                          None,
@@ -288,7 +283,7 @@ cpdef utils.dpnp_descriptor dpnp_inv(utils.dpnp_descriptor input):
     cdef DPNPFuncType return_type = ret_type_and_func[0]
     cdef custom_linalg_1in_1out_func_ptr_t func = < custom_linalg_1in_1out_func_ptr_t > ret_type_and_func[1]
 
-    # ceate result array with type given by FPTR data
+    # create result array with type given by FPTR data
     cdef utils.dpnp_descriptor result = utils.create_output_descriptor(input_shape,
                                                                        return_type,
                                                                        None,
@@ -322,7 +317,7 @@ cpdef utils.dpnp_descriptor dpnp_matrix_rank(utils.dpnp_descriptor input):
 
     input_obj = input.get_array()
 
-    # ceate result array with type given by FPTR data
+    # create result array with type given by FPTR data
     cdef utils.dpnp_descriptor result = utils.create_output_descriptor((1,),
                                                                        kernel_data.return_type,
                                                                        None,
@@ -374,7 +369,8 @@ cpdef object dpnp_norm(object input, ord=None, axis=None):
             (ord in ('f', 'fro') and ndim == 2) or
                 (ord == 2 and ndim == 1)):
 
-            input = dpnp.ravel(input, order='K')
+            # TODO: change order='K' when support is implemented
+            input = dpnp.ravel(input, order='C')
             sqnorm = dpnp.dot(input, input)
             ret = dpnp.sqrt([sqnorm], dtype=res_type)
             return dpnp.array(ret.reshape(1, *ret.shape), dtype=res_type)

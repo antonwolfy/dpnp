@@ -29,7 +29,7 @@ Container specific part of the DPNP
 
 Notes
 -----
-This module contains code and dependency on diffrent containers used in DPNP
+This module contains code and dependency on different containers used in DPNP
 
 """
 
@@ -130,7 +130,7 @@ def asarray(
         )
 
         # return x1 if dpctl returns a zero copy of x1_obj
-        if array_obj is x1_obj:
+        if array_obj is x1_obj and isinstance(x1, dpnp_array):
             return x1
 
     return dpnp_array(array_obj.shape, buffer=array_obj, order=order)
@@ -218,6 +218,7 @@ def full(
 ):
     """Validate input parameters before passing them into `dpctl.tensor` module"""
     dpu.validate_usm_type(usm_type, allow_none=True)
+
     sycl_queue_normalized = dpnp.get_normalized_queue_device(
         fill_value, sycl_queue=sycl_queue, device=device
     )

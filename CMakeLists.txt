@@ -1,8 +1,4 @@
-cmake_minimum_required(VERSION 3.21...3.26 FATAL_ERROR)
-
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24")
-  cmake_policy(SET CMP0135 NEW)
-endif()
+cmake_minimum_required(VERSION 3.21...3.27 FATAL_ERROR)
 
 project(dpnp
   DESCRIPTION "NumPy-like API accelerated by SYCL."
@@ -27,17 +23,44 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${DPCTL_MODULE_PATH})
 
 
-find_package(IntelDPCPP REQUIRED)
-find_package(TBB REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+find_package(IntelSYCL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+find_package(TBB QUIET)
+if(TBB_FOUND)
+    find_package(TBB REQUIRED)
+else()
+    find_package(TBB REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+endif()
 
 set(MKL_ARCH "intel64")
 set(MKL_LINK "dynamic")
-set(MKL_INTERFACE_FULL "intel_ilp64")
 set(MKL_THREADING "tbb_thread")
-find_package(MKL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+set(MKL_VERSION_2024 FALSE)
+find_package(MKL QUIET)
+if(MKL_FOUND)
+    if(MKL_VERSION VERSION_GREATER_EQUAL "2024.0.0")
+        set(MKL_VERSION_2024 TRUE)
+        set(MKL_INTERFACE "ilp64")
+        find_package(MKL REQUIRED)
+    endif()
+endif()
+
+if(NOT MKL_VERSION_2024)
+    set(MKL_INTERFACE_FULL "intel_ilp64")
+    find_package(MKL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+endif()
 
 set(ONEDPL_PAR_BACKEND tbb)
-find_package(oneDPL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+find_package(oneDPL QUIET)
+if(oneDPL_FOUND)
+    if(oneDPL_VERSION VERSION_GREATER_EQUAL "2022.3.0")
+        find_package(oneDPL REQUIRED)
+    else()
+        find_package(oneDPL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+    endif()
+else()
+    find_package(oneDPL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
+endif()
+
 
 include(GNUInstallDirs)
 
@@ -50,7 +73,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-find_package(PythonExtensions REQUIRED)
+find_package(Python REQUIRED COMPONENTS Development.Module)
 find_package(NumPy REQUIRED)
 
 set(CYTHON_FLAGS "-t -w \"${CMAKE_SOURCE_DIR}\"")

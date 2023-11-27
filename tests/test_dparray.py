@@ -13,6 +13,7 @@ from .helper import (
 )
 
 
+@pytest.mark.usefixtures("suppress_complex_warning")
 @pytest.mark.parametrize("res_dtype", get_all_dtypes())
 @pytest.mark.parametrize("arr_dtype", get_all_dtypes())
 @pytest.mark.parametrize(
@@ -26,6 +27,12 @@ def test_astype(arr, arr_dtype, res_dtype):
     expected = numpy_array.astype(res_dtype)
     result = dpnp_array.astype(res_dtype)
     assert_allclose(expected, result)
+
+
+def test_astype_subok_error():
+    x = dpnp.ones((4))
+    with pytest.raises(NotImplementedError):
+        x.astype("i4", subok=False)
 
 
 @pytest.mark.parametrize("arr_dtype", get_all_dtypes())
@@ -226,3 +233,16 @@ def test_array_as_index(shape, index_dtype):
     ind_arr = dpnp.ones(shape, dtype=index_dtype)
     a = numpy.arange(ind_arr.size + 1)
     assert a[tuple(ind_arr)] == a[1]
+
+
+def test_ravel():
+    a = dpnp.ones((2, 2))
+    b = a.ravel()
+    a[0, 0] = 5
+    assert_array_equal(a.ravel(), b)
+
+
+def test_repeat():
+    numpy_array = numpy.arange(4).repeat(3)
+    dpnp_array = dpnp.arange(4).repeat(3)
+    assert_array_equal(numpy_array, dpnp_array)

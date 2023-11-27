@@ -1,5 +1,3 @@
-# cython: language_level=3
-# distutils: language = c++
 # -*- coding: utf-8 -*-
 # *****************************************************************************
 # Copyright (c) 2016-2023, Intel Corporation
@@ -62,6 +60,7 @@ __all__ = [
     "mean",
     "median",
     "min",
+    "ptp",
     "nanvar",
     "std",
     "var",
@@ -136,9 +135,9 @@ def average(x1, axis=None, weights=None, returned=False):
     Limitations
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
-    Prameters ``axis`` is supported only with default value ``None``.
-    Prameters ``weights`` is supported only with default value ``None``.
-    Prameters ``returned`` is supported only with default value ``False``.
+    Parameter `axis` is supported only with default value ``None``.
+    Parameter `weights` is supported only with default value ``None``.
+    Parameter `returned` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 
@@ -206,7 +205,7 @@ def correlate(x1, x2, mode="valid"):
     -----------
     Input arrays are supported as :obj:`dpnp.ndarray`.
     Size and shape of input arrays are supported to be equal.
-    Prameters ``mode`` is supported only with default value ``"valid``.
+    Parameter `mode` is supported only with default value ``"valid``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 
@@ -267,11 +266,11 @@ def cov(
     Input array ``m`` is supported as :obj:`dpnp.ndarray`.
     Dimension of input array ``m`` is limited by ``m.ndim <= 2``.
     Size and shape of input arrays are supported to be equal.
-    Prameters ``y`` is supported only with default value ``None``.
-    Prameters ``bias`` is supported only with default value ``False``.
-    Prameters ``ddof`` is supported only with default value ``None``.
-    Prameters ``fweights`` is supported only with default value ``None``.
-    Prameters ``aweights`` is supported only with default value ``None``.
+    Parameter `y` is supported only with default value ``None``.
+    Parameter `bias` is supported only with default value ``False``.
+    Parameter `ddof` is supported only with default value ``None``.
+    Parameter `fweights` is supported only with default value ``None``.
+    Parameter `aweights` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 
@@ -352,69 +351,70 @@ def histogram(a, bins=10, range=None, density=None, weights=None):
     )
 
 
-def max(x1, axis=None, out=None, keepdims=False, initial=None, where=True):
+def max(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     """
     Return the maximum of an array or maximum along an axis.
 
+    For full documentation refer to :obj:`numpy.max`.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Maximum of `a`.
+
     Limitations
     -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Otherwise the function will be executed sequentially on CPU.
-    Prameters ``out`` is supported only with default value ``None``.
+    Input and output arrays are only supported as either :class:`dpnp.ndarray`
+    or :class:`dpctl.tensor.usm_ndarray`.
+    Parameters `where`, and `initial` are supported only with their default values.
+    Otherwise ``NotImplementedError`` exception will be raised.
     Input array data types are limited by supported DPNP :ref:`Data types`.
+
+    See Also
+    --------
+    :obj:`dpnp.min` : Return the minimum of an array.
+    :obj:`dpnp.maximum` : Element-wise maximum of two arrays, propagates NaNs.
+    :obj:`dpnp.fmax` : Element-wise maximum of two arrays, ignores NaNs.
+    :obj:`dpnp.amax` : The maximum value of an array along a given axis, propagates NaNs.
+    :obj:`dpnp.nanmax` : The maximum value of an array along a given axis, ignores NaNs.
 
     Examples
     --------
     >>> import dpnp as np
     >>> a = np.arange(4).reshape((2,2))
-    >>> a.shape
-    (2, 2)
-    >>> [i for i in a]
-    [0, 1, 2, 3]
+    >>> a
+    array([[0, 1],
+           [2, 3]])
     >>> np.max(a)
-    3
+    array(3)
+
+    >>> np.max(a, axis=0)   # Maxima along the first axis
+    array([2, 3])
+    >>> np.max(a, axis=1)   # Maxima along the second axis
+    array([1, 3])
+
+    >>> b = np.arange(5, dtype=float)
+    >>> b[2] = np.NaN
+    >>> np.max(b)
+    array(nan)
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        # Negative values in 'shape' are not allowed in input array
-        # 306-322 check on negative and duplicate axis
-        isaxis = True
-        if axis is not None:
-            if dpnp.isscalar(axis):
-                if axis < 0:
-                    isaxis = False
-            else:
-                for val in axis:
-                    if val < 0:
-                        isaxis = False
-                        break
-                if isaxis:
-                    for i in range(len(axis)):
-                        for j in range(len(axis)):
-                            if i != j:
-                                if axis[i] == axis[j]:
-                                    isaxis = False
-                                    break
+    if initial is not None:
+        raise NotImplementedError(
+            "initial keyword argument is only supported by its default value."
+        )
+    elif where is not True:
+        raise NotImplementedError(
+            "where keyword argument is only supported by its default value."
+        )
+    else:
+        dpt_array = dpnp.get_usm_ndarray(a)
+        result = dpnp_array._create_from_usm_ndarray(
+            dpt.max(dpt_array, axis=axis, keepdims=keepdims)
+        )
 
-        if not isaxis:
-            pass
-        elif out is not None:
-            pass
-        elif keepdims:
-            pass
-        elif initial is not None:
-            pass
-        elif where is not True:
-            pass
-        else:
-            result_obj = dpnp_max(x1_desc, axis).get_pyobj()
-            result = dpnp.convert_single_elem_array_to_scalar(result_obj)
-
-            return result
-
-    return call_origin(numpy.max, x1, axis, out, keepdims, initial, where)
+        return dpnp.get_result_array(result, out)
 
 
 def mean(x, /, *, axis=None, dtype=None, keepdims=False, out=None, where=True):
@@ -523,10 +523,10 @@ def median(x1, axis=None, out=None, overwrite_input=False, keepdims=False):
     Limitations
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
-    Prameters ``axis`` is supported only with default value ``None``.
-    Prameters ``out`` is supported only with default value ``None``.
-    Prameters ``overwrite_input`` is supported only with default value ``False``.
-    Prameters ``keepdims`` is supported only with default value ``False``.
+    Parameter `axis` is supported only with default value ``None``.
+    Parameter `out` is supported only with default value ``None``.
+    Parameter `overwrite_input` is supported only with default value ``False``.
+    Parameter `keepdims` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 
@@ -564,47 +564,113 @@ def median(x1, axis=None, out=None, overwrite_input=False, keepdims=False):
     return call_origin(numpy.median, x1, axis, out, overwrite_input, keepdims)
 
 
-def min(x1, axis=None, out=None, keepdims=False, initial=None, where=True):
+def min(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     """
-    Return the minimum along a given axis.
+    Return the minimum of an array or maximum along an axis.
+
+    For full documentation refer to :obj:`numpy.min`.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Minimum of `a`.
 
     Limitations
     -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Otherwise the function will be executed sequentially on CPU.
-    Prameters ``out`` is supported only with default value ``None``.
+    Input and output arrays are only supported as either :class:`dpnp.ndarray`
+    or :class:`dpctl.tensor.usm_ndarray`.
+    Parameters `where`, and `initial` are supported only with their default values.
+    Otherwise ``NotImplementedError`` exception will be raised.
     Input array data types are limited by supported DPNP :ref:`Data types`.
+
+    See Also
+    --------
+    :obj:`dpnp.max` : Return the maximum of an array.
+    :obj:`dpnp.minimum` : Element-wise minimum of two arrays, propagates NaNs.
+    :obj:`dpnp.fmin` : Element-wise minimum of two arrays, ignores NaNs.
+    :obj:`dpnp.amin` : The minimum value of an array along a given axis, propagates NaNs.
+    :obj:`dpnp.nanmin` : The minimum value of an array along a given axis, ignores NaNs.
 
     Examples
     --------
     >>> import dpnp as np
     >>> a = np.arange(4).reshape((2,2))
-    >>> a.shape
-    (2, 2)
-    >>> [i for i in a]
-    [0, 1, 2, 3]
+    >>> a
+    array([[0, 1],
+           [2, 3]])
     >>> np.min(a)
-    0
+    array(0)
+
+    >>> np.min(a, axis=0)   # Minima along the first axis
+    array([0, 1])
+    >>> np.min(a, axis=1)   # Minima along the second axis
+    array([0, 2])
+
+    >>> b = np.arange(5, dtype=float)
+    >>> b[2] = np.NaN
+    >>> np.min(b)
+    array(nan)
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        if out is not None:
-            pass
-        elif keepdims:
-            pass
-        elif initial is not None:
-            pass
-        elif where is not True:
-            pass
-        else:
-            result_obj = dpnp_min(x1_desc, axis).get_pyobj()
-            result = dpnp.convert_single_elem_array_to_scalar(result_obj)
+    if initial is not None:
+        raise NotImplementedError(
+            "initial keyword argument is only supported by its default value."
+        )
+    elif where is not True:
+        raise NotImplementedError(
+            "where keyword argument is only supported by its default value."
+        )
+    else:
+        dpt_array = dpnp.get_usm_ndarray(a)
+        result = dpnp_array._create_from_usm_ndarray(
+            dpt.min(dpt_array, axis=axis, keepdims=keepdims)
+        )
 
-            return result
+        return dpnp.get_result_array(result, out)
 
-    return call_origin(numpy.min, x1, axis, out, keepdims, initial, where)
+
+def ptp(
+    a,
+    /,
+    axis=None,
+    out=None,
+    keepdims=False,
+):
+    """
+    Range of values (maximum - minimum) along an axis.
+
+    For full documentation refer to :obj:`numpy.ptp`.
+
+    Returns
+    -------
+    ptp : dpnp.ndarray
+        The range of a given array.
+
+    Limitations
+    -----------
+    Input array is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> x = np.array([[4, 9, 2, 10],[6, 9, 7, 12]])
+    >>> np.ptp(x, axis=1)
+    array([8, 6])
+
+    >>> np.ptp(x, axis=0)
+    array([2, 0, 5, 2])
+
+    >>> np.ptp(x)
+    array(10)
+
+    """
+
+    return dpnp.subtract(
+        dpnp.max(a, axis=axis, keepdims=keepdims, out=out),
+        dpnp.min(a, axis=axis, keepdims=keepdims),
+        out=out,
+    )
 
 
 def nanvar(x1, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
@@ -616,10 +682,10 @@ def nanvar(x1, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
     Limitations
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
-    Prameters ``axis`` is supported only with default value ``None``.
-    Prameters ``dtype`` is supported only with default value ``None``.
-    Prameters ``out`` is supported only with default value ``None``.
-    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.
+    Parameter `axis` is supported only with default value ``None``.
+    Parameter `dtype` is supported only with default value ``None``.
+    Parameter `out` is supported only with default value ``None``.
+    Parameter `keepdims` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
     """
 
@@ -662,10 +728,10 @@ def std(x1, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
     Size of input array is limited by ``a.size > 0``.
-    Prameters ``axis`` is supported only with default value ``None``.
-    Prameters ``dtype`` is supported only with default value ``None``.
-    Prameters ``out`` is supported only with default value ``None``.
-    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.
+    Parameter `axis` is supported only with default value ``None``.
+    Parameter `dtype` is supported only with default value ``None``.
+    Parameter `out` is supported only with default value ``None``.
+    Parameter `keepdims` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 
@@ -720,10 +786,10 @@ def var(x1, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
     Size of input array is limited by ``a.size > 0``.
-    Prameters ``axis`` is supported only with default value ``None``.
-    Prameters ``dtype`` is supported only with default value ``None``.
-    Prameters ``out`` is supported only with default value ``None``.
-    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.
+    Parameter `axis` is supported only with default value ``None``.
+    Parameter `dtype` is supported only with default value ``None``.
+    Parameter `out` is supported only with default value ``None``.
+    Parameter `keepdims` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
     Input array data types are limited by supported DPNP :ref:`Data types`.
 

@@ -33,49 +33,19 @@ from dpnp.dpnp_utils.dpnp_algo_utils cimport dpnp_descriptor
 
 cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this namespace for Enum import
     cdef enum DPNPFuncName "DPNPFuncName":
-        DPNP_FN_ABSOLUTE
-        DPNP_FN_ABSOLUTE_EXT
         DPNP_FN_ALLCLOSE
         DPNP_FN_ALLCLOSE_EXT
         DPNP_FN_ARANGE
-        DPNP_FN_ARCCOS
-        DPNP_FN_ARCCOS_EXT
-        DPNP_FN_ARCCOSH
-        DPNP_FN_ARCCOSH_EXT
-        DPNP_FN_ARCSIN
-        DPNP_FN_ARCSIN_EXT
-        DPNP_FN_ARCSINH
-        DPNP_FN_ARCSINH_EXT
-        DPNP_FN_ARCTAN
-        DPNP_FN_ARCTAN_EXT
-        DPNP_FN_ARCTAN2
-        DPNP_FN_ARCTAN2_EXT
-        DPNP_FN_ARCTANH
-        DPNP_FN_ARCTANH_EXT
-        DPNP_FN_ARGMAX
-        DPNP_FN_ARGMAX_EXT
-        DPNP_FN_ARGMIN
-        DPNP_FN_ARGMIN_EXT
         DPNP_FN_ARGSORT
         DPNP_FN_ARGSORT_EXT
-        DPNP_FN_ASTYPE
-        DPNP_FN_ASTYPE_EXT
-        DPNP_FN_CBRT
-        DPNP_FN_CBRT_EXT
         DPNP_FN_CHOLESKY
         DPNP_FN_CHOLESKY_EXT
         DPNP_FN_CHOOSE
         DPNP_FN_CHOOSE_EXT
         DPNP_FN_COPY
         DPNP_FN_COPY_EXT
-        DPNP_FN_COPYSIGN
-        DPNP_FN_COPYSIGN_EXT
         DPNP_FN_CORRELATE
         DPNP_FN_CORRELATE_EXT
-        DPNP_FN_COSH
-        DPNP_FN_COSH_EXT
-        DPNP_FN_COUNT_NONZERO
-        DPNP_FN_COUNT_NONZERO_EXT
         DPNP_FN_CROSS
         DPNP_FN_CROSS_EXT
         DPNP_FN_CUMPROD
@@ -86,8 +56,6 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_DEGREES_EXT
         DPNP_FN_DET
         DPNP_FN_DET_EXT
-        DPNP_FN_DIAG
-        DPNP_FN_DIAG_EXT
         DPNP_FN_DIAG_INDICES
         DPNP_FN_DIAG_INDICES_EXT
         DPNP_FN_DIAGONAL
@@ -104,12 +72,6 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_ERF_EXT
         DPNP_FN_EYE
         DPNP_FN_EYE_EXT
-        DPNP_FN_EXP
-        DPNP_FN_EXP_EXT
-        DPNP_FN_EXP2
-        DPNP_FN_EXP2_EXT
-        DPNP_FN_EXPM1
-        DPNP_FN_EXPM1_EXT
         DPNP_FN_FABS
         DPNP_FN_FABS_EXT
         DPNP_FN_FFT_FFT
@@ -118,38 +80,22 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_FFT_RFFT_EXT
         DPNP_FN_FILL_DIAGONAL
         DPNP_FN_FILL_DIAGONAL_EXT
-        DPNP_FN_FLATTEN
-        DPNP_FN_FLATTEN_EXT
         DPNP_FN_FMOD
         DPNP_FN_FMOD_EXT
         DPNP_FN_FULL
         DPNP_FN_FULL_LIKE
-        DPNP_FN_HYPOT
-        DPNP_FN_HYPOT_EXT
-        DPNP_FN_IDENTITY
-        DPNP_FN_IDENTITY_EXT
         DPNP_FN_INV
         DPNP_FN_INV_EXT
         DPNP_FN_KRON
         DPNP_FN_KRON_EXT
-        DPNP_FN_LOG10
-        DPNP_FN_LOG10_EXT
-        DPNP_FN_LOG1P
-        DPNP_FN_LOG1P_EXT
-        DPNP_FN_LOG2
-        DPNP_FN_LOG2_EXT
         DPNP_FN_MATMUL
         DPNP_FN_MATMUL_EXT
         DPNP_FN_MATRIX_RANK
         DPNP_FN_MATRIX_RANK_EXT
-        DPNP_FN_MAX
-        DPNP_FN_MAX_EXT
         DPNP_FN_MAXIMUM
         DPNP_FN_MAXIMUM_EXT
         DPNP_FN_MEDIAN
         DPNP_FN_MEDIAN_EXT
-        DPNP_FN_MIN
-        DPNP_FN_MIN_EXT
         DPNP_FN_MINIMUM
         DPNP_FN_MINIMUM_EXT
         DPNP_FN_MODF
@@ -162,20 +108,12 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_PARTITION
         DPNP_FN_PARTITION_EXT
         DPNP_FN_PLACE
-        DPNP_FN_PROD
-        DPNP_FN_PROD_EXT
-        DPNP_FN_PTP
-        DPNP_FN_PTP_EXT
-        DPNP_FN_PUT
-        DPNP_FN_PUT_EXT
         DPNP_FN_QR
         DPNP_FN_QR_EXT
         DPNP_FN_RADIANS
         DPNP_FN_RADIANS_EXT
         DPNP_FN_RECIP
         DPNP_FN_RECIP_EXT
-        DPNP_FN_REPEAT
-        DPNP_FN_REPEAT_EXT
         DPNP_FN_RNG_BETA
         DPNP_FN_RNG_BETA_EXT
         DPNP_FN_RNG_BINOMIAL
@@ -249,8 +187,6 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_RNG_ZIPF_EXT
         DPNP_FN_SEARCHSORTED
         DPNP_FN_SEARCHSORTED_EXT
-        DPNP_FN_SINH
-        DPNP_FN_SINH_EXT
         DPNP_FN_SORT
         DPNP_FN_SORT_EXT
         DPNP_FN_STD
@@ -259,23 +195,15 @@ cdef extern from "dpnp_iface_fptr.hpp" namespace "DPNPFuncName":  # need this na
         DPNP_FN_SUM_EXT
         DPNP_FN_SVD
         DPNP_FN_SVD_EXT
-        DPNP_FN_TAN
-        DPNP_FN_TAN_EXT
-        DPNP_FN_TANH
-        DPNP_FN_TANH_EXT
         DPNP_FN_TRACE
         DPNP_FN_TRACE_EXT
         DPNP_FN_TRANSPOSE
         DPNP_FN_TRAPZ
         DPNP_FN_TRAPZ_EXT
-        DPNP_FN_TRI
-        DPNP_FN_TRI_EXT
         DPNP_FN_TRIL
         DPNP_FN_TRIL_EXT
         DPNP_FN_TRIU
         DPNP_FN_TRIU_EXT
-        DPNP_FN_VANDER
-        DPNP_FN_VANDER_EXT
         DPNP_FN_VAR
         DPNP_FN_VAR_EXT
         DPNP_FN_ZEROS
@@ -375,9 +303,6 @@ ctypedef c_dpctl.DPCTLSyclEventRef(*dpnp_reduction_c_t)(c_dpctl.DPCTLSyclQueueRe
                                                         const long*,
                                                         const c_dpctl.DPCTLEventVectorRef)
 
-cpdef dpnp_descriptor dpnp_astype(dpnp_descriptor x1, dtype)
-cpdef dpnp_descriptor dpnp_flatten(dpnp_descriptor x1)
-
 
 """
 Internal functions
@@ -408,25 +333,10 @@ cpdef dpnp_descriptor dpnp_copy(dpnp_descriptor x1)
 """
 Mathematical functions
 """
-cpdef dpnp_descriptor dpnp_arctan2(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
+cpdef dpnp_descriptor dpnp_fmax(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
                                    dpnp_descriptor out=*, object where=*)
-cpdef dpnp_descriptor dpnp_hypot(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
-                                 dpnp_descriptor out=*, object where=*)
-cpdef dpnp_descriptor dpnp_maximum(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
+cpdef dpnp_descriptor dpnp_fmin(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
                                    dpnp_descriptor out=*, object where=*)
-cpdef dpnp_descriptor dpnp_minimum(dpnp_descriptor x1_obj, dpnp_descriptor x2_obj, object dtype=*,
-                                   dpnp_descriptor out=*, object where=*)
-
-"""
-Array manipulation routines
-"""
-cpdef dpnp_descriptor dpnp_repeat(dpnp_descriptor array1, repeats, axes=*)
-
-
-"""
-Statistics functions
-"""
-cpdef dpnp_descriptor dpnp_min(dpnp_descriptor a, axis)
 
 
 """
@@ -436,31 +346,8 @@ cpdef dpnp_descriptor dpnp_argsort(dpnp_descriptor array1)
 cpdef dpnp_descriptor dpnp_sort(dpnp_descriptor array1)
 
 """
-Searching functions
-"""
-cpdef dpnp_descriptor dpnp_argmax(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_argmin(dpnp_descriptor array1)
-
-"""
 Trigonometric functions
 """
-cpdef dpnp_descriptor dpnp_arccos(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_arccosh(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_arcsin(dpnp_descriptor array1, dpnp_descriptor out)
-cpdef dpnp_descriptor dpnp_arcsinh(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_arctan(dpnp_descriptor array1, dpnp_descriptor out)
-cpdef dpnp_descriptor dpnp_arctanh(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_cbrt(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_cosh(dpnp_descriptor array1)
 cpdef dpnp_descriptor dpnp_degrees(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_exp(dpnp_descriptor array1, dpnp_descriptor out)
-cpdef dpnp_descriptor dpnp_exp2(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_expm1(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_log10(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_log1p(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_log2(dpnp_descriptor array1)
 cpdef dpnp_descriptor dpnp_radians(dpnp_descriptor array1)
 cpdef dpnp_descriptor dpnp_recip(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_sinh(dpnp_descriptor array1)
-cpdef dpnp_descriptor dpnp_tan(dpnp_descriptor array1, dpnp_descriptor out)
-cpdef dpnp_descriptor dpnp_tanh(dpnp_descriptor array1)

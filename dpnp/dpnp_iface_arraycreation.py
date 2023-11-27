@@ -1,5 +1,3 @@
-# cython: language_level=3
-# distutils: language = c++
 # -*- coding: utf-8 -*-
 # *****************************************************************************
 # Copyright (c) 2016-2023, Intel Corporation
@@ -50,6 +48,12 @@ import dpnp.dpnp_container as dpnp_container
 from dpnp.dpnp_algo import *
 from dpnp.dpnp_utils import *
 
+from .dpnp_algo.dpnp_arraycreation import (
+    dpnp_geomspace,
+    dpnp_linspace,
+    dpnp_logspace,
+)
+
 __all__ = [
     "arange",
     "array",
@@ -80,7 +84,6 @@ __all__ = [
     "ogrid",
     "ones",
     "ones_like",
-    "ptp",
     "trace",
     "tri",
     "tril",
@@ -115,7 +118,7 @@ def arange(
 
     Limitations
     -----------
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -576,11 +579,29 @@ def copy(a, order="K", subok=False):
     return array(a, order=order, subok=subok, copy=True)
 
 
-def diag(x1, k=0):
+def diag(v, /, k=0, *, device=None, usm_type=None, sycl_queue=None):
     """
     Extract a diagonal or construct a diagonal array.
 
     For full documentation refer to :obj:`numpy.diag`.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        The extracted diagonal or constructed diagonal array.
+
+    Limitations
+    -----------
+    Parameter `k` is only supported as integer data type.
+    Otherwise ``TypeError`` exception will be raised.
+
+    See Also
+    --------
+    :obj:`diagonal` : Return specified diagonals.
+    :obj:`diagflat` : Create a 2-D array with the flattened input as a diagonal.
+    :obj:`trace` : Return sum along diagonals.
+    :obj:`triu` : Return upper triangle of an array.
+    :obj:`tril` : Return lower triangle of an array.
 
     Examples
     --------
@@ -605,50 +626,92 @@ def diag(x1, k=0):
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        if not isinstance(k, int):
-            pass
-        elif x1_desc.ndim != 1 and x1_desc.ndim != 2:
-            pass
+    if not isinstance(k, int):
+        raise TypeError("An integer is required, but got {}".format(type(k)))
+    else:
+        v = dpnp.asarray(
+            v, device=device, usm_type=usm_type, sycl_queue=sycl_queue
+        )
+
+        init0 = max(0, -k)
+        init1 = max(0, k)
+        if v.ndim == 1:
+            size = v.shape[0] + abs(k)
+            m = dpnp.zeros(
+                (size, size),
+                dtype=v.dtype,
+                usm_type=v.usm_type,
+                sycl_queue=v.sycl_queue,
+            )
+            for i in range(v.shape[0]):
+                m[(init0 + i), init1 + i] = v[i]
+            return m
+        elif v.ndim == 2:
+            size = min(v.shape[0], v.shape[0] + k, v.shape[1], v.shape[1] - k)
+            if size < 0:
+                size = 0
+            m = dpnp.zeros(
+                (size,),
+                dtype=v.dtype,
+                usm_type=v.usm_type,
+                sycl_queue=v.sycl_queue,
+            )
+            for i in range(size):
+                m[i] = v[(init0 + i), init1 + i]
+            return m
         else:
-            return dpnp_diag(x1_desc, k).get_pyobj()
-
-    return call_origin(numpy.diag, x1, k)
+            raise ValueError("Input must be a 1-D or 2-D array.")
 
 
-def diagflat(x1, k=0):
+def diagflat(v, /, k=0, *, device=None, usm_type=None, sycl_queue=None):
     """
     Create a two-dimensional array with the flattened input as a diagonal.
 
     For full documentation refer to :obj:`numpy.diagflat`.
 
+    Returns
+    -------
+    out : dpnp.ndarray
+        The 2-D output array.
+
+    See Also
+    --------
+    :obj:`diag` : Return the extracted diagonal or constructed diagonal array.
+    :obj:`diagonal` : Return specified diagonals.
+    :obj:`trace` : Return sum along diagonals.
+
+    Limitations
+    -----------
+    Parameter `k` is only supported as integer data type.
+    Otherwise ``TypeError`` exception will be raised.
+
     Examples
     --------
     >>> import dpnp as np
-    >>> np.diagflat([[1,2], [3,4]])
+    >>> x = np.array([[1,2], [3,4]])
+    >>> np.diagflat(x)
     array([[1, 0, 0, 0],
            [0, 2, 0, 0],
            [0, 0, 3, 0],
            [0, 0, 0, 4]])
 
-    >>> np.diagflat([1,2], 1)
-    array([[0, 1, 0],
-           [0, 0, 2],
-           [0, 0, 0]])
+    >>> np.diagflat(x, 1)
+    array([[0, 1, 0, 0, 0],
+        [0, 0, 2, 0, 0],
+        [0, 0, 0, 3, 0],
+        [0, 0, 0, 0, 4],
+        [0, 0, 0, 0, 0]])
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        input_ravel = dpnp.ravel(x1)
-        input_ravel_desc = dpnp.get_dpnp_descriptor(
-            input_ravel, copy_when_nondefault_queue=False
+    if not isinstance(k, int):
+        raise TypeError("An integer is required, but got {}".format(type(k)))
+    else:
+        v = dpnp.asarray(
+            v, device=device, usm_type=usm_type, sycl_queue=sycl_queue
         )
-
-        return dpnp_diag(input_ravel_desc, k).get_pyobj()
-
-    return call_origin(numpy.diagflat, x1, k)
+        v = dpnp.ravel(v)
+        return dpnp.diag(v, k, usm_type=v.usm_type, sycl_queue=v.sycl_queue)
 
 
 def empty(
@@ -668,8 +731,8 @@ def empty(
 
     Limitations
     -----------
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -724,9 +787,9 @@ def empty_like(
 
     Limitations
     -----------
-    Parameter ``x1`` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
-    Parameter ``order`` is supported with values ``"C"`` or ``"F"``.
-    Parameter ``subok`` is supported only with default value ``False``.
+    Parameter `x1` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
+    Parameter `order` is supported with values ``"C"`` or ``"F"``.
+    Parameter `subok` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -772,12 +835,12 @@ def empty_like(
 
 def eye(
     N,
-    M=None,
     /,
-    *,
+    M=None,
     k=0,
     dtype=None,
     order="C",
+    *,
     like=None,
     device=None,
     usm_type="device",
@@ -790,9 +853,21 @@ def eye(
 
     Limitations
     -----------
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> np.eye(2, dtype=int)
+    array([[1, 0],
+           [0, 1]])
+
+    >>> np.eye(3, k=1)
+    array([[0.,  1.,  0.],
+           [0.,  0.,  1.],
+           [0.,  0.,  0.]])
 
     """
     if order not in ("C", "c", "F", "f", None):
@@ -916,8 +991,8 @@ def full(
 
     Limitations
     -----------
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -935,6 +1010,7 @@ def full(
     [10, 10, 10, 10]
 
     """
+
     if like is not None:
         pass
     elif order not in ("C", "c", "F", "f", None):
@@ -973,9 +1049,9 @@ def full_like(
 
     Limitations
     -----------
-    Parameter ``x1`` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``subok`` is supported only with default value ``False``.
+    Parameter `x1` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `subok` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -1019,15 +1095,28 @@ def full_like(
     return numpy.full_like(x1, fill_value, dtype, order, subok, shape)
 
 
-def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
+def geomspace(
+    start,
+    stop,
+    /,
+    num,
+    *,
+    dtype=None,
+    device=None,
+    usm_type=None,
+    sycl_queue=None,
+    endpoint=True,
+    axis=0,
+):
     """
     Return numbers spaced evenly on a log scale (a geometric progression).
 
     For full documentation refer to :obj:`numpy.geomspace`.
 
-    Limitations
-    -----------
-    Parameter ``axis`` is supported only with default value ``0``.
+    Returns
+    -------
+    out : dpnp.ndarray
+        num samples, equally spaced on a log scale.
 
     See Also
     --------
@@ -1041,27 +1130,50 @@ def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
     Examples
     --------
     >>> import dpnp as np
-    >>> x = np.geomspace(1, 1000, num=4)
-    >>> [i for i in x]
-    [1.0, 10.0, 100.0, 1000.0]
-    >>> x2 = np.geomspace(1, 1000, num=4, endpoint=False)
-    >>> [i for i in x2]
-    [1.0, 5.62341325, 31.6227766, 177.827941]
+    >>> np.geomspace(1, 1000, num=4)
+    array([   1.,   10.,  100., 1000.])
+    >>> np.geomspace(1, 1000, num=3, endpoint=False)
+    array([  1.,  10., 100.])
+    >>> np.geomspace(1, 1000, num=4, endpoint=False)
+    array([  1.        ,   5.62341325,  31.6227766 , 177.827941  ])
+    >>> np.geomspace(1, 256, num=9)
+    array([  1.,   2.,   4.,   8.,  16.,  32.,  64., 128., 256.])
+
+    >>> np.geomspace(1, 256, num=9, dtype=int)
+    array([  1,   2,   4,   7,  16,  32,  63, 127, 256])
+    >>> np.around(np.geomspace(1, 256, num=9)).astype(int)
+    array([  1,   2,   4,   8,  16,  32,  64, 128, 256])
+
+    >>> np.geomspace(1000, 1, num=4)
+    array([1000.,  100.,   10.,    1.])
+    >>> np.geomspace(-1000, -1, num=4)
+    array([-1000.,  -100.,   -10.,    -1.])
 
     """
 
-    if not use_origin_backend():
-        if axis != 0:
-            pass
-        else:
-            return dpnp_geomspace(
-                start, stop, num, endpoint, dtype, axis
-            ).get_pyobj()
+    return dpnp_geomspace(
+        start,
+        stop,
+        num,
+        dtype=dtype,
+        device=device,
+        usm_type=usm_type,
+        sycl_queue=sycl_queue,
+        endpoint=endpoint,
+        axis=axis,
+    )
 
-    return call_origin(numpy.geomspace, start, stop, num, endpoint, dtype, axis)
 
-
-def identity(n, dtype=None, *, like=None):
+def identity(
+    n,
+    /,
+    dtype=None,
+    *,
+    like=None,
+    device=None,
+    usm_type="device",
+    sycl_queue=None,
+):
     """
     Return the identity array.
 
@@ -1069,9 +1181,22 @@ def identity(n, dtype=None, *, like=None):
 
     For full documentation refer to :obj:`numpy.identity`.
 
+    Returns
+    -------
+    out : dpnp.ndarray
+        `n` x `n` array with its main diagonal set to one,
+        and all other elements 0.
+
     Limitations
     -----------
-    Parameter ``like`` is currently not supported .
+    Parameter `like` is currently not supported.
+    Otherwise the function will be executed sequentially on CPU.
+
+    See Also
+    --------
+    :obj:`dpnp.eye` : Return a 2-D array with ones on the diagonal and zeros elsewhere.
+    :obj:`dpnp.ones` : Return a new array setting values to one.
+    :obj:`dpnp.diag` : Return diagonal 2-D array from an input 1-D array.
 
     Examples
     --------
@@ -1086,11 +1211,16 @@ def identity(n, dtype=None, *, like=None):
         if like is not None:
             pass
         elif n < 0:
-            pass
+            raise ValueError("negative dimensions are not allowed")
         else:
             _dtype = dpnp.default_float_type() if dtype is None else dtype
-            return dpnp_identity(n, _dtype).get_pyobj()
-
+            return dpnp.eye(
+                n,
+                dtype=_dtype,
+                device=device,
+                usm_type=usm_type,
+                sycl_queue=sycl_queue,
+            )
     return call_origin(numpy.identity, n, dtype=dtype, like=like)
 
 
@@ -1113,11 +1243,15 @@ def linspace(
 
     For full documentation refer to :obj:`numpy.linspace`.
 
-    Limitations
-    -----------
-    Parameter ``axis`` is supported only with default value ``0``.
-    Parameter ``retstep`` is supported only with default value ``False``.
-    Otherwise the function will be executed sequentially on CPU.
+    Returns
+    -------
+    out : dpnp.ndarray
+        There are num equally spaced samples in the closed interval
+        [`start`, `stop`] or the half-open interval [`start`, `stop`)
+        (depending on whether `endpoint` is ``True`` or ``False``).
+    step : float, optional
+        Only returned if `retstep` is ``True``.
+        Size of spacing between samples.
 
     See Also
     --------
@@ -1131,36 +1265,28 @@ def linspace(
     Examples
     --------
     >>> import dpnp as np
-    >>> x = np.linspace(2.0, 3.0, num=5)
-    >>> [i for i in x]
-    [2.0, 2.25, 2.5, 2.75, 3.0]
-    >>> x2 = np.linspace(2.0, 3.0, num=5, endpoint=False)
-    >>> [i for i in x2]
-    [2.0, 2.2, 2.4, 2.6, 2.8]
-    >>> x3, step = np.linspace(2.0, 3.0, num=5, retstep=True)
-    >>> [i for i in x3], step
-    ([2.0, 2.25, 2.5, 2.75, 3.0], 0.25)
+    >>> np.linspace(2.0, 3.0, num=5)
+    array([2.  , 2.25, 2.5 , 2.75, 3.  ])
+
+    >>> np.linspace(2.0, 3.0, num=5, endpoint=False)
+    array([2. , 2.2, 2.4, 2.6, 2.8])
+
+    >>> np.linspace(2.0, 3.0, num=5, retstep=True)
+    (array([2.  , 2.25, 2.5 , 2.75, 3.  ]), array(0.25))
 
     """
 
-    if retstep is not False:
-        pass
-    elif axis != 0:
-        pass
-    else:
-        return dpnp_linspace(
-            start,
-            stop,
-            num,
-            dtype=dtype,
-            device=device,
-            usm_type=usm_type,
-            sycl_queue=sycl_queue,
-            endpoint=endpoint,
-        )
-
-    return call_origin(
-        numpy.linspace, start, stop, num, endpoint, retstep, dtype, axis
+    return dpnp_linspace(
+        start,
+        stop,
+        num,
+        dtype=dtype,
+        device=device,
+        usm_type=usm_type,
+        sycl_queue=sycl_queue,
+        endpoint=endpoint,
+        retstep=retstep,
+        axis=axis,
     )
 
 
@@ -1190,15 +1316,29 @@ def loadtxt(fname, **kwargs):
     return call_origin(numpy.loadtxt, fname, **kwargs)
 
 
-def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
+def logspace(
+    start,
+    stop,
+    /,
+    num=50,
+    *,
+    device=None,
+    usm_type=None,
+    sycl_queue=None,
+    endpoint=True,
+    base=10.0,
+    dtype=None,
+    axis=0,
+):
     """
     Return numbers spaced evenly on a log scale.
 
     For full documentation refer to :obj:`numpy.logspace`.
 
-    Limitations
-    -----------
-    Parameter ``axis`` is supported only with default value ``0``.
+    Returns
+    -------
+    out: dpnp.ndarray
+        num samples, equally spaced on a log scale.
 
     See Also
     --------
@@ -1214,28 +1354,32 @@ def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
     Examples
     --------
     >>> import dpnp as np
-    >>> x = np.logspace(2.0, 3.0, num=4)
-    >>> [i for i in x]
-    [100.0, 215.443469, 464.15888336, 1000.0]
-    >>> x2 = np.logspace(2.0, 3.0, num=4, endpoint=False)
-    >>> [i for i in x2]
-    [100.0, 177.827941, 316.22776602, 562.34132519]
-    >>> x3 = np.logspace(2.0, 3.0, num=4, base=2.0)
-    >>> [i for i in x3]
-    [4.0, 5.0396842, 6.34960421, 8.0]
+    >>> np.logspace(2.0, 3.0, num=4)
+    array([ 100.        ,  215.443469  ,  464.15888336, 1000.        ])
+
+    >>> np.logspace(2.0, 3.0, num=4, endpoint=False)
+    array([100.        , 177.827941  , 316.22776602, 562.34132519])
+
+    >>> np.logspace(2.0, 3.0, num=4, base=2.0)
+    array([4.        , 5.0396842 , 6.34960421, 8.        ])
+
+    >>> np.logspace(2.0, 3.0, num=4, base=[2.0, 3.0], axis=-1)
+    array([[ 4.        ,  5.0396842 ,  6.34960421,  8.        ],
+           [ 9.        , 12.98024613, 18.72075441, 27.        ]])
 
     """
 
-    if not use_origin_backend():
-        if axis != 0:
-            checker_throw_value_error("linspace", "axis", axis, 0)
-
-        return dpnp_logspace(
-            start, stop, num, endpoint, base, dtype, axis
-        ).get_pyobj()
-
-    return call_origin(
-        numpy.logspace, start, stop, num, endpoint, base, dtype, axis
+    return dpnp_logspace(
+        start,
+        stop,
+        num=num,
+        device=device,
+        usm_type=usm_type,
+        sycl_queue=sycl_queue,
+        endpoint=endpoint,
+        base=base,
+        dtype=dtype,
+        axis=axis,
     )
 
 
@@ -1252,8 +1396,8 @@ def meshgrid(*xi, copy=True, sparse=False, indexing="xy"):
     Limitations
     -----------
     Each array instance from `xi` is supported as either :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`.
-    Parameter ``copy`` is supported only with default value ``True``.
-    Parameter ``sparse`` is supported only with default value ``False``.
+    Parameter `copy` is supported only with default value ``True``.
+    Parameter `sparse` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
 
     Examples
@@ -1379,8 +1523,8 @@ def ones(
 
     Limitations
     -----------
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -1439,9 +1583,9 @@ def ones_like(
 
     Limitations
     -----------
-    Parameter ``x1`` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
-    Parameter ``order`` is supported with values ``"C"`` or ``"F"``.
-    Parameter ``subok`` is supported only with default value ``False``.
+    Parameter `x1` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
+    Parameter `order` is supported with values ``"C"`` or ``"F"``.
+    Parameter `subok` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -1485,35 +1629,6 @@ def ones_like(
     return call_origin(numpy.ones_like, x1, dtype, order, subok, shape)
 
 
-def ptp(arr, axis=None, out=None, keepdims=numpy._NoValue):
-    """
-    Range of values (maximum - minimum) along an axis.
-
-    For full documentation refer to :obj:`numpy.ptp`.
-
-    Limitations
-    -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Parameters ``out`` and ``keepdims`` are supported only with default values.
-    """
-    arr_desc = dpnp.get_dpnp_descriptor(arr, copy_when_nondefault_queue=False)
-    if not arr_desc:
-        pass
-    elif axis is not None and not isinstance(axis, int):
-        pass
-    elif out is not None:
-        pass
-    elif keepdims is not numpy._NoValue:
-        pass
-    else:
-        result_obj = dpnp_ptp(arr_desc, axis=axis).get_pyobj()
-        result = dpnp.convert_single_elem_array_to_scalar(result_obj)
-
-        return result
-
-    return call_origin(numpy.ptp, arr, axis, out, keepdims)
-
-
 def trace(x1, offset=0, axis1=0, axis2=1, dtype=None, out=None):
     """
     Return the sum along diagonals of the array.
@@ -1523,7 +1638,7 @@ def trace(x1, offset=0, axis1=0, axis2=1, dtype=None, out=None):
     Limitations
     -----------
     Input array is supported as :obj:`dpnp.ndarray`.
-    Parameters ``axis1``, ``axis2``, ``out`` and ``dtype`` are supported only with default values.
+    Parameters `axis1`, `axis2`, `out` and `dtype` are supported only with default values.
     """
 
     x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
@@ -1546,11 +1661,38 @@ def trace(x1, offset=0, axis1=0, axis2=1, dtype=None, out=None):
     return call_origin(numpy.trace, x1, offset, axis1, axis2, dtype, out)
 
 
-def tri(N, M=None, k=0, dtype=dpnp.float, **kwargs):
+def tri(
+    N,
+    /,
+    M=None,
+    k=0,
+    dtype=dpnp.float,
+    *,
+    device=None,
+    usm_type="device",
+    sycl_queue=None,
+    **kwargs,
+):
     """
     An array with ones at and below the given diagonal and zeros elsewhere.
 
     For full documentation refer to :obj:`numpy.tri`.
+
+    Returns
+    -------
+    out : ndarray of shape (N, M)
+        Array with its lower triangle filled with ones and zeros elsewhere.
+
+    Limitations
+    -----------
+    Parameter `M`, `N`, and `k` are only supported as integer data type and when they are positive.
+    Keyword argument `kwargs` is currently unsupported.
+    Otherwise the function will be executed sequentially on CPU.
+
+    See Also
+    --------
+    :obj:`dpnp.tril` : Return lower triangle of an array.
+    :obj:`dpnp.triu` : Return upper triangle of an array.
 
     Examples
     --------
@@ -1586,7 +1728,17 @@ def tri(N, M=None, k=0, dtype=dpnp.float, **kwargs):
                 if dtype in (dpnp.float, None)
                 else dtype
             )
-            return dpnp_tri(N, M, k, _dtype).get_pyobj()
+            if M is None:
+                M = N
+
+            m = dpnp.ones(
+                (N, M),
+                dtype=_dtype,
+                device=device,
+                usm_type=usm_type,
+                sycl_queue=sycl_queue,
+            )
+            return dpnp.tril(m, k=k)
 
     return call_origin(numpy.tri, N, M, k, dtype, **kwargs)
 
@@ -1678,11 +1830,30 @@ def triu(x1, /, *, k=0):
     return call_origin(numpy.triu, x1, k)
 
 
-def vander(x1, N=None, increasing=False):
+def vander(
+    x1,
+    /,
+    N=None,
+    increasing=False,
+    *,
+    device=None,
+    usm_type=None,
+    sycl_queue=None,
+):
     """
     Generate a Vandermonde matrix.
 
     For full documentation refer to :obj:`numpy.vander`.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Vandermonde matrix.
+
+    Limitations
+    -----------
+    Parameter `N`, if it is not ``None``, is only supported as integer data type.
+    Otherwise ``TypeError`` exception will be raised.
 
     Examples
     --------
@@ -1694,12 +1865,14 @@ def vander(x1, N=None, increasing=False):
            [ 4,  2,  1],
            [ 9,  3,  1],
            [25,  5,  1]])
+
     >>> x = np.array([1, 2, 3, 5])
     >>> np.vander(x)
     array([[  1,   1,   1,   1],
            [  8,   4,   2,   1],
            [ 27,   9,   3,   1],
            [125,  25,   5,   1]])
+
     >>> np.vander(x, increasing=True)
     array([[  1,   1,   1,   1],
            [  1,   2,   4,   8],
@@ -1707,17 +1880,33 @@ def vander(x1, N=None, increasing=False):
            [  1,   5,  25, 125]])
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        if x1.ndim != 1:
-            pass
-        else:
-            if N is None:
-                N = x1.size
+    x1 = dpnp.asarray(
+        x1, device=device, usm_type=usm_type, sycl_queue=sycl_queue
+    )
 
-            return dpnp_vander(x1_desc, N, increasing).get_pyobj()
+    if N is not None and not isinstance(N, int):
+        raise TypeError("An integer is required, but got {}".format(type(N)))
+    elif x1.ndim != 1:
+        raise ValueError("x1 must be a one-dimensional array or sequence.")
+    else:
+        if N is None:
+            N = x1.size
 
-    return call_origin(numpy.vander, x1, N=N, increasing=increasing)
+        _dtype = int if x1.dtype == bool else x1.dtype
+        m = empty(
+            (x1.size, N),
+            dtype=_dtype,
+            usm_type=x1.usm_type,
+            sycl_queue=x1.sycl_queue,
+        )
+        tmp = m[:, ::-1] if not increasing else m
+        dpnp.power(
+            x1.reshape(-1, 1),
+            dpnp.arange(N, dtype=_dtype, sycl_queue=x1.sycl_queue),
+            out=tmp,
+        )
+
+        return m
 
 
 def zeros(
@@ -1737,8 +1926,8 @@ def zeros(
 
     Limitations
     -----------
-    Parameter ``order`` is supported only with values ``"C"`` and ``"F"``.
-    Parameter ``like`` is supported only with default value ``None``.
+    Parameter `order` is supported only with values ``"C"`` and ``"F"``.
+    Parameter `like` is supported only with default value ``None``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also
@@ -1796,9 +1985,9 @@ def zeros_like(
 
     Limitations
     -----------
-    Parameter ``x1`` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
-    Parameter ``order`` is supported with values ``"C"`` or ``"F"``.
-    Parameter ``subok`` is supported only with default value ``False``.
+    Parameter `x1` is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`
+    Parameter `order` is supported with values ``"C"`` or ``"F"``.
+    Parameter `subok` is supported only with default value ``False``.
     Otherwise the function will be executed sequentially on CPU.
 
     See Also

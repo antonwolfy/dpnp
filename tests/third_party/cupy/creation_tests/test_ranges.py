@@ -1,3 +1,4 @@
+import functools
 import math
 import sys
 import unittest
@@ -6,7 +7,29 @@ import numpy
 import pytest
 
 import dpnp as cupy
+from tests.helper import has_support_aspect64
 from tests.third_party.cupy import testing
+
+
+def skip_int_equality_before_numpy_1_20(names=("dtype",)):
+    """Require numpy/numpy#16841 or skip the equality check."""
+
+    def decorator(wrapped):
+        if numpy.lib.NumpyVersion(numpy.__version__) >= "1.20.0":
+            return wrapped
+
+        @functools.wraps(wrapped)
+        def wrapper(self, *args, **kwargs):
+            xp = kwargs["xp"]
+            dtypes = [kwargs[name] for name in names]
+            ret = wrapped(self, *args, **kwargs)
+            if any(numpy.issubdtype(dtype, numpy.integer) for dtype in dtypes):
+                ret = xp.zeros_like(ret)
+            return ret
+
+        return wrapper
+
+    return decorator
 
 
 @testing.gpu
@@ -60,7 +83,7 @@ class TestRanges(unittest.TestCase):
     def test_arange_no_dtype_int(self, xp):
         return xp.arange(1, 11, 2)
 
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_arange_no_dtype_float(self, xp):
         return xp.arange(1.0, 11.0, 2.0)
 
@@ -77,6 +100,14 @@ class TestRanges(unittest.TestCase):
     @testing.numpy_cupy_array_equal()
     def test_linspace2(self, xp, dtype):
         return xp.linspace(10, 0, 5, dtype=dtype)
+
+    @testing.for_all_dtypes(no_bool=True)
+    @testing.numpy_cupy_array_equal()
+    @skip_int_equality_before_numpy_1_20()
+    def test_linspace3(self, xp, dtype):
+        if xp.dtype(dtype).kind == "u":
+            pytest.skip()
+        return xp.linspace(-10, 8, 9, dtype=dtype)
 
     @testing.for_all_dtypes(no_bool=True)
     @testing.numpy_cupy_array_equal()
@@ -120,11 +151,11 @@ class TestRanges(unittest.TestCase):
         self.assertEqual(step, 2.5)
         return x
 
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_linspace_no_dtype_int(self, xp):
         return xp.linspace(0, 10, 50)
 
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_linspace_no_dtype_float(self, xp):
         return xp.linspace(0.0, 10.0, 50)
 
@@ -139,21 +170,23 @@ class TestRanges(unittest.TestCase):
 
     @testing.numpy_cupy_allclose()
     def test_linspace_float_overflow(self, xp):
-        return xp.linspace(0.0, sys.float_info.max / 5, 10, dtype=float)
+        dtype = cupy.default_float_type()
+        return xp.linspace(0.0, xp.finfo(dtype).max / 5, 10, dtype=dtype)
 
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose()
     def test_linspace_float_underflow(self, xp):
         # find minimum subnormal number
-        x = sys.float_info.min
+        dtype = cupy.default_float_type()
+        x = xp.finfo(dtype).min
         while x / 2 > 0:
             x /= 2
-        return xp.linspace(0.0, x, 10, dtype=float)
+        return xp.linspace(0.0, x, 10, dtype=dtype)
 
     @testing.with_requires("numpy>=1.16")
     @testing.for_all_dtypes_combination(
         names=("dtype_range", "dtype_out"), no_bool=True, no_complex=True
     )
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_linspace_array_start_stop(self, xp, dtype_range, dtype_out):
         start = xp.array([0, 120], dtype=dtype_range)
         stop = xp.array([100, 0], dtype=dtype_range)
@@ -163,7 +196,7 @@ class TestRanges(unittest.TestCase):
     @testing.for_all_dtypes_combination(
         names=("dtype_range", "dtype_out"), no_bool=True, no_complex=True
     )
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_linspace_mixed_start_stop(self, xp, dtype_range, dtype_out):
         start = 0.0
         if xp.dtype(dtype_range).kind in "u":
@@ -176,7 +209,7 @@ class TestRanges(unittest.TestCase):
     @testing.for_all_dtypes_combination(
         names=("dtype_range", "dtype_out"), no_bool=True, no_complex=True
     )
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_linspace_mixed_start_stop2(self, xp, dtype_range, dtype_out):
         if xp.dtype(dtype_range).kind in "u":
             start = xp.array([160, 120], dtype=dtype_range)
@@ -189,7 +222,7 @@ class TestRanges(unittest.TestCase):
     @testing.for_all_dtypes_combination(
         names=("dtype_range", "dtype_out"), no_bool=True, no_complex=True
     )
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_linspace_array_start_stop_axis1(self, xp, dtype_range, dtype_out):
         start = xp.array([0, 120], dtype=dtype_range)
         stop = xp.array([100, 0], dtype=dtype_range)
@@ -205,19 +238,17 @@ class TestRanges(unittest.TestCase):
 
     @testing.with_requires("numpy>=1.16")
     @testing.for_all_dtypes(no_bool=True)
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_linspace_start_stop_list(self, xp, dtype):
         start = [0, 0]
         stop = [100, 16]
         return xp.linspace(start, stop, num=50, dtype=dtype)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.for_all_dtypes(no_bool=True)
     @testing.numpy_cupy_allclose()
     def test_logspace(self, xp, dtype):
         return xp.logspace(0, 2, 5, dtype=dtype)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.for_all_dtypes(no_bool=True)
     @testing.numpy_cupy_allclose()
     def test_logspace2(self, xp, dtype):
@@ -228,29 +259,24 @@ class TestRanges(unittest.TestCase):
     def test_logspace_zero_num(self, xp, dtype):
         return xp.logspace(0, 2, 0, dtype=dtype)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.for_all_dtypes(no_bool=True)
     @testing.numpy_cupy_allclose()
     def test_logspace_one_num(self, xp, dtype):
         return xp.logspace(0, 2, 1, dtype=dtype)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.for_all_dtypes(no_bool=True)
     @testing.numpy_cupy_allclose()
     def test_logspace_no_endpoint(self, xp, dtype):
         return xp.logspace(0, 2, 5, dtype=dtype, endpoint=False)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_logspace_no_dtype_int(self, xp):
         return xp.logspace(0, 2)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_logspace_no_dtype_float(self, xp):
         return xp.logspace(0.0, 2.0)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.numpy_cupy_allclose()
     def test_logspace_float_args_with_int_dtype(self, xp):
         return xp.logspace(0.1, 2.1, 11, dtype=int)
@@ -260,11 +286,21 @@ class TestRanges(unittest.TestCase):
             with pytest.raises(ValueError):
                 xp.logspace(0, 10, -1)
 
-    @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @testing.for_all_dtypes(no_bool=True)
-    @testing.numpy_cupy_allclose()
+    @testing.numpy_cupy_allclose(rtol=1e-04)
     def test_logspace_base(self, xp, dtype):
         return xp.logspace(0, 2, 5, base=2.0, dtype=dtype)
+
+    # See #7946 and https://github.com/numpy/numpy/issues/24957
+    @testing.with_requires("numpy>=1.16, !=1.25.*, !=1.26.*")
+    @testing.for_all_dtypes_combination(
+        names=("dtype_range", "dtype_out"), no_bool=True, no_complex=True
+    )
+    @testing.numpy_cupy_allclose(rtol=1e-6, contiguous_check=False)
+    def test_logspace_array_start_stop_axis1(self, xp, dtype_range, dtype_out):
+        start = xp.array([0, 2], dtype=dtype_range)
+        stop = xp.array([2, 0], dtype=dtype_range)
+        return xp.logspace(start, stop, num=5, dtype=dtype_out, axis=1)
 
 
 @testing.parameterize(
@@ -323,7 +359,7 @@ class TestMgrid(unittest.TestCase):
     def test_mgrid1(self, xp):
         return xp.mgrid[-10:10]
 
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_mgrid2(self, xp):
         return xp.mgrid[-10:10:10j]
 
@@ -333,7 +369,7 @@ class TestMgrid(unittest.TestCase):
         y = xp.ones(10)[:, None]
         return xp.mgrid[x:y:10j]
 
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_mgrid4(self, xp):
         # check len(keys) > 1
         return xp.mgrid[-10:10:10j, -10:10:10j]
@@ -356,7 +392,7 @@ class TestOgrid(unittest.TestCase):
     def test_ogrid1(self, xp):
         return xp.ogrid[-10:10]
 
-    @testing.numpy_cupy_array_equal()
+    @testing.numpy_cupy_allclose(rtol=1e-4, type_check=has_support_aspect64())
     def test_ogrid2(self, xp):
         return xp.ogrid[-10:10:10j]
 

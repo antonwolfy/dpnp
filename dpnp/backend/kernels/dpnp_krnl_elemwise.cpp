@@ -92,7 +92,7 @@
             }                                                                  \
                                                                                \
             /* memory transfer optimization, use USM-host for temporary speeds \
-             * up tranfer to device */                                         \
+             * up transfer to device */                                        \
             using usm_host_allocatorT =                                        \
                 sycl::usm_allocator<shape_elem_type, sycl::usm::alloc::host>;  \
                                                                                \
@@ -233,15 +233,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_ARCCOS][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_acos_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_ARCCOS_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_acos_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOS_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_acos_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOS_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_acos_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOS_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_acos_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_ARCCOSH][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_acosh_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_ARCCOSH][eft_LNG][eft_LNG] = {
@@ -250,15 +241,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_acosh_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_ARCCOSH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_acosh_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_ARCCOSH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_acosh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOSH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_acosh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOSH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_acosh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCCOSH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_acosh_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_ARCSIN][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_asin_c_default<int32_t, double>};
@@ -269,15 +251,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_ARCSIN][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_asin_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_ARCSIN_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_asin_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSIN_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_asin_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSIN_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_asin_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSIN_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_asin_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_ARCSINH][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_asinh_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_ARCSINH][eft_LNG][eft_LNG] = {
@@ -286,15 +259,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_asinh_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_ARCSINH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_asinh_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_ARCSINH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_asinh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSINH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_asinh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSINH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_asinh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCSINH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_asinh_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_ARCTAN][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_atan_c_default<int32_t, double>};
@@ -305,15 +269,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_ARCTAN][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_atan_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_ARCTAN_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_atan_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTAN_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_atan_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTAN_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_atan_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTAN_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_atan_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_ARCTANH][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_atanh_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_ARCTANH][eft_LNG][eft_LNG] = {
@@ -323,15 +278,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_ARCTANH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_atanh_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_ARCTANH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_atanh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTANH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_atanh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTANH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_atanh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_ARCTANH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_atanh_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_CBRT][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_cbrt_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_CBRT][eft_LNG][eft_LNG] = {
@@ -340,15 +286,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_cbrt_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_CBRT][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_cbrt_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_CBRT_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_cbrt_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_CBRT_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_cbrt_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_CBRT_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_cbrt_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_CBRT_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_cbrt_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_CEIL][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_ceil_c_default<int32_t, double>};
@@ -453,15 +390,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_COSH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_cosh_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_COSH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_cosh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_COSH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_cosh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_COSH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_cosh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_COSH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_cosh_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_DEGREES][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_degrees_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_DEGREES][eft_LNG][eft_LNG] = {
@@ -472,9 +400,21 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_DBL, (void *)dpnp_degrees_c_default<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_DEGREES_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_degrees_c_ext<int32_t, double>};
+        get_default_floating_type(),
+        (void *)dpnp_degrees_c_ext<
+            int32_t, func_type_map_t::find_type<get_default_floating_type()>>,
+        get_default_floating_type<std::false_type>(),
+        (void *)dpnp_degrees_c_ext<
+            int32_t, func_type_map_t::find_type<
+                         get_default_floating_type<std::false_type>()>>};
     fmap[DPNPFuncName::DPNP_FN_DEGREES_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_degrees_c_ext<int64_t, double>};
+        get_default_floating_type(),
+        (void *)dpnp_degrees_c_ext<
+            int64_t, func_type_map_t::find_type<get_default_floating_type()>>,
+        get_default_floating_type<std::false_type>(),
+        (void *)dpnp_degrees_c_ext<
+            int64_t, func_type_map_t::find_type<
+                         get_default_floating_type<std::false_type>()>>};
     fmap[DPNPFuncName::DPNP_FN_DEGREES_EXT][eft_FLT][eft_FLT] = {
         eft_FLT, (void *)dpnp_degrees_c_ext<float, float>};
     fmap[DPNPFuncName::DPNP_FN_DEGREES_EXT][eft_DBL][eft_DBL] = {
@@ -489,15 +429,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_EXP2][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_exp2_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_EXP2_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_exp2_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXP2_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_exp2_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXP2_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_exp2_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_EXP2_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_exp2_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_EXP][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_exp_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_EXP][eft_LNG][eft_LNG] = {
@@ -507,15 +438,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_EXP][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_exp_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_EXP_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_exp_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXP_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_exp_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXP_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_exp_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_EXP_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_exp_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_EXPM1][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_expm1_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_EXPM1][eft_LNG][eft_LNG] = {
@@ -524,15 +446,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_expm1_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_EXPM1][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_expm1_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_EXPM1_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_expm1_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXPM1_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_expm1_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_EXPM1_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_expm1_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_EXPM1_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_expm1_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_FABS][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_fabs_c_default<int32_t, double>};
@@ -570,15 +483,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_LOG10][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_log10_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_LOG10_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_log10_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG10_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_log10_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG10_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_log10_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_LOG10_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_log10_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_LOG1P][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_log1p_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_LOG1P][eft_LNG][eft_LNG] = {
@@ -588,15 +492,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_LOG1P][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_log1p_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_LOG1P_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_log1p_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG1P_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_log1p_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG1P_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_log1p_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_LOG1P_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_log1p_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_LOG2][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_log2_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_LOG2][eft_LNG][eft_LNG] = {
@@ -605,15 +500,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_log2_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_LOG2][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_log2_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_LOG2_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_log2_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG2_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_log2_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_LOG2_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_log2_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_LOG2_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_log2_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_LOG][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_log_c_default<int32_t, double>};
@@ -634,9 +520,21 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_DBL, (void *)dpnp_radians_c_default<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_RADIANS_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_radians_c_ext<int32_t, double>};
+        get_default_floating_type(),
+        (void *)dpnp_radians_c_ext<
+            int32_t, func_type_map_t::find_type<get_default_floating_type()>>,
+        get_default_floating_type<std::false_type>(),
+        (void *)dpnp_radians_c_ext<
+            int32_t, func_type_map_t::find_type<
+                         get_default_floating_type<std::false_type>()>>};
     fmap[DPNPFuncName::DPNP_FN_RADIANS_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_radians_c_ext<int64_t, double>};
+        get_default_floating_type(),
+        (void *)dpnp_radians_c_ext<
+            int64_t, func_type_map_t::find_type<get_default_floating_type()>>,
+        get_default_floating_type<std::false_type>(),
+        (void *)dpnp_radians_c_ext<
+            int64_t, func_type_map_t::find_type<
+                         get_default_floating_type<std::false_type>()>>};
     fmap[DPNPFuncName::DPNP_FN_RADIANS_EXT][eft_FLT][eft_FLT] = {
         eft_FLT, (void *)dpnp_radians_c_ext<float, float>};
     fmap[DPNPFuncName::DPNP_FN_RADIANS_EXT][eft_DBL][eft_DBL] = {
@@ -659,15 +557,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_sinh_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_SINH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_sinh_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_SINH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_sinh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_SINH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_sinh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_SINH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_sinh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_SINH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_sinh_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_SQRT][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_sqrt_c_default<int32_t, double>};
@@ -693,15 +582,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_TAN][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_tan_c_default<double, double>};
 
-    fmap[DPNPFuncName::DPNP_FN_TAN_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_tan_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_TAN_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_tan_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_TAN_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_tan_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_TAN_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_tan_c_ext<double, double>};
-
     fmap[DPNPFuncName::DPNP_FN_TANH][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_tanh_c_default<int32_t, double>};
     fmap[DPNPFuncName::DPNP_FN_TANH][eft_LNG][eft_LNG] = {
@@ -710,15 +590,6 @@ static void func_map_init_elemwise_1arg_2type(func_map_t &fmap)
         eft_FLT, (void *)dpnp_tanh_c_default<float, float>};
     fmap[DPNPFuncName::DPNP_FN_TANH][eft_DBL][eft_DBL] = {
         eft_DBL, (void *)dpnp_tanh_c_default<double, double>};
-
-    fmap[DPNPFuncName::DPNP_FN_TANH_EXT][eft_INT][eft_INT] = {
-        eft_DBL, (void *)dpnp_tanh_c_ext<int32_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_TANH_EXT][eft_LNG][eft_LNG] = {
-        eft_DBL, (void *)dpnp_tanh_c_ext<int64_t, double>};
-    fmap[DPNPFuncName::DPNP_FN_TANH_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_tanh_c_ext<float, float>};
-    fmap[DPNPFuncName::DPNP_FN_TANH_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_tanh_c_ext<double, double>};
 
     fmap[DPNPFuncName::DPNP_FN_TRUNC][eft_INT][eft_INT] = {
         eft_DBL, (void *)dpnp_trunc_c_default<int32_t, double>};
@@ -844,7 +715,7 @@ constexpr auto dispatch_fmod_op(T elem1, T elem2)
             }                                                                  \
                                                                                \
             /* memory transfer optimization, use USM-host for temporary speeds \
-             * up tranfer to device */                                         \
+             * up transfer to device */                                        \
             using usm_host_allocatorT =                                        \
                 sycl::usm_allocator<shape_elem_type, sycl::usm::alloc::host>;  \
                                                                                \
@@ -1039,19 +910,6 @@ static void func_map_init_elemwise_1arg_1type(func_map_t &fmap)
     fmap[DPNPFuncName::DPNP_FN_FLATTEN][eft_C128][eft_C128] = {
         eft_C128, (void *)dpnp_copy_c_default<std::complex<double>>};
 
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_BLN][eft_BLN] = {
-        eft_BLN, (void *)dpnp_copy_c_ext<bool>};
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_INT][eft_INT] = {
-        eft_INT, (void *)dpnp_copy_c_ext<int32_t>};
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_LNG][eft_LNG] = {
-        eft_LNG, (void *)dpnp_copy_c_ext<int64_t>};
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_FLT][eft_FLT] = {
-        eft_FLT, (void *)dpnp_copy_c_ext<float>};
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_DBL][eft_DBL] = {
-        eft_DBL, (void *)dpnp_copy_c_ext<double>};
-    fmap[DPNPFuncName::DPNP_FN_FLATTEN_EXT][eft_C128][eft_C128] = {
-        eft_C128, (void *)dpnp_copy_c_ext<std::complex<double>>};
-
     fmap[DPNPFuncName::DPNP_FN_NEGATIVE][eft_INT][eft_INT] = {
         eft_INT, (void *)dpnp_negative_c_default<int32_t>};
     fmap[DPNPFuncName::DPNP_FN_NEGATIVE][eft_LNG][eft_LNG] = {
@@ -1236,7 +1094,7 @@ static void func_map_init_elemwise_1arg_1type(func_map_t &fmap)
             }                                                                  \
                                                                                \
             /* memory transfer optimization, use USM-host for temporary speeds \
-             * up tranfer to device */                                         \
+             * up transfer to device */                                        \
             using usm_host_allocatorT =                                        \
                 sycl::usm_allocator<shape_elem_type, sycl::usm::alloc::host>;  \
                                                                                \
@@ -1577,32 +1435,6 @@ static void func_map_elemwise_2arg_3type_core(func_map_t &fmap)
 template <DPNPFuncType FT1, DPNPFuncType... FTs>
 static void func_map_elemwise_2arg_3type_short_core(func_map_t &fmap)
 {
-    ((fmap[DPNPFuncName::DPNP_FN_ARCTAN2_EXT][FT1][FTs] =
-          {get_floating_res_type<FT1, FTs>(),
-           (void *)dpnp_arctan2_c_ext<
-               func_type_map_t::find_type<get_floating_res_type<FT1, FTs>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>,
-           get_floating_res_type<FT1, FTs, std::false_type>(),
-           (void *)dpnp_arctan2_c_ext<
-               func_type_map_t::find_type<
-                   get_floating_res_type<FT1, FTs, std::false_type>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>}),
-     ...);
-    ((fmap[DPNPFuncName::DPNP_FN_COPYSIGN_EXT][FT1][FTs] =
-          {get_floating_res_type<FT1, FTs>(),
-           (void *)dpnp_copysign_c_ext<
-               func_type_map_t::find_type<get_floating_res_type<FT1, FTs>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>,
-           get_floating_res_type<FT1, FTs, std::false_type>(),
-           (void *)dpnp_copysign_c_ext<
-               func_type_map_t::find_type<
-                   get_floating_res_type<FT1, FTs, std::false_type>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>}),
-     ...);
     ((fmap[DPNPFuncName::DPNP_FN_FMOD_EXT][FT1][FTs] =
           {get_floating_res_type<FT1, FTs, std::true_type, std::true_type>(),
            (void *)
@@ -1614,19 +1446,6 @@ static void func_map_elemwise_2arg_3type_short_core(func_map_t &fmap)
            (void *)dpnp_fmod_c_ext<
                func_type_map_t::find_type<get_floating_res_type<
                    FT1, FTs, std::false_type, std::true_type>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>}),
-     ...);
-    ((fmap[DPNPFuncName::DPNP_FN_HYPOT_EXT][FT1][FTs] =
-          {get_floating_res_type<FT1, FTs>(),
-           (void *)dpnp_hypot_c_ext<
-               func_type_map_t::find_type<get_floating_res_type<FT1, FTs>()>,
-               func_type_map_t::find_type<FT1>,
-               func_type_map_t::find_type<FTs>>,
-           get_floating_res_type<FT1, FTs, std::false_type>(),
-           (void *)dpnp_hypot_c_ext<
-               func_type_map_t::find_type<
-                   get_floating_res_type<FT1, FTs, std::false_type>()>,
                func_type_map_t::find_type<FT1>,
                func_type_map_t::find_type<FTs>>}),
      ...);
