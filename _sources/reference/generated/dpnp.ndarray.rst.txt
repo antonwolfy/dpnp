@@ -64,6 +64,9 @@
    .. automethod:: conjugate
 
 
+   .. automethod:: copy
+
+
    .. automethod:: cumsum
 
 
@@ -103,6 +106,15 @@
    .. automethod:: prod
 
 
+   .. automethod:: put
+
+
+   .. automethod:: ravel
+
+
+   .. automethod:: repeat
+
+
    .. automethod:: reshape
 
 
@@ -116,6 +128,9 @@
 
 
    .. automethod:: sum
+
+
+   .. automethod:: swapaxes
 
 
    .. automethod:: take
@@ -167,9 +182,11 @@
    .. autoattribute:: dtype
    .. autoattribute:: flags
    .. autoattribute:: flat
+   .. autoattribute:: imag
    .. autoattribute:: itemsize
    .. autoattribute:: nbytes
    .. autoattribute:: ndim
+   .. autoattribute:: real
    .. autoattribute:: shape
    .. autoattribute:: size
    .. autoattribute:: strides

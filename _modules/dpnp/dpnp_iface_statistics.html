@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
     <!-- Google tag (gtag.js) -->
@@ -12,18 +12,20 @@
     </script>
     
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dpnp.dpnp_iface_statistics &mdash; dpnp 0.12.1 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>dpnp.dpnp_iface_statistics &mdash; Data Parallel Extension for NumPy 0.11.1+405.gad90f66b documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=2c0fa8bd"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -38,10 +40,10 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            dpnp
+            Data Parallel Extension for NumPy
           </a>
               <div class="version">
-                0.12
+                0.11.1+405.gad90f66b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -67,7 +69,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">dpnp</a>
+          <a href="../../index.html">Data Parallel Extension for NumPy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -86,9 +88,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dpnp.dpnp_iface_statistics</h1><div class="highlight"><pre>
-<span></span><span class="c1"># cython: language_level=3</span>
-<span class="c1"># distutils: language = c++</span>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># *****************************************************************************</span>
 <span class="c1"># Copyright (c) 2016-2023, Intel Corporation</span>
 <span class="c1"># All rights reserved.</span>
@@ -130,7 +130,6 @@
 
 <span class="kn">import</span> <span class="nn">dpctl.tensor</span> <span class="k">as</span> <span class="nn">dpt</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">from</span> <span class="nn">numpy.core.numeric</span> <span class="kn">import</span> <span class="n">normalize_axis_tuple</span>
 
 <span class="kn">import</span> <span class="nn">dpnp</span>
 <span class="kn">from</span> <span class="nn">dpnp.dpnp_algo</span> <span class="kn">import</span> <span class="o">*</span>
@@ -150,13 +149,16 @@
     <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
     <span class="s2">&quot;median&quot;</span><span class="p">,</span>
     <span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ptp&quot;</span><span class="p">,</span>
     <span class="s2">&quot;nanvar&quot;</span><span class="p">,</span>
     <span class="s2">&quot;std&quot;</span><span class="p">,</span>
     <span class="s2">&quot;var&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
 
-<div class="viewcode-block" id="amax"><a class="viewcode-back" href="../../reference/generated/dpnp.amax.html#dpnp.amax">[docs]</a><span class="k">def</span> <span class="nf">amax</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="amax">
+<a class="viewcode-back" href="../../reference/generated/dpnp.amax.html#dpnp.amax">[docs]</a>
+<span class="k">def</span> <span class="nf">amax</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the maximum of an array or maximum along an axis.</span>
 
@@ -185,7 +187,10 @@
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="amin"><a class="viewcode-back" href="../../reference/generated/dpnp.amin.html#dpnp.amin">[docs]</a><span class="k">def</span> <span class="nf">amin</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="amin">
+<a class="viewcode-back" href="../../reference/generated/dpnp.amin.html#dpnp.amin">[docs]</a>
+<span class="k">def</span> <span class="nf">amin</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the minimum of an array or minimum along an axis.</span>
 
@@ -215,7 +220,10 @@
     <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="average"><a class="viewcode-back" href="../../reference/generated/dpnp.average.html#dpnp.average">[docs]</a><span class="k">def</span> <span class="nf">average</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">returned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="average">
+<a class="viewcode-back" href="../../reference/generated/dpnp.average.html#dpnp.average">[docs]</a>
+<span class="k">def</span> <span class="nf">average</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">returned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the weighted average along the specified axis.</span>
 
@@ -224,9 +232,9 @@
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
 <span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
-<span class="sd">    Prameters ``axis`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``weights`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``returned`` is supported only with default value ``False``.</span>
+<span class="sd">    Parameter `axis` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `weights` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `returned` is supported only with default value ``False``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -262,7 +270,10 @@
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">returned</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="bincount"><a class="viewcode-back" href="../../reference/generated/dpnp.bincount.html#dpnp.bincount">[docs]</a><span class="k">def</span> <span class="nf">bincount</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+<div class="viewcode-block" id="bincount">
+<a class="viewcode-back" href="../../reference/generated/dpnp.bincount.html#dpnp.bincount">[docs]</a>
+<span class="k">def</span> <span class="nf">bincount</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Count number of occurrences of each value in array of non-negative ints.</span>
 
@@ -284,7 +295,10 @@
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">bincount</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">minlength</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="correlate"><a class="viewcode-back" href="../../reference/generated/dpnp.correlate.html#dpnp.correlate">[docs]</a><span class="k">def</span> <span class="nf">correlate</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">):</span>
+
+<div class="viewcode-block" id="correlate">
+<a class="viewcode-back" href="../../reference/generated/dpnp.correlate.html#dpnp.correlate">[docs]</a>
+<span class="k">def</span> <span class="nf">correlate</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Cross-correlation of two 1-dimensional sequences.</span>
 
@@ -294,7 +308,7 @@
 <span class="sd">    -----------</span>
 <span class="sd">    Input arrays are supported as :obj:`dpnp.ndarray`.</span>
 <span class="sd">    Size and shape of input arrays are supported to be equal.</span>
-<span class="sd">    Prameters ``mode`` is supported only with default value ``&quot;valid``.</span>
+<span class="sd">    Parameter `mode` is supported only with default value ``&quot;valid``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -327,7 +341,10 @@
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">correlate</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="cov"><a class="viewcode-back" href="../../reference/generated/dpnp.cov.html#dpnp.cov">[docs]</a><span class="k">def</span> <span class="nf">cov</span><span class="p">(</span>
+
+<div class="viewcode-block" id="cov">
+<a class="viewcode-back" href="../../reference/generated/dpnp.cov.html#dpnp.cov">[docs]</a>
+<span class="k">def</span> <span class="nf">cov</span><span class="p">(</span>
     <span class="n">m</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">rowvar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -355,11 +372,11 @@
 <span class="sd">    Input array ``m`` is supported as :obj:`dpnp.ndarray`.</span>
 <span class="sd">    Dimension of input array ``m`` is limited by ``m.ndim &lt;= 2``.</span>
 <span class="sd">    Size and shape of input arrays are supported to be equal.</span>
-<span class="sd">    Prameters ``y`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``bias`` is supported only with default value ``False``.</span>
-<span class="sd">    Prameters ``ddof`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``fweights`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``aweights`` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `y` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `bias` is supported only with default value ``False``.</span>
+<span class="sd">    Parameter `ddof` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `fweights` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `aweights` is supported only with default value ``None``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -403,7 +420,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="histogram"><a class="viewcode-back" href="../../reference/generated/dpnp.histogram.html#dpnp.histogram">[docs]</a><span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="histogram">
+<a class="viewcode-back" href="../../reference/generated/dpnp.histogram.html#dpnp.histogram">[docs]</a>
+<span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the histogram of a dataset.</span>
 
@@ -440,72 +460,79 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="max"><a class="viewcode-back" href="../../reference/generated/dpnp.max.html#dpnp.max">[docs]</a><span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="max">
+<a class="viewcode-back" href="../../reference/generated/dpnp.max.html#dpnp.max">[docs]</a>
+<span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the maximum of an array or maximum along an axis.</span>
 
+<span class="sd">    For full documentation refer to :obj:`numpy.max`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : dpnp.ndarray</span>
+<span class="sd">        Maximum of `a`.</span>
+
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
-<span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
-<span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
+<span class="sd">    Input and output arrays are only supported as either :class:`dpnp.ndarray`</span>
+<span class="sd">    or :class:`dpctl.tensor.usm_ndarray`.</span>
+<span class="sd">    Parameters `where`, and `initial` are supported only with their default values.</span>
+<span class="sd">    Otherwise ``NotImplementedError`` exception will be raised.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    :obj:`dpnp.min` : Return the minimum of an array.</span>
+<span class="sd">    :obj:`dpnp.maximum` : Element-wise maximum of two arrays, propagates NaNs.</span>
+<span class="sd">    :obj:`dpnp.fmax` : Element-wise maximum of two arrays, ignores NaNs.</span>
+<span class="sd">    :obj:`dpnp.amax` : The maximum value of an array along a given axis, propagates NaNs.</span>
+<span class="sd">    :obj:`dpnp.nanmax` : The maximum value of an array along a given axis, ignores NaNs.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import dpnp as np</span>
 <span class="sd">    &gt;&gt;&gt; a = np.arange(4).reshape((2,2))</span>
-<span class="sd">    &gt;&gt;&gt; a.shape</span>
-<span class="sd">    (2, 2)</span>
-<span class="sd">    &gt;&gt;&gt; [i for i in a]</span>
-<span class="sd">    [0, 1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    array([[0, 1],</span>
+<span class="sd">           [2, 3]])</span>
 <span class="sd">    &gt;&gt;&gt; np.max(a)</span>
-<span class="sd">    3</span>
+<span class="sd">    array(3)</span>
+
+<span class="sd">    &gt;&gt;&gt; np.max(a, axis=0)   # Maxima along the first axis</span>
+<span class="sd">    array([2, 3])</span>
+<span class="sd">    &gt;&gt;&gt; np.max(a, axis=1)   # Maxima along the second axis</span>
+<span class="sd">    array([1, 3])</span>
+
+<span class="sd">    &gt;&gt;&gt; b = np.arange(5, dtype=float)</span>
+<span class="sd">    &gt;&gt;&gt; b[2] = np.NaN</span>
+<span class="sd">    &gt;&gt;&gt; np.max(b)</span>
+<span class="sd">    array(nan)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
-        <span class="c1"># Negative values in &#39;shape&#39; are not allowed in input array</span>
-        <span class="c1"># 306-322 check on negative and duplicate axis</span>
-        <span class="n">isaxis</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">isaxis</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">isaxis</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="k">break</span>
-                <span class="k">if</span> <span class="n">isaxis</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)):</span>
-                        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)):</span>
-                            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
-                                <span class="k">if</span> <span class="n">axis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">axis</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
-                                    <span class="n">isaxis</span> <span class="o">=</span> <span class="kc">False</span>
-                                    <span class="k">break</span>
+    <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;initial keyword argument is only supported by its default value.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;where keyword argument is only supported by its default value.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dpt_array</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_usm_ndarray</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp_array</span><span class="o">.</span><span class="n">_create_from_usm_ndarray</span><span class="p">(</span>
+            <span class="n">dpt</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dpt_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span>
+        <span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">isaxis</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">keepdims</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">initial</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">result_obj</span> <span class="o">=</span> <span class="n">dpnp_max</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">convert_single_elem_array_to_scalar</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">result</span>
-
-    <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_result_array</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="mean"><a class="viewcode-back" href="../../reference/generated/dpnp.mean.html#dpnp.mean">[docs]</a><span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="mean">
+<a class="viewcode-back" href="../../reference/generated/dpnp.mean.html#dpnp.mean">[docs]</a>
+<span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the arithmetic mean along the specified axis.</span>
 
@@ -513,16 +540,16 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    y : dpnp.ndarray</span>
+<span class="sd">    out : dpnp.ndarray</span>
 <span class="sd">        an array containing the mean values of the elements along the specified axis(axes).</span>
-<span class="sd">        If the input array is empty, an array containing a single NaN value is returned.</span>
+<span class="sd">        If the input is a zero-size array, an array containing NaN values is returned.</span>
 
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
-<span class="sd">    Parameters `x` is supported as either :class:`dpnp.ndarray`</span>
+<span class="sd">    Parameters `a` is supported as either :class:`dpnp.ndarray`</span>
 <span class="sd">    or :class:`dpctl.tensor.usm_ndarray`.</span>
-<span class="sd">    Parameters `keepdims`, `out` and `where` are supported with their default values.</span>
-<span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
+<span class="sd">    Parameter `where` is supported only with their default values.</span>
+<span class="sd">    Otherwise ``NotImplementedError`` exception will be raised.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
 <span class="sd">    See Also</span>
@@ -547,62 +574,27 @@
 <span class="sd">    array([2., 3.])</span>
 <span class="sd">    &gt;&gt;&gt; np.mean(a, axis=1)</span>
 <span class="sd">    array([1.5, 3.5])</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">keepdims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">elif</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">elif</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;where keyword argument is only supported by its default value.&quot;</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">inexact</span><span class="p">):</span>
-            <span class="n">dtype</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="n">dpt_array</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_usm_ndarray</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp_array</span><span class="o">.</span><span class="n">_create_from_usm_ndarray</span><span class="p">(</span>
+            <span class="n">dpt</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dpt_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">result</span>
 
-        <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dpnp</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
-                <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">dtype</span> <span class="k">else</span> <span class="n">result</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
-            <span class="n">axis</span> <span class="o">=</span> <span class="p">(</span><span class="n">axis</span><span class="p">,)</span>
-
-        <span class="n">axis</span> <span class="o">=</span> <span class="n">normalize_axis_tuple</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="s2">&quot;axis&quot;</span><span class="p">)</span>
-        <span class="n">res_sum</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
-
-        <span class="n">del_</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="k">for</span> <span class="n">axis_value</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">:</span>
-            <span class="n">del_</span> <span class="o">*=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis_value</span><span class="p">]</span>
-
-        <span class="c1"># performing an inplace operation on arrays of bool or integer types</span>
-        <span class="c1"># is not possible due to incompatible data types because</span>
-        <span class="c1"># it returns a floating value</span>
-        <span class="k">if</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">res_sum</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">inexact</span><span class="p">):</span>
-            <span class="n">res_sum</span> <span class="o">/=</span> <span class="n">del_</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_res_sum</span> <span class="o">=</span> <span class="n">res_sum</span> <span class="o">/</span> <span class="n">del_</span>
-            <span class="k">return</span> <span class="p">(</span>
-                <span class="n">new_res_sum</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">new_res_sum</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">dtype</span>
-                <span class="k">else</span> <span class="n">new_res_sum</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">res_sum</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="k">if</span> <span class="n">res_sum</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">dtype</span> <span class="k">else</span> <span class="n">res_sum</span>
-
-    <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span>
-        <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
-        <span class="n">x</span><span class="p">,</span>
-        <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
-        <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
-        <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span>
-        <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">,</span>
-        <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span>
-    <span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_result_array</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="median"><a class="viewcode-back" href="../../reference/generated/dpnp.median.html#dpnp.median">[docs]</a><span class="k">def</span> <span class="nf">median</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="median">
+<a class="viewcode-back" href="../../reference/generated/dpnp.median.html#dpnp.median">[docs]</a>
+<span class="k">def</span> <span class="nf">median</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the median along the specified axis.</span>
 
@@ -611,10 +603,10 @@
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
 <span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
-<span class="sd">    Prameters ``axis`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``overwrite_input`` is supported only with default value ``False``.</span>
-<span class="sd">    Prameters ``keepdims`` is supported only with default value ``False``.</span>
+<span class="sd">    Parameter `axis` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `out` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `overwrite_input` is supported only with default value ``False``.</span>
+<span class="sd">    Parameter `keepdims` is supported only with default value ``False``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -652,50 +644,125 @@
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">median</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">overwrite_input</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="min"><a class="viewcode-back" href="../../reference/generated/dpnp.min.html#dpnp.min">[docs]</a><span class="k">def</span> <span class="nf">min</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="min">
+<a class="viewcode-back" href="../../reference/generated/dpnp.min.html#dpnp.min">[docs]</a>
+<span class="k">def</span> <span class="nf">min</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the minimum along a given axis.</span>
+<span class="sd">    Return the minimum of an array or maximum along an axis.</span>
+
+<span class="sd">    For full documentation refer to :obj:`numpy.min`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : dpnp.ndarray</span>
+<span class="sd">        Minimum of `a`.</span>
 
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
-<span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
-<span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
+<span class="sd">    Input and output arrays are only supported as either :class:`dpnp.ndarray`</span>
+<span class="sd">    or :class:`dpctl.tensor.usm_ndarray`.</span>
+<span class="sd">    Parameters `where`, and `initial` are supported only with their default values.</span>
+<span class="sd">    Otherwise ``NotImplementedError`` exception will be raised.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    :obj:`dpnp.max` : Return the maximum of an array.</span>
+<span class="sd">    :obj:`dpnp.minimum` : Element-wise minimum of two arrays, propagates NaNs.</span>
+<span class="sd">    :obj:`dpnp.fmin` : Element-wise minimum of two arrays, ignores NaNs.</span>
+<span class="sd">    :obj:`dpnp.amin` : The minimum value of an array along a given axis, propagates NaNs.</span>
+<span class="sd">    :obj:`dpnp.nanmin` : The minimum value of an array along a given axis, ignores NaNs.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import dpnp as np</span>
 <span class="sd">    &gt;&gt;&gt; a = np.arange(4).reshape((2,2))</span>
-<span class="sd">    &gt;&gt;&gt; a.shape</span>
-<span class="sd">    (2, 2)</span>
-<span class="sd">    &gt;&gt;&gt; [i for i in a]</span>
-<span class="sd">    [0, 1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    array([[0, 1],</span>
+<span class="sd">           [2, 3]])</span>
 <span class="sd">    &gt;&gt;&gt; np.min(a)</span>
-<span class="sd">    0</span>
+<span class="sd">    array(0)</span>
+
+<span class="sd">    &gt;&gt;&gt; np.min(a, axis=0)   # Minima along the first axis</span>
+<span class="sd">    array([0, 1])</span>
+<span class="sd">    &gt;&gt;&gt; np.min(a, axis=1)   # Minima along the second axis</span>
+<span class="sd">    array([0, 2])</span>
+
+<span class="sd">    &gt;&gt;&gt; b = np.arange(5, dtype=float)</span>
+<span class="sd">    &gt;&gt;&gt; b[2] = np.NaN</span>
+<span class="sd">    &gt;&gt;&gt; np.min(b)</span>
+<span class="sd">    array(nan)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">x1_desc</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_dpnp_descriptor</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">copy_when_nondefault_queue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">x1_desc</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">keepdims</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">initial</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">elif</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">result_obj</span> <span class="o">=</span> <span class="n">dpnp_min</span><span class="p">(</span><span class="n">x1_desc</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">get_pyobj</span><span class="p">()</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">convert_single_elem_array_to_scalar</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;initial keyword argument is only supported by its default value.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;where keyword argument is only supported by its default value.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dpt_array</span> <span class="o">=</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_usm_ndarray</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">dpnp_array</span><span class="o">.</span><span class="n">_create_from_usm_ndarray</span><span class="p">(</span>
+            <span class="n">dpt</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dpt_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span>
+        <span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">result</span>
-
-    <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">get_result_array</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="nanvar"><a class="viewcode-back" href="../../reference/generated/dpnp.nanvar.html#dpnp.nanvar">[docs]</a><span class="k">def</span> <span class="nf">nanvar</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ptp">
+<a class="viewcode-back" href="../../reference/generated/dpnp.ptp.html#dpnp.ptp">[docs]</a>
+<span class="k">def</span> <span class="nf">ptp</span><span class="p">(</span>
+    <span class="n">a</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
+    <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Range of values (maximum - minimum) along an axis.</span>
+
+<span class="sd">    For full documentation refer to :obj:`numpy.ptp`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ptp : dpnp.ndarray</span>
+<span class="sd">        The range of a given array.</span>
+
+<span class="sd">    Limitations</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Input array is supported as :class:`dpnp.dpnp_array` or :class:`dpctl.tensor.usm_ndarray`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import dpnp as np</span>
+<span class="sd">    &gt;&gt;&gt; x = np.array([[4, 9, 2, 10],[6, 9, 7, 12]])</span>
+<span class="sd">    &gt;&gt;&gt; np.ptp(x, axis=1)</span>
+<span class="sd">    array([8, 6])</span>
+
+<span class="sd">    &gt;&gt;&gt; np.ptp(x, axis=0)</span>
+<span class="sd">    array([2, 0, 5, 2])</span>
+
+<span class="sd">    &gt;&gt;&gt; np.ptp(x)</span>
+<span class="sd">    array(10)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">dpnp</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span>
+        <span class="n">dpnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">),</span>
+        <span class="n">dpnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">),</span>
+        <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="nanvar">
+<a class="viewcode-back" href="../../reference/generated/dpnp.nanvar.html#dpnp.nanvar">[docs]</a>
+<span class="k">def</span> <span class="nf">nanvar</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the variance along the specified axis, while ignoring NaNs.</span>
 
@@ -704,10 +771,10 @@
 <span class="sd">    Limitations</span>
 <span class="sd">    -----------</span>
 <span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
-<span class="sd">    Prameters ``axis`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``dtype`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.</span>
+<span class="sd">    Parameter `axis` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `dtype` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `out` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `keepdims` is supported only with default value ``False``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -740,7 +807,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="std"><a class="viewcode-back" href="../../reference/generated/dpnp.std.html#dpnp.std">[docs]</a><span class="k">def</span> <span class="nf">std</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="std">
+<a class="viewcode-back" href="../../reference/generated/dpnp.std.html#dpnp.std">[docs]</a>
+<span class="k">def</span> <span class="nf">std</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the standard deviation along the specified axis.</span>
 
@@ -750,10 +820,10 @@
 <span class="sd">    -----------</span>
 <span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
 <span class="sd">    Size of input array is limited by ``a.size &gt; 0``.</span>
-<span class="sd">    Prameters ``axis`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``dtype`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.</span>
+<span class="sd">    Parameter `axis` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `dtype` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `out` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `keepdims` is supported only with default value ``False``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -798,7 +868,10 @@
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">std</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">ddof</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="var"><a class="viewcode-back" href="../../reference/generated/dpnp.var.html#dpnp.var">[docs]</a><span class="k">def</span> <span class="nf">var</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="var">
+<a class="viewcode-back" href="../../reference/generated/dpnp.var.html#dpnp.var">[docs]</a>
+<span class="k">def</span> <span class="nf">var</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the variance along the specified axis.</span>
 
@@ -808,10 +881,10 @@
 <span class="sd">    -----------</span>
 <span class="sd">    Input array is supported as :obj:`dpnp.ndarray`.</span>
 <span class="sd">    Size of input array is limited by ``a.size &gt; 0``.</span>
-<span class="sd">    Prameters ``axis`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``dtype`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``out`` is supported only with default value ``None``.</span>
-<span class="sd">    Prameters ``keepdims`` is supported only with default value ``numpy._NoValue``.</span>
+<span class="sd">    Parameter `axis` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `dtype` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `out` is supported only with default value ``None``.</span>
+<span class="sd">    Parameter `keepdims` is supported only with default value ``False``.</span>
 <span class="sd">    Otherwise the function will be executed sequentially on CPU.</span>
 <span class="sd">    Input array data types are limited by supported DPNP :ref:`Data types`.</span>
 
@@ -854,6 +927,7 @@
             <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">return</span> <span class="n">call_origin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">ddof</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
