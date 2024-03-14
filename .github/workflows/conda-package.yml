@@ -392,9 +392,98 @@ jobs:
           max_attempts: 5
           retry_on: any
           command: |
+            @echo on
             conda activate ${{ env.TEST_ENV_NAME }}
             cd ${{ env.tests-path }}
             python -m pytest -q -ra --disable-warnings -vv ${{ env.TEST_SCOPE }}
+
+  test_test_windows:
+    name: Test retry
+
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: cmd /C CALL {0}
+
+    strategy:
+      matrix:
+        python: ['3.10']
+
+    continue-on-error: false
+
+    env:
+      tests-path: 'tests'
+
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout DPNP repo
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python }}
+          miniconda-version: 'latest'
+          activate-environment: ${{ env.TEST_ENV_NAME }}
+
+      - name: Store conda paths as envs
+        run: |
+          @echo on
+          (echo CONDA_LIB_PATH=%CONDA_PREFIX%\Library\lib\) >> %GITHUB_ENV%
+          (echo CONDA_LIB_BIN_PATH=%CONDA_PREFIX%\Library\bin\) >> %GITHUB_ENV%
+
+      - name: Install opencl_rt
+        run: conda install opencl_rt -c intel --override-channels
+
+      - name: Install dpnp
+        run: |
+          @echo on
+          conda install dpnp pytest python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+        env:
+          TEST_CHANNELS: '-c dppy/label/dev ${{ env.CHANNELS }}'
+
+      - name: List installed packages
+        run: conda list
+
+      - name: Activate OCL CPU RT
+        shell: pwsh
+        run: |
+          $script_path="$env:CONDA_PREFIX\Scripts\set-intel-ocl-icd-registry.ps1"
+          &$script_path
+          # Check the variable assisting OpenCL CPU driver to find TBB DLLs which are not located where it expects them by default
+          $cl_cfg="$env:CONDA_PREFIX\Library\lib\cl.cfg"
+          Get-Content -Tail 5 -Path $cl_cfg
+
+      - name: Create empty temporary directory to run tests from
+        run: >-
+          mkdir "${{ env.tests-path }}\test_tmp"
+
+      - name: List content of workdir folder
+        run: dir "${{ env.tests-path }}"
+
+      - name: Run tests
+        id: run_tests_win
+        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
+        with:
+          shell: cmd
+          timeout_minutes: 15
+          max_attempts: 5
+          retry_on: any
+          command: >-
+            conda activate ${{ env.TEST_ENV_NAME }}
+            && conda list
+            & cd ${{ env.tests-path }}\test_tmp
+            & dir .
+            & python -c "import dpnp, dpctl; dpctl.lsplatform()"
+            && python -m pytest -q -ra --disable-warnings -vv ${{ env.tests-path }}\test_arraycreation.py
 
   upload:
     name: Upload ['${{ matrix.os }}', python='${{ matrix.python }}']
