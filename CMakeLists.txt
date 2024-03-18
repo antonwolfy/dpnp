@@ -95,6 +95,8 @@ if(WIN32)
         "${CMAKE_CXX_FLAGS_DEBUG} ${WARNING_FLAGS} ${SDL_FLAGS} -O0 -g1 -DDEBUG"
     )
     set(DPNP_LDFLAGS "/NXCompat;/DynamicBase")
+
+    set(CMAKE_LINKER lld-link.exe)
 elseif(UNIX)
     string(CONCAT WARNING_FLAGS
         "-Wall "
