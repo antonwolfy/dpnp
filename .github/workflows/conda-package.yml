@@ -98,6 +98,12 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      - name: Search for missing VS libs
+        if: runner.os == 'Windows'
+        run: |
+          where /r "C:\hostedtoolcache" msvcrtd.lib
+          where /r "C:\hostedtoolcache" kernel32.lib
+
       - name: Checkout DPNP repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
