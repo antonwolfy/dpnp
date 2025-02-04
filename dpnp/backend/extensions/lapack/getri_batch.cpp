@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +23,13 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
 
+#include <stdexcept>
+
 #include <pybind11/pybind11.h>
 
 // dpctl tensor headers
 #include "utils/memory_overlap.hpp"
+#include "utils/sycl_alloc_utils.hpp"
 #include "utils/type_utils.hpp"
 
 #include "getri.hpp"
@@ -34,20 +37,14 @@
 
 #include "dpnp_utils.hpp"
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 namespace mkl_lapack = oneapi::mkl::lapack;
 namespace py = pybind11;
 namespace type_utils = dpctl::tensor::type_utils;
 
 typedef sycl::event (*getri_batch_impl_fn_ptr_t)(
-    sycl::queue,
+    sycl::queue &,
     std::int64_t,
     char *,
     std::int64_t,
@@ -63,7 +60,7 @@ static getri_batch_impl_fn_ptr_t
     getri_batch_dispatch_vector[dpctl_td_ns::num_types];
 
 template <typename T>
-static sycl::event getri_batch_impl(sycl::queue exec_q,
+static sycl::event getri_batch_impl(sycl::queue &exec_q,
                                     std::int64_t n,
                                     char *in_a,
                                     std::int64_t lda,
@@ -156,7 +153,7 @@ static sycl::event getri_batch_impl(sycl::queue exec_q,
     if (is_exception_caught) // an unexpected error occurs
     {
         if (scratchpad != nullptr) {
-            sycl::free(scratchpad, exec_q);
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, exec_q);
         }
 
         throw std::runtime_error(error_msg.str());
@@ -165,16 +162,18 @@ static sycl::event getri_batch_impl(sycl::queue exec_q,
     sycl::event clean_up_event = exec_q.submit([&](sycl::handler &cgh) {
         cgh.depends_on(getri_batch_event);
         auto ctx = exec_q.get_context();
-        cgh.host_task([ctx, scratchpad]() { sycl::free(scratchpad, ctx); });
+        cgh.host_task([ctx, scratchpad]() {
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, ctx);
+        });
     });
     host_task_events.push_back(clean_up_event);
     return getri_batch_event;
 }
 
 std::pair<sycl::event, sycl::event>
-    getri_batch(sycl::queue exec_q,
-                dpctl::tensor::usm_ndarray a_array,
-                dpctl::tensor::usm_ndarray ipiv_array,
+    getri_batch(sycl::queue &exec_q,
+                const dpctl::tensor::usm_ndarray &a_array,
+                const dpctl::tensor::usm_ndarray &ipiv_array,
                 py::list dev_info,
                 std::int64_t n,
                 std::int64_t stride_a,
@@ -287,7 +286,4 @@ void init_getri_batch_dispatch_vector(void)
         contig;
     contig.populate_dispatch_vector(getri_batch_dispatch_vector);
 }
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+} // namespace dpnp::extensions::lapack

@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +30,12 @@
 
 #include <dpctl4pybind11.hpp>
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 extern std::pair<sycl::event, sycl::event>
-    getri_batch(sycl::queue exec_q,
-                dpctl::tensor::usm_ndarray a_array,
-                dpctl::tensor::usm_ndarray ipiv_array,
+    getri_batch(sycl::queue &exec_q,
+                const dpctl::tensor::usm_ndarray &a_array,
+                const dpctl::tensor::usm_ndarray &ipiv_array,
                 py::list dev_info,
                 std::int64_t n,
                 std::int64_t stride_a,
@@ -50,7 +44,4 @@ extern std::pair<sycl::event, sycl::event>
                 const std::vector<sycl::event> &depends = {});
 
 extern void init_getri_batch_dispatch_vector(void);
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+} // namespace dpnp::extensions::lapack

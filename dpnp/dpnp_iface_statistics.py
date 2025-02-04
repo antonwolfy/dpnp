@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,33 +37,32 @@ it contains:
 
 """
 
+import math
 
 import dpctl.tensor as dpt
+import dpctl.tensor._tensor_elementwise_impl as ti
+import dpctl.utils as dpu
 import numpy
-from numpy.core.numeric import normalize_axis_index
+from dpctl.tensor._numpy_helper import normalize_axis_index
 
 import dpnp
 
 # pylint: disable=no-name-in-module
-from .dpnp_algo import (
-    dpnp_correlate,
-    dpnp_median,
+import dpnp.backend.extensions.statistics._statistics_impl as statistics_ext
+from dpnp.dpnp_utils.dpnp_utils_common import (
+    result_type_for_device,
+    to_supported_dtypes,
 )
-from .dpnp_array import dpnp_array
-from .dpnp_utils import (
-    call_origin,
-    get_usm_allocations,
-)
+
+from .dpnp_utils import call_origin, get_usm_allocations
 from .dpnp_utils.dpnp_utils_reduction import dpnp_wrap_reduction_call
-from .dpnp_utils.dpnp_utils_statistics import (
-    dpnp_cov,
-)
+from .dpnp_utils.dpnp_utils_statistics import dpnp_cov, dpnp_median
 
 __all__ = [
     "amax",
     "amin",
     "average",
-    "bincount",
+    "corrcoef",
     "correlate",
     "cov",
     "max",
@@ -90,7 +89,8 @@ def _count_reduce_items(arr, axis, where=True):
         operation must be counted. If a tuple of unique integers is given,
         the items are counted over multiple axes. If ``None``, the variance
         is computed over the entire array.
-        Default: `None`.
+
+        Default: ``None``.
 
     Returns
     -------
@@ -112,17 +112,47 @@ def _count_reduce_items(arr, axis, where=True):
         for ax in axis:
             items *= arr.shape[normalize_axis_index(ax, arr.ndim)]
         items = dpnp.intp(items)
-    else:
+    else:  # pragma: no cover
         raise NotImplementedError(
             "where keyword argument is only supported with its default value."
         )
     return items
 
 
-def _get_comparison_res_dt(a, _dtype, _out):
-    """Get a data type used by dpctl for result array in comparison function."""
+def _divide_by_scalar(a, v):
+    """
+    Divide input array by a scalar.
 
-    return a.dtype
+    The division is implemented through dedicated ``ti._divide_by_scalar``
+    function which has a better performance comparing to standard ``divide``
+    function, because there is no need to have internal call of ``asarray``
+    for the denominator `v` and so it avoids allocating extra device memory.
+
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray}
+        Input array.
+    v : scalar
+        The scalar denominator.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        An array containing the result of division.
+
+    """
+
+    usm_a = dpnp.get_usm_ndarray(a)
+    queue = usm_a.sycl_queue
+    _manager = dpu.SequentialOrderManager[queue]
+    dep_evs = _manager.submitted_events
+
+    # pylint: disable=protected-access
+    ht_ev, div_ev = ti._divide_by_scalar(
+        src=usm_a, scalar=v, dst=usm_a, sycl_queue=queue, depends=dep_evs
+    )
+    _manager.add_event_pair(ht_ev, div_ev)
+    return a
 
 
 def amax(a, axis=None, out=None, keepdims=False, initial=None, where=True):
@@ -188,16 +218,18 @@ def average(a, axis=None, weights=None, returned=False, *, keepdims=False):
 
         The only constraint on `weights` is that `sum(weights)` must not be 0.
     returned : {bool}, optional
-        Default is ``False``. If ``True``, the tuple (`average`,
-        `sum_of_weights`) is returned, otherwise only the average is returned.
-        If `weights=None`, `sum_of_weights` is equivalent to the number of
-        elements over which the average is taken.
+        If ``True``, the tuple (`average`, `sum_of_weights`) is returned,
+        otherwise only the average is returned. If `weights=None`,
+        `sum_of_weights` is equivalent to the number of elements over which
+        the average is taken.
+        Default: ``False``.
     keepdims : {None, bool}, optional
         If ``True``, the reduced axes (dimensions) are included in the result
         as singleton dimensions, so that the returned array remains
         compatible with the input array according to Array Broadcasting
         rules. Otherwise, if ``False``, the reduced axes are not included in
-        the returned array. Default: ``False``.
+        the returned array.
+        Default: ``False``.
 
     Returns
     -------
@@ -257,60 +289,61 @@ def average(a, axis=None, weights=None, returned=False, *, keepdims=False):
     """
 
     dpnp.check_supported_arrays_type(a)
+    usm_type, exec_q = get_usm_allocations([a, weights])
+
     if weights is None:
         avg = dpnp.mean(a, axis=axis, keepdims=keepdims)
         scl = dpnp.asanyarray(
             avg.dtype.type(a.size / avg.size),
-            usm_type=a.usm_type,
-            sycl_queue=a.sycl_queue,
+            usm_type=usm_type,
+            sycl_queue=exec_q,
         )
     else:
-        if not isinstance(weights, (dpnp_array, dpt.usm_ndarray)):
-            wgt = dpnp.asanyarray(
-                weights, usm_type=a.usm_type, sycl_queue=a.sycl_queue
+        if not dpnp.is_supported_array_type(weights):
+            weights = dpnp.asarray(
+                weights, usm_type=usm_type, sycl_queue=exec_q
             )
-        else:
-            get_usm_allocations([a, weights])
-            wgt = weights
 
-        if not dpnp.issubdtype(a.dtype, dpnp.inexact):
+        a_dtype = a.dtype
+        if not dpnp.issubdtype(a_dtype, dpnp.inexact):
             default_dtype = dpnp.default_float_type(a.device)
-            result_dtype = dpnp.result_type(a.dtype, wgt.dtype, default_dtype)
+            res_dtype = dpnp.result_type(a_dtype, weights.dtype, default_dtype)
         else:
-            result_dtype = dpnp.result_type(a.dtype, wgt.dtype)
+            res_dtype = dpnp.result_type(a_dtype, weights.dtype)
 
         # Sanity checks
-        if a.shape != wgt.shape:
+        wgt_shape = weights.shape
+        a_shape = a.shape
+        if a_shape != wgt_shape:
             if axis is None:
                 raise TypeError(
                     "Axis must be specified when shapes of input array and "
                     "weights differ."
                 )
-            if wgt.ndim != 1:
+            if weights.ndim != 1:
                 raise TypeError(
                     "1D weights expected when shapes of input array and "
                     "weights differ."
                 )
-            if wgt.shape[0] != a.shape[axis]:
+            if wgt_shape[0] != a_shape[axis]:
                 raise ValueError(
                     "Length of weights not compatible with specified axis."
                 )
 
-            # setup wgt to broadcast along axis
-            wgt = dpnp.broadcast_to(wgt, (a.ndim - 1) * (1,) + wgt.shape)
-            wgt = wgt.swapaxes(-1, axis)
+            # setup weights to broadcast along axis
+            weights = dpnp.broadcast_to(
+                weights, (a.ndim - 1) * (1,) + wgt_shape
+            )
+            weights = weights.swapaxes(-1, axis)
 
-        scl = wgt.sum(axis=axis, dtype=result_dtype, keepdims=keepdims)
+        scl = weights.sum(axis=axis, dtype=res_dtype, keepdims=keepdims)
         if dpnp.any(scl == 0.0):
             raise ZeroDivisionError("Weights sum to zero, can't be normalized")
 
-        # result_datatype
-        avg = (
-            dpnp.multiply(a, wgt).sum(
-                axis=axis, dtype=result_dtype, keepdims=keepdims
-            )
-            / scl
+        avg = dpnp.multiply(a, weights).sum(
+            axis=axis, dtype=res_dtype, keepdims=keepdims
         )
+        avg /= scl
 
     if returned:
         if scl.shape != avg.shape:
@@ -319,69 +352,376 @@ def average(a, axis=None, weights=None, returned=False, *, keepdims=False):
     return avg
 
 
-def bincount(x1, weights=None, minlength=0):
+def corrcoef(x, y=None, rowvar=True, *, dtype=None):
     """
-    Count number of occurrences of each value in array of non-negative integers.
+    Return Pearson product-moment correlation coefficients.
 
-    For full documentation refer to :obj:`numpy.bincount`.
+    For full documentation refer to :obj:`numpy.corrcoef`.
+
+    Parameters
+    ----------
+    x : {dpnp.ndarray, usm_ndarray}
+        A 1-D or 2-D array containing multiple variables and observations.
+        Each row of `x` represents a variable, and each column a single
+        observation of all those variables. Also see `rowvar` below.
+    y : {None, dpnp.ndarray, usm_ndarray}, optional
+        An additional set of variables and observations. `y` has the same
+        shape as `x`.
+        Default: ``None``.
+    rowvar : {bool}, optional
+        If `rowvar` is ``True``, then each row represents a variable,
+        with observations in the columns. Otherwise, the relationship
+        is transposed: each column represents a variable, while the rows
+        contain observations.
+        Default: ``True``.
+    dtype : {None, dtype}, optional
+        Data-type of the result.
+        Default: ``None``.
+
+    Returns
+    -------
+    R : {dpnp.ndarray}
+        The correlation coefficient matrix of the variables.
 
     See Also
     --------
-    :obj:`dpnp.unique` : Find the unique elements of an array.
+    :obj:`dpnp.cov` : Covariance matrix.
 
     Examples
     --------
+    In this example we generate two random arrays, ``xarr`` and ``yarr``, and
+    compute the row-wise and column-wise Pearson correlation coefficients,
+    ``R``. Since `rowvar` is true by default, we first find the row-wise
+    Pearson correlation coefficients between the variables of ``xarr``.
+
     >>> import dpnp as np
-    >>> res = np.bincount(np.arange(5))
-    >>> print(res)
-    [1, 1, 1, 1, 1]
+    >>> np.random.seed(123)
+    >>> xarr = np.random.rand(3, 3).astype(np.float32)
+    >>> xarr
+    array([[7.2858386e-17, 2.2066992e-02, 3.9520904e-01],
+           [4.8012391e-01, 5.9377134e-01, 4.5147297e-01],
+           [9.0728188e-01, 9.9387854e-01, 5.8399546e-01]], dtype=float32)
+    >>> R1 = np.corrcoef(xarr)
+    >>> R1
+    array([[ 0.99999994, -0.6173796 , -0.9685411 ],
+           [-0.6173796 ,  1.        ,  0.7937219 ],
+           [-0.9685411 ,  0.7937219 ,  0.9999999 ]], dtype=float32)
 
+    If we add another set of variables and observations ``yarr``, we can
+    compute the row-wise Pearson correlation coefficients between the
+    variables in ``xarr`` and ``yarr``.
+
+    >>> yarr = np.random.rand(3, 3).astype(np.float32)
+    >>> yarr
+    array([[0.17615308, 0.65354985, 0.15716429],
+           [0.09373496, 0.2123185 , 0.84086883],
+           [0.9011005 , 0.45206687, 0.00225109]], dtype=float32)
+    >>> R2 = np.corrcoef(xarr, yarr)
+    >>> R2
+    array([[ 0.99999994, -0.6173796 , -0.968541  , -0.48613155,  0.9951523 ,
+            -0.8900264 ],
+           [-0.6173796 ,  1.        ,  0.7937219 ,  0.9875833 , -0.53702235,
+             0.19083664],
+           [-0.968541  ,  0.7937219 ,  0.9999999 ,  0.6883078 , -0.9393724 ,
+             0.74857277],
+           [-0.48613152,  0.9875833 ,  0.6883078 ,  0.9999999 , -0.39783284,
+             0.0342579 ],
+           [ 0.9951523 , -0.53702235, -0.9393725 , -0.39783284,  0.99999994,
+            -0.9305482 ],
+           [-0.89002645,  0.19083665,  0.7485727 ,  0.0342579 , -0.9305482 ,
+             1.        ]], dtype=float32)
+
+    Finally if we use the option ``rowvar=False``, the columns are now
+    being treated as the variables and we will find the column-wise Pearson
+    correlation coefficients between variables in ``xarr`` and ``yarr``.
+
+    >>> R3 = np.corrcoef(xarr, yarr, rowvar=False)
+    >>> R3
+    array([[ 1.        ,  0.9724453 , -0.9909503 ,  0.8104691 , -0.46436927,
+            -0.1643624 ],
+           [ 0.9724453 ,  1.        , -0.9949381 ,  0.6515728 , -0.6580445 ,
+             0.07012729],
+           [-0.99095035, -0.994938  ,  1.        , -0.72450536,  0.5790461 ,
+             0.03047091],
+           [ 0.8104691 ,  0.65157276, -0.72450536,  1.        ,  0.14243561,
+            -0.71102554],
+           [-0.4643693 , -0.6580445 ,  0.57904613,  0.1424356 ,  0.99999994,
+            -0.79727215],
+           [-0.1643624 ,  0.07012729,  0.03047091, -0.7110255 , -0.7972722 ,
+             0.99999994]], dtype=float32)
     """
 
-    return call_origin(numpy.bincount, x1, weights=weights, minlength=minlength)
+    out = dpnp.cov(x, y, rowvar, dtype=dtype)
+    if out.ndim == 0:
+        # scalar covariance
+        # nan if incorrect value (nan, inf, 0), 1 otherwise
+        return out / out
+
+    d = dpnp.diag(out)
+
+    stddev = dpnp.sqrt(d.real)
+    out /= stddev[:, None]
+    out /= stddev[None, :]
+
+    # Clip real and imaginary parts to [-1, 1]. This does not guarantee
+    # abs(a[i,j]) <= 1 for complex arrays, but is the best we can do without
+    # excessive work.
+    dpnp.clip(out.real, -1, 1, out=out.real)
+    if dpnp.iscomplexobj(out):
+        dpnp.clip(out.imag, -1, 1, out=out.imag)
+
+    return out
 
 
-def correlate(x1, x2, mode="valid"):
-    """
+def _get_padding(a_size, v_size, mode):
+    assert v_size <= a_size
+
+    if mode == "valid":
+        l_pad, r_pad = 0, 0
+    elif mode == "same":
+        l_pad = v_size // 2
+        r_pad = v_size - l_pad - 1
+    elif mode == "full":
+        l_pad, r_pad = v_size - 1, v_size - 1
+    else:  # pragma: no cover
+        raise ValueError(
+            f"Unknown mode: {mode}. Only 'valid', 'same', 'full' are supported."
+        )
+
+    return l_pad, r_pad
+
+
+def _choose_conv_method(a, v, rdtype):
+    assert a.size >= v.size
+    if rdtype == dpnp.bool:
+        # to avoid accuracy issues
+        return "direct"
+
+    if v.size < 10**4 or a.size < 10**4:
+        # direct method is faster for small arrays
+        return "direct"
+
+    if dpnp.issubdtype(rdtype, dpnp.integer):
+        max_a = int(dpnp.max(dpnp.abs(a)))
+        sum_v = int(dpnp.sum(dpnp.abs(v)))
+        max_value = int(max_a * sum_v)
+
+        default_float = dpnp.default_float_type(a.sycl_device)
+        if max_value > 2 ** numpy.finfo(default_float).nmant - 1:
+            # can't represent the result in the default float type
+            return "direct"  # pragma: no covers
+
+    if dpnp.issubdtype(rdtype, dpnp.number):
+        return "fft"
+
+    raise ValueError(f"Unsupported dtype: {rdtype}")  # pragma: no cover
+
+
+def _run_native_sliding_dot_product1d(a, v, l_pad, r_pad, rdtype):
+    queue = a.sycl_queue
+    device = a.sycl_device
+
+    supported_types = statistics_ext.sliding_dot_product1d_dtypes()
+    supported_dtype = to_supported_dtypes(rdtype, supported_types, device)
+
+    if supported_dtype is None:  # pragma: no cover
+        raise ValueError(
+            f"function does not support input types "
+            f"({a.dtype.name}, {v.dtype.name}), "
+            "and the inputs could not be coerced to any "
+            f"supported types. List of supported types: "
+            f"{[st.name for st in supported_types]}"
+        )
+
+    a_casted = dpnp.asarray(a, dtype=supported_dtype, order="C")
+    v_casted = dpnp.asarray(v, dtype=supported_dtype, order="C")
+
+    usm_type = dpu.get_coerced_usm_type([a_casted.usm_type, v_casted.usm_type])
+    out_size = l_pad + r_pad + a_casted.size - v_casted.size + 1
+    # out type is the same as input type
+    out = dpnp.empty_like(a_casted, shape=out_size, usm_type=usm_type)
+
+    a_usm = dpnp.get_usm_ndarray(a_casted)
+    v_usm = dpnp.get_usm_ndarray(v_casted)
+    out_usm = dpnp.get_usm_ndarray(out)
+
+    _manager = dpu.SequentialOrderManager[queue]
+
+    mem_ev, corr_ev = statistics_ext.sliding_dot_product1d(
+        a_usm,
+        v_usm,
+        out_usm,
+        l_pad,
+        r_pad,
+        depends=_manager.submitted_events,
+    )
+    _manager.add_event_pair(mem_ev, corr_ev)
+
+    return out
+
+
+def _convolve_fft(a, v, l_pad, r_pad, rtype):
+    assert a.size >= v.size
+    assert l_pad < v.size
+
+    # +1 is needed to avoid circular convolution
+    padded_size = a.size + r_pad + 1
+    fft_size = 2 ** int(math.ceil(math.log2(padded_size)))
+
+    af = dpnp.fft.fft(a, fft_size)  # pylint: disable=no-member
+    vf = dpnp.fft.fft(v, fft_size)  # pylint: disable=no-member
+
+    r = dpnp.fft.ifft(af * vf)  # pylint: disable=no-member
+    if dpnp.issubdtype(rtype, dpnp.floating):
+        r = r.real
+    elif dpnp.issubdtype(rtype, dpnp.integer) or rtype == dpnp.bool:
+        r = r.real.round()
+
+    start = v.size - 1 - l_pad
+    end = padded_size - 1
+
+    return r[start:end]
+
+
+def correlate(a, v, mode="valid", method="auto"):
+    r"""
     Cross-correlation of two 1-dimensional sequences.
+
+    This function computes the correlation as generally defined in signal
+    processing texts [1]_:
+
+    .. math:: c_k = \sum_n a_{n+k} \cdot \overline{v}_n
+
+    with `a` and `v` sequences being zero-padded where necessary and
+    :math:`\overline v` denoting complex conjugation.
 
     For full documentation refer to :obj:`numpy.correlate`.
 
-    Limitations
-    -----------
-    Input arrays are supported as :obj:`dpnp.ndarray`.
-    Size and shape of input arrays are supported to be equal.
-    Parameter `mode` is supported only with default value ``"valid``.
-    Otherwise the function will be executed sequentially on CPU.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray}
+        First input array.
+    v : {dpnp.ndarray, usm_ndarray}
+        Second input array.
+    mode : {"valid", "same", "full"}, optional
+        Refer to the :obj:`dpnp.convolve` docstring. Note that the default
+        is ``"valid"``, unlike :obj:`dpnp.convolve`, which uses ``"full"``.
+
+        Default: ``"valid"``.
+    method : {"auto", "direct", "fft"}, optional
+        Specifies which method to use to calculate the correlation:
+
+        - `"direct"` : The correlation is determined directly from sums.
+        - `"fft"` : The Fourier Transform is used to perform the calculations.
+          This method is faster for long sequences but can have accuracy issues.
+        - `"auto"` : Automatically chooses direct or Fourier method based on
+          an estimate of which is faster.
+
+        Note: Use of the FFT convolution on input containing NAN or INF
+        will lead to the entire output being NAN or INF.
+        Use method='direct' when your input contains NAN or INF values.
+
+        Default: ``"auto"``.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Discrete cross-correlation of `a` and `v`.
+
+    Notes
+    -----
+    The definition of correlation above is not unique and sometimes
+    correlation may be defined differently. Another common definition is [1]_:
+
+    .. math:: c'_k = \sum_n a_{n} \cdot \overline{v_{n+k}}
+
+    which is related to :math:`c_k` by :math:`c'_k = c_{-k}`.
+
+    References
+    ----------
+    .. [1] Wikipedia, "Cross-correlation",
+           https://en.wikipedia.org/wiki/Cross-correlation
 
     See Also
     --------
-    :obj:`dpnp.convolve` : Discrete, linear convolution of
-                           two one-dimensional sequences.
+    :obj:`dpnp.convolve` : Discrete, linear convolution of two one-dimensional
+                        sequences.
+
 
     Examples
     --------
     >>> import dpnp as np
-    >>> x = np.correlate([1, 2, 3], [0, 1, 0.5])
-    >>> [i for i in x]
-    [3.5]
+    >>> a = np.array([1, 2, 3], dtype=np.float32)
+    >>> v = np.array([0, 1, 0.5], dtype=np.float32)
+    >>> np.correlate(a, v)
+    array([3.5], dtype=float32)
+    >>> np.correlate(a, v, "same")
+    array([2. , 3.5, 3. ], dtype=float32)
+    >>> np.correlate([a, v, "full")
+    array([0.5, 2. , 3.5, 3. , 0. ], dtype=float32)
+
+    Using complex sequences:
+
+    >>> ac = np.array([1+1j, 2, 3-1j], dtype=np.complex64)
+    >>> vc = np.array([0, 1, 0.5j], dtype=np.complex64)
+    >>> np.correlate(ac, vc, 'full')
+    array([0.5-0.5j, 1. +0.j , 1.5-1.5j, 3. -1.j , 0. +0.j ], dtype=complex64)
+
+    Note that you get the time reversed, complex conjugated result
+    (:math:`\overline{c_{-k}}`) when the two input sequences `a` and `v` change
+    places:
+
+    >>> np.correlate(vc, ac, 'full')
+    array([0. +0.j , 3. +1.j , 1.5+1.5j, 1. +0.j , 0.5+0.5j], dtype=complex64)
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    x2_desc = dpnp.get_dpnp_descriptor(x2, copy_when_nondefault_queue=False)
-    if x1_desc and x2_desc:
-        if x1_desc.size != x2_desc.size or x1_desc.size == 0:
-            pass
-        elif x1_desc.shape != x2_desc.shape:
-            pass
-        elif mode != "valid":
-            pass
-        else:
-            return dpnp_correlate(x1_desc, x2_desc).get_pyobj()
+    dpnp.check_supported_arrays_type(a, v)
 
-    return call_origin(numpy.correlate, x1, x2, mode=mode)
+    if a.size == 0 or v.size == 0:
+        raise ValueError(
+            f"Array arguments cannot be empty. "
+            f"Received sizes: a.size={a.size}, v.size={v.size}"
+        )
+    if a.ndim != 1 or v.ndim != 1:
+        raise ValueError(
+            f"Only 1-dimensional arrays are supported. "
+            f"Received shapes: a.shape={a.shape}, v.shape={v.shape}"
+        )
+
+    supported_methods = ["auto", "direct", "fft"]
+    if method not in supported_methods:
+        raise ValueError(
+            f"Unknown method: {method}. Supported methods: {supported_methods}"
+        )
+
+    device = a.sycl_device
+    rdtype = result_type_for_device([a.dtype, v.dtype], device)
+
+    if dpnp.issubdtype(v.dtype, dpnp.complexfloating):
+        v = dpnp.conj(v)
+
+    revert = False
+    if v.size > a.size:
+        revert = True
+        a, v = v, a
+
+    l_pad, r_pad = _get_padding(a.size, v.size, mode)
+
+    if method == "auto":
+        method = _choose_conv_method(a, v, rdtype)
+
+    if method == "direct":
+        r = _run_native_sliding_dot_product1d(a, v, l_pad, r_pad, rdtype)
+    elif method == "fft":
+        r = _convolve_fft(a, v[::-1], l_pad, r_pad, rdtype)
+    else:  # pragma: no cover
+        raise ValueError(f"Unknown method: {method}")
+
+    if revert:
+        r = r[::-1]
+
+    return dpnp.asarray(r, dtype=rdtype, order="C")
 
 
 def cov(
@@ -438,7 +778,7 @@ def cov(
 
     """
 
-    if not isinstance(m, (dpnp_array, dpt.usm_ndarray)):
+    if not dpnp.is_supported_array_type(m):
         pass
     elif m.ndim > 2:
         pass
@@ -522,7 +862,7 @@ def max(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     array([1, 3])
 
     >>> b = np.arange(5, dtype=float)
-    >>> b[2] = np.NaN
+    >>> b[2] = np.nan
     >>> np.max(b)
     array(nan)
 
@@ -532,11 +872,10 @@ def max(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     usm_a = dpnp.get_usm_ndarray(a)
 
     return dpnp_wrap_reduction_call(
-        a,
+        usm_a,
         out,
         dpt.max,
-        _get_comparison_res_dt,
-        usm_a,
+        a.dtype,
         axis=axis,
         keepdims=keepdims,
     )
@@ -567,13 +906,15 @@ def mean(a, /, axis=None, dtype=None, out=None, keepdims=False, *, where=True):
     out : {None, dpnp.ndarray, usm_ndarray}, optional
         Alternative output array in which to place the result. It must have
         the same shape as the expected output but the type (of the calculated
-        values) will be cast if necessary. Default: ``None``.
+        values) will be cast if necessary.
+        Default: ``None``.
     keepdims : {None, bool}, optional
         If ``True``, the reduced axes (dimensions) are included in the result
         as singleton dimensions, so that the returned array remains
         compatible with the input array according to Array Broadcasting
         rules. Otherwise, if ``False``, the reduced axes are not included in
-        the returned array. Default: ``False``.
+        the returned array.
+        Default: ``False``.
 
     Returns
     -------
@@ -614,30 +955,59 @@ def mean(a, /, axis=None, dtype=None, out=None, keepdims=False, *, where=True):
 
     dpnp.check_limitations(where=where)
 
-    dpt_array = dpnp.get_usm_ndarray(a)
-    result = dpnp_array._create_from_usm_ndarray(
-        dpt.mean(dpt_array, axis=axis, keepdims=keepdims)
-    )
-    result = result.astype(dtype) if dtype is not None else result
+    usm_a = dpnp.get_usm_ndarray(a)
+    usm_res = dpt.mean(usm_a, axis=axis, keepdims=keepdims)
+    if dtype is not None:
+        usm_res = dpt.astype(usm_res, dtype)
 
-    return dpnp.get_result_array(result, out, casting="same_kind")
+    return dpnp.get_result_array(usm_res, out, casting="unsafe")
 
 
-def median(x1, axis=None, out=None, overwrite_input=False, keepdims=False):
+def median(a, axis=None, out=None, overwrite_input=False, keepdims=False):
     """
     Compute the median along the specified axis.
 
     For full documentation refer to :obj:`numpy.median`.
 
-    Limitations
-    -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Parameter `axis` is supported only with default value ``None``.
-    Parameter `out` is supported only with default value ``None``.
-    Parameter `overwrite_input` is supported only with default value ``False``.
-    Parameter `keepdims` is supported only with default value ``False``.
-    Otherwise the function will be executed sequentially on CPU.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray}
+        Input array.
+    axis : {None, int, tuple or list of ints}, optional
+        Axis or axes along which the medians are computed. The default,
+        ``axis=None``, will compute the median along a flattened version of
+        the array. If a sequence of axes, the array is first flattened along
+        the given axes, then the median is computed along the resulting
+        flattened axis.
+        Default: ``None``.
+    out : {None, dpnp.ndarray, usm_ndarray}, optional
+        Alternative output array in which to place the result. It must have
+        the same shape as the expected output but the type (of the calculated
+        values) will be cast if necessary.
+        Default: ``None``.
+    overwrite_input : bool, optional
+       If ``True``, then allow use of memory of input array `a` for
+       calculations. The input array will be modified by the call to
+       :obj:`dpnp.median`. This will save memory when you do not need to
+       preserve the contents of the input array. Treat the input as undefined,
+       but it will probably be fully or partially sorted.
+       Default: ``False``.
+    keepdims : bool, optional
+        If ``True``, the reduced axes (dimensions) are included in the result
+        as singleton dimensions, so that the returned array remains
+        compatible with the input array according to Array Broadcasting
+        rules. Otherwise, if ``False``, the reduced axes are not included in
+        the returned array.
+        Default: ``False``.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        A new array holding the result. If `a` has a floating-point data type,
+        the returned array will have the same data type as `a`. If `a` has a
+        boolean or integral data type, the returned array will have the
+        default floating point data type for the device where input array `a`
+        is allocated.
 
     See Also
     --------
@@ -645,32 +1015,52 @@ def median(x1, axis=None, out=None, overwrite_input=False, keepdims=False):
     :obj:`dpnp.percentile` : Compute the q-th percentile of the data
                              along the specified axis.
 
+    Notes
+    -----
+    Given a vector ``V`` of length ``N``, the median of ``V`` is the
+    middle value of a sorted copy of ``V``, ``V_sorted`` - i.e.,
+    ``V_sorted[(N-1)/2]``, when ``N`` is odd, and the average of the
+    two middle values of ``V_sorted`` when ``N`` is even.
+
     Examples
     --------
     >>> import dpnp as np
     >>> a = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> a
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
     >>> np.median(a)
-    3.5
+    array(3.5)
+
+    >>> np.median(a, axis=0)
+    array([6.5, 4.5, 2.5])
+    >>> np.median(a, axis=1)
+    array([7., 2.])
+    >>> np.median(a, axis=(0, 1))
+    array(3.5)
+
+    >>> m = np.median(a, axis=0)
+    >>> out = np.zeros_like(m)
+    >>> np.median(a, axis=0, out=m)
+    array([6.5, 4.5, 2.5])
+    >>> m
+    array([6.5, 4.5, 2.5])
+
+    >>> b = a.copy()
+    >>> np.median(b, axis=1, overwrite_input=True)
+    array([7., 2.])
+    >>> assert not np.all(a==b)
+    >>> b = a.copy()
+    >>> np.median(b, axis=None, overwrite_input=True)
+    array(3.5)
+    >>> assert not np.all(a==b)
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if x1_desc:
-        if axis is not None:
-            pass
-        elif out is not None:
-            pass
-        elif overwrite_input:
-            pass
-        elif keepdims:
-            pass
-        else:
-            result_obj = dpnp_median(x1_desc).get_pyobj()
-            result = dpnp.convert_single_elem_array_to_scalar(result_obj)
-
-            return result
-
-    return call_origin(numpy.median, x1, axis, out, overwrite_input, keepdims)
+    dpnp.check_supported_arrays_type(a)
+    return dpnp_median(
+        a, axis, out, overwrite_input, keepdims, ignore_nan=False
+    )
 
 
 def min(a, axis=None, out=None, keepdims=False, initial=None, where=True):
@@ -737,7 +1127,7 @@ def min(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     array([0, 2])
 
     >>> b = np.arange(5, dtype=float)
-    >>> b[2] = np.NaN
+    >>> b[2] = np.nan
     >>> np.min(b)
     array(nan)
 
@@ -747,11 +1137,10 @@ def min(a, axis=None, out=None, keepdims=False, initial=None, where=True):
     usm_a = dpnp.get_usm_ndarray(a)
 
     return dpnp_wrap_reduction_call(
-        a,
+        usm_a,
         out,
         dpt.min,
-        _get_comparison_res_dt,
-        usm_a,
+        a.dtype,
         axis=axis,
         keepdims=keepdims,
     )
@@ -801,10 +1190,19 @@ def ptp(
     )
 
 
+# pylint: disable=redefined-outer-name
 def std(
-    a, axis=None, dtype=None, out=None, ddof=0, keepdims=False, *, where=True
+    a,
+    axis=None,
+    dtype=None,
+    out=None,
+    ddof=0,
+    keepdims=False,
+    *,
+    where=True,
+    mean=None,
 ):
-    """
+    r"""
     Compute the standard deviation along the specified axis.
 
     For full documentation refer to :obj:`numpy.std`.
@@ -818,36 +1216,49 @@ def std(
         If a tuple of unique integers is given, the standard deviations
         are computed over multiple axes. If ``None``, the standard deviation
         is computed over the entire array.
+
         Default: ``None``.
     dtype : {None, dtype}, optional
-        Type to use in computing the standard deviation. By default,
-        if `a` has a floating-point data type, the returned array
-        will have the same data type as `a`.
-        If `a` has a boolean or integral data type, the returned array
-        will have the default floating point data type for the device
+        Type to use in computing the standard deviation. By default, if `a` has
+        a floating-point data type, the returned array will have the same data
+        type as `a`. If `a` has a boolean or integral data type, the returned
+        array will have the default floating point data type for the device
         where input array `a` is allocated.
+
+        Default: ``None``.
     out : {None, dpnp.ndarray, usm_ndarray}, optional
         Alternative output array in which to place the result. It must have
         the same shape as the expected output but the type (of the calculated
         values) will be cast if necessary.
+
+        Default: ``None``.
     ddof : {int, float}, optional
-        Means Delta Degrees of Freedom.  The divisor used in calculations
-        is ``N - ddof``, where ``N`` corresponds to the total
-        number of elements over which the standard deviation is calculated.
-        Default: `0.0`.
+        Means Delta Degrees of Freedom. The divisor used in calculations is
+        ``N - ddof``, where ``N`` corresponds to the total number of elements
+        over which the standard deviation is calculated.
+
+        Default: ``0.0``.
     keepdims : {None, bool}, optional
         If ``True``, the reduced axes (dimensions) are included in the result
-        as singleton dimensions, so that the returned array remains
-        compatible with the input array according to Array Broadcasting
-        rules. Otherwise, if ``False``, the reduced axes are not included in
-        the returned array. Default: ``False``.
+        as singleton dimensions, so that the returned array remains compatible
+        with the input array according to Array Broadcasting rules. Otherwise,
+        if ``False``, the reduced axes are not included in the returned array.
+
+        Default: ``False``.
+    mean : {dpnp.ndarray, usm_ndarray}, optional
+        Provide the mean to prevent its recalculation. The mean should have
+        a shape as if it was calculated with ``keepdims=True``.
+        The axis for the calculation of the mean should be the same as used in
+        the call to this `std` function.
+
+        Default: ``None``.
 
     Returns
     -------
     out : dpnp.ndarray
-        An array containing the standard deviations. If the standard
-        deviation was computed over the entire array, a zero-dimensional
-        array is returned.
+        An array containing the standard deviations. If the standard deviation
+        was computed over the entire array, a zero-dimensional array is
+        returned.
 
     Limitations
     -----------
@@ -856,6 +1267,45 @@ def std(
 
     Notes
     -----
+    There are several common variants of the array standard deviation
+    calculation. Assuming the input `a` is a one-dimensional array and `mean`
+    is either provided as an argument or computed as ``a.mean()``, DPNP
+    computes the standard deviation of an array as::
+
+        N = len(a)
+        d2 = abs(a - mean)**2  # abs is for complex `a`
+        var = d2.sum() / (N - ddof)  # note use of `ddof`
+        std = var**0.5
+
+    Different values of the argument `ddof` are useful in different contexts.
+    The default ``ddof=0`` corresponds with the expression:
+
+    .. math::
+
+        \sqrt{\frac{\sum_i{|a_i - \bar{a}|^2 }}{N}}
+
+    which is sometimes called the "population standard deviation" in the field
+    of statistics because it applies the definition of standard deviation to `a`
+    as if `a` were a complete population of possible observations.
+
+    Many other libraries define the standard deviation of an array
+    differently, e.g.:
+
+    .. math::
+
+        \sqrt{\frac{\sum_i{|a_i - \bar{a}|^2 }}{N - 1}}
+
+    In statistics, the resulting quantity is sometimes called the "sample
+    standard deviation" because if `a` is a random sample from a larger
+    population, this calculation provides the square root of an unbiased
+    estimate of the variance of the population. The use of :math:`N-1` in the
+    denominator is often called "Bessel's correction" because it corrects for
+    bias (toward lower values) in the variance estimate introduced when the
+    sample mean of `a` is used in place of the true mean of the population.
+    The resulting estimate of the standard deviation is still biased, but less
+    than it would have been without the correction. For this quantity, use
+    ``ddof=1``.
+
     Note that, for complex numbers, the absolute value is taken before squaring,
     so that the result is always real and non-negative.
 
@@ -876,11 +1326,18 @@ def std(
     >>> import dpnp as np
     >>> a = np.array([[1, 2], [3, 4]])
     >>> np.std(a)
-    array(1.118033988749895)
+    array(1.11803399)
     >>> np.std(a, axis=0)
-    array([1.,  1.])
+    array([1., 1.])
     >>> np.std(a, axis=1)
-    array([0.5,  0.5])
+    array([0.5, 0.5])
+
+    Using the mean keyword to save computation time:
+
+    >>> a = np.array([[14, 8, 11, 10], [7, 9, 10, 11], [10, 15, 5, 10]])
+    >>> mean = np.mean(a, axis=1, keepdims=True)
+    >>> np.std(a, axis=1, mean=mean)
+    array([2.16506351, 1.47901995, 3.53553391])
 
     """
 
@@ -892,7 +1349,7 @@ def std(
             f"An integer or float is required, but got {type(ddof)}"
         )
 
-    if dpnp.issubdtype(a.dtype, dpnp.complexfloating):
+    if dpnp.issubdtype(a.dtype, dpnp.complexfloating) or mean is not None:
         result = dpnp.var(
             a,
             axis=axis,
@@ -901,24 +1358,32 @@ def std(
             ddof=ddof,
             keepdims=keepdims,
             where=where,
+            mean=mean,
         )
         dpnp.sqrt(result, out=result)
     else:
-        dpt_array = dpnp.get_usm_ndarray(a)
-        result = dpnp_array._create_from_usm_ndarray(
-            dpt.std(dpt_array, axis=axis, correction=ddof, keepdims=keepdims)
-        )
-        result = dpnp.get_result_array(result, out)
+        usm_a = dpnp.get_usm_ndarray(a)
+        usm_res = dpt.std(usm_a, axis=axis, correction=ddof, keepdims=keepdims)
+        result = dpnp.get_result_array(usm_res, out)
 
     if dtype is not None and out is None:
         result = result.astype(dtype, casting="same_kind")
     return result
 
 
+# pylint: disable=redefined-outer-name
 def var(
-    a, axis=None, dtype=None, out=None, ddof=0, keepdims=False, *, where=True
+    a,
+    axis=None,
+    dtype=None,
+    out=None,
+    ddof=0,
+    keepdims=False,
+    *,
+    where=True,
+    mean=None,
 ):
-    """
+    r"""
     Compute the variance along the specified axis.
 
     For full documentation refer to :obj:`numpy.var`.
@@ -928,38 +1393,51 @@ def var(
     a : {dpnp.ndarray, usm_ndarray}
         Input array.
     axis : {None, int, tuple of ints}, optional
-        axis or axes along which the variances must be computed. If a tuple
+        Axis or axes along which the variances must be computed. If a tuple
         of unique integers is given, the variances are computed over multiple
         axes. If ``None``, the variance is computed over the entire array.
+
         Default: ``None``.
     dtype : {None, dtype}, optional
         Type to use in computing the variance. By default, if `a` has a
-        floating-point data type, the returned array will have
-        the same data type as `a`.
-        If `a` has a boolean or integral data type, the returned array
-        will have the default floating point data type for the device
+        floating-point data type, the returned array will have the same data
+        type as `a`. If `a` has a boolean or integral data type, the returned
+        array will have the default floating point data type for the device
         where input array `a` is allocated.
+
+        Default: ``None``.
     out : {None, dpnp.ndarray, usm_ndarray}, optional
         Alternative output array in which to place the result. It must have
         the same shape as the expected output but the type (of the calculated
         values) will be cast if necessary.
+
+        Default: ``None``.
     ddof : {int, float}, optional
-        Means Delta Degrees of Freedom.  The divisor used in calculations
-        is ``N - ddof``, where ``N`` corresponds to the total
-        number of elements over which the variance is calculated.
-        Default: `0.0`.
+        Means Delta Degrees of Freedom. The divisor used in calculations is
+        ``N - ddof``, where ``N`` corresponds to the total number of elements
+        over which the variance is calculated.
+
+        Default: ``0.0``.
     keepdims : {None, bool}, optional
         If ``True``, the reduced axes (dimensions) are included in the result
-        as singleton dimensions, so that the returned array remains
-        compatible with the input array according to Array Broadcasting
-        rules. Otherwise, if ``False``, the reduced axes are not included in
-        the returned array. Default: ``False``.
+        as singleton dimensions, so that the returned array remains compatible
+        with the input array according to Array Broadcasting rules. Otherwise,
+        if ``False``, the reduced axes are not included in the returned array.
+
+        Default: ``False``.
+    mean : {dpnp.ndarray, usm_ndarray}, optional
+        Provide the mean to prevent its recalculation. The mean should have
+        a shape as if it was calculated with ``keepdims=True``.
+        The axis for the calculation of the mean should be the same as used in
+        the call to this `var` function.
+
+        Default: ``None``.
 
     Returns
     -------
     out : dpnp.ndarray
-        An array containing the variances. If the variance was computed
-        over the entire array, a zero-dimensional array is returned.
+        An array containing the variances. If the variance was computed over
+        the entire array, a zero-dimensional array is returned.
 
     Limitations
     -----------
@@ -968,6 +1446,40 @@ def var(
 
     Notes
     -----
+    There are several common variants of the array variance calculation.
+    Assuming the input `a` is a one-dimensional array and `mean` is either
+    provided as an argument or computed as ``a.mean()``, DPNP computes the
+    variance of an array as::
+
+        N = len(a)
+        d2 = abs(a - mean)**2  # abs is for complex `a`
+        var = d2.sum() / (N - ddof)  # note use of `ddof`
+
+    Different values of the argument `ddof` are useful in different contexts.
+    The default ``ddof=0`` corresponds with the expression:
+
+    .. math::
+
+        \frac{\sum_i{|a_i - \bar{a}|^2 }}{N}
+
+    which is sometimes called the "population variance" in the field of
+    statistics because it applies the definition of variance to `a` as if `a`
+    were a complete population of possible observations.
+
+    Many other libraries define the variance of an array differently, e.g.:
+
+    .. math::
+
+        \frac{\sum_i{|a_i - \bar{a}|^2}}{N - 1}
+
+    In statistics, the resulting quantity is sometimes called the "sample
+    variance" because if `a` is a random sample from a larger population, this
+    calculation provides an unbiased estimate of the variance of the population.
+    The use of :math:`N-1` in the denominator is often called "Bessel's
+    correction" because it corrects for bias (toward lower values) in the
+    variance estimate introduced when the sample mean of `a` is used in place
+    of the true mean of the population. For this quantity, use ``ddof=1``.
+
     Note that, for complex numbers, the absolute value is taken before squaring,
     so that the result is always real and non-negative.
 
@@ -990,9 +1502,16 @@ def var(
     >>> np.var(a)
     array(1.25)
     >>> np.var(a, axis=0)
-    array([1.,  1.])
+    array([1., 1.])
     >>> np.var(a, axis=1)
-    array([0.25,  0.25])
+    array([0.25, 0.25])
+
+    Using the mean keyword to save computation time:
+
+    >>> a = np.array([[14, 8, 11, 10], [7, 9, 10, 11], [10, 15, 5, 10]])
+    >>> mean = np.mean(a, axis=1, keepdims=True)
+    >>> np.var(a, axis=1, mean=mean)
+    array([ 4.6875,  2.1875, 12.5   ])
 
     """
 
@@ -1004,35 +1523,50 @@ def var(
             f"An integer or float is required, but got {type(ddof)}"
         )
 
-    if dpnp.issubdtype(a.dtype, dpnp.complexfloating):
-        # Note that if dtype is not of inexact type then arrmean
-        # will not be either.
-        arrmean = dpnp.mean(
-            a, axis=axis, dtype=dtype, keepdims=True, where=where
-        )
+    if dpnp.issubdtype(a.dtype, dpnp.complexfloating) or mean is not None:
+        # cast bool and integer types to default floating type
+        if dtype is None and not dpnp.issubdtype(a.dtype, dpnp.inexact):
+            dtype = dpnp.default_float_type(device=a.device)
+
+        if mean is not None:
+            arrmean = mean
+        else:
+            # Compute the mean.
+            # Note that if dtype is not of inexact type
+            # then `arrmean` will not be either.
+            arrmean = dpnp.mean(
+                a, axis=axis, dtype=dtype, keepdims=True, where=where
+            )
+
+        # Compute sum of squared deviations from mean.
+        # Note that `x` may not be inexact.
         x = dpnp.subtract(a, arrmean)
-        x = dpnp.multiply(x, x.conj(), out=x).real
+        if dpnp.issubdtype(x.dtype, dpnp.complexfloating):
+            x = dpnp.multiply(x, x.conj(), out=x).real
+        else:
+            x = dpnp.square(x, out=x)
+
         result = dpnp.sum(
             x,
             axis=axis,
-            dtype=a.real.dtype,
+            dtype=dtype,
             out=out,
             keepdims=keepdims,
             where=where,
         )
 
+        # compute degrees of freedom and make sure it is not negative
         cnt = _count_reduce_items(a, axis, where)
         cnt = numpy.max(cnt - ddof, 0).astype(result.dtype, casting="same_kind")
         if not cnt:
             cnt = dpnp.nan
 
-        dpnp.divide(result, cnt, out=result)
+        # divide by degrees of freedom
+        result = _divide_by_scalar(result, cnt)
     else:
-        dpt_array = dpnp.get_usm_ndarray(a)
-        result = dpnp_array._create_from_usm_ndarray(
-            dpt.var(dpt_array, axis=axis, correction=ddof, keepdims=keepdims)
-        )
-        result = dpnp.get_result_array(result, out)
+        usm_a = dpnp.get_usm_ndarray(a)
+        usm_res = dpt.var(usm_a, axis=axis, correction=ddof, keepdims=keepdims)
+        result = dpnp.get_result_array(usm_res, out)
 
     if out is None and dtype is not None:
         result = result.astype(dtype, casting="same_kind")

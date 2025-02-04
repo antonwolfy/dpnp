@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2023-2024, Intel Corporation
+# Copyright (c) 2023-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,8 @@
 # *****************************************************************************
 
 import dpctl.tensor as dpt
+import dpctl.tensor._tensor_impl as dti
+import dpctl.tensor._type_utils as dtu
 import numpy
 from dpctl.tensor._elementwise_common import (
     BinaryElementwiseFunc,
@@ -32,18 +34,24 @@ from dpctl.tensor._elementwise_common import (
 )
 
 import dpnp
+import dpnp.backend.extensions.vm._vm_impl as vmi
 from dpnp.dpnp_array import dpnp_array
 
 __all__ = [
+    "DPNPI0",
+    "DPNPAngle",
+    "DPNPBinaryFunc",
+    "DPNPImag",
+    "DPNPReal",
+    "DPNPRound",
+    "DPNPSinc",
+    "DPNPUnaryFunc",
+    "acceptance_fn_gcd_lcm",
     "acceptance_fn_negative",
     "acceptance_fn_positive",
     "acceptance_fn_sign",
     "acceptance_fn_subtract",
-    "DPNPAngle",
-    "DPNPBinaryFunc",
-    "DPNPReal",
-    "DPNPRound",
-    "DPNPUnaryFunc",
+    "resolve_weak_types_2nd_arg_int",
 ]
 
 
@@ -111,11 +119,12 @@ class DPNPUnaryFunc(UnaryElementwiseFunc):
             if depends is None:
                 depends = []
 
-            if mkl_fn_to_call is not None and mkl_fn_to_call(
-                sycl_queue, src, dst
-            ):
-                # call pybind11 extension for unary function from OneMKL VM
-                return mkl_impl_fn(sycl_queue, src, dst, depends)
+            if vmi._is_available() and mkl_fn_to_call is not None:
+                if getattr(vmi, mkl_fn_to_call)(sycl_queue, src, dst):
+                    # call pybind11 extension for unary function from OneMKL VM
+                    return getattr(vmi, mkl_impl_fn)(
+                        sycl_queue, src, dst, depends
+                    )
             return unary_dp_impl_fn(src, dst, sycl_queue, depends)
 
         super().__init__(
@@ -179,7 +188,6 @@ class DPNPUnaryFunc(UnaryElementwiseFunc):
         out_usm = None if out is None else dpnp.get_usm_ndarray(out)
         res_usm = super().__call__(x_usm, out=out_usm, order=order)
 
-        dpnp.synchronize_array_data(res_usm)
         if out is not None and isinstance(out, dpnp_array):
             return out
         return dpnp_array._create_from_usm_ndarray(res_usm)
@@ -242,6 +250,14 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
         The function is only called when both arguments of the binary
         function require casting, e.g. both arguments of
         `dpctl.tensor.logaddexp` are arrays with integral data type.
+    weak_type_resolver : {callable}, optional
+        Function to influence type promotion behavior for Python scalar types
+        of this binary function. The function takes 3 arguments:
+            o1_dtype - Data type or Python scalar type of the first argument
+            o2_dtype - Data type or Python scalar type of of the second argument
+            sycl_dev - The :class:`dpctl.SyclDevice` where the function
+                evaluation is carried out.
+        One of `o1_dtype` and `o2_dtype` must be a ``dtype`` instance.
     """
 
     def __init__(
@@ -254,6 +270,7 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
         mkl_impl_fn=None,
         binary_inplace_fn=None,
         acceptance_fn=None,
+        weak_type_resolver=None,
     ):
         def _call_func(src1, src2, dst, sycl_queue, depends=None):
             """
@@ -264,11 +281,12 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
             if depends is None:
                 depends = []
 
-            if mkl_fn_to_call is not None and mkl_fn_to_call(
-                sycl_queue, src1, src2, dst
-            ):
-                # call pybind11 extension for binary function from OneMKL VM
-                return mkl_impl_fn(sycl_queue, src1, src2, dst, depends)
+            if vmi._is_available() and mkl_fn_to_call is not None:
+                if getattr(vmi, mkl_fn_to_call)(sycl_queue, src1, src2, dst):
+                    # call pybind11 extension for binary function from OneMKL VM
+                    return getattr(vmi, mkl_impl_fn)(
+                        sycl_queue, src1, src2, dst, depends
+                    )
             return binary_dp_impl_fn(src1, src2, dst, sycl_queue, depends)
 
         super().__init__(
@@ -278,6 +296,7 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
             docs,
             binary_inplace_fn,
             acceptance_fn=acceptance_fn,
+            weak_type_resolver=weak_type_resolver,
         )
         self.__name__ = "DPNPBinaryFunc"
 
@@ -316,6 +335,20 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
                 "as an argument, but both were provided."
             )
 
+        x1_usm = dpnp.get_usm_ndarray_or_scalar(x1)
+        x2_usm = dpnp.get_usm_ndarray_or_scalar(x2)
+        out_usm = None if out is None else dpnp.get_usm_ndarray(out)
+
+        if (
+            isinstance(x1, dpnp_array)
+            and x1 is out
+            and order == "K"
+            and dtype is None
+        ):
+            # in-place operation
+            super()._inplace_op(x1_usm, x2_usm)
+            return x1
+
         if order is None:
             order = "K"
         elif order in "afkcAFKC":
@@ -324,9 +357,6 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
             raise ValueError(
                 "order must be one of 'C', 'F', 'A', or 'K' (got '{order}')"
             )
-
-        x1_usm = dpnp.get_usm_ndarray_or_scalar(x1)
-        x2_usm = dpnp.get_usm_ndarray_or_scalar(x2)
 
         if dtype is not None:
             if dpnp.isscalar(x1):
@@ -349,10 +379,8 @@ class DPNPBinaryFunc(BinaryElementwiseFunc):
                 x1_usm = dpt.astype(x1_usm, dtype, copy=False)
                 x2_usm = dpt.astype(x2_usm, dtype, copy=False)
 
-        out_usm = None if out is None else dpnp.get_usm_ndarray(out)
         res_usm = super().__call__(x1_usm, x2_usm, out=out_usm, order=order)
 
-        dpnp.synchronize_array_data(res_usm)
         if out is not None and isinstance(out, dpnp_array):
             return out
         return dpnp_array._create_from_usm_ndarray(res_usm)
@@ -476,11 +504,53 @@ class DPNPAngle(DPNPUnaryFunc):
             docs,
         )
 
-    def __call__(self, x, deg=False):
-        res = super().__call__(x)
+    def __call__(self, x, deg=False, out=None, order="K"):
+        res = super().__call__(x, out=out, order=order)
         if deg is True:
             res *= 180 / dpnp.pi
         return res
+
+
+class DPNPI0(DPNPUnaryFunc):
+    """Class that implements dpnp.i0 unary element-wise functions."""
+
+    def __init__(
+        self,
+        name,
+        result_type_resolver_fn,
+        unary_dp_impl_fn,
+        docs,
+    ):
+        super().__init__(
+            name,
+            result_type_resolver_fn,
+            unary_dp_impl_fn,
+            docs,
+        )
+
+    def __call__(self, x, out=None, order="K"):
+        return super().__call__(x, out=out, order=order)
+
+
+class DPNPImag(DPNPUnaryFunc):
+    """Class that implements dpnp.imag unary element-wise functions."""
+
+    def __init__(
+        self,
+        name,
+        result_type_resolver_fn,
+        unary_dp_impl_fn,
+        docs,
+    ):
+        super().__init__(
+            name,
+            result_type_resolver_fn,
+            unary_dp_impl_fn,
+            docs,
+        )
+
+    def __call__(self, x, out=None, order="K"):
+        return super().__call__(x, out=out, order=order)
 
 
 class DPNPReal(DPNPUnaryFunc):
@@ -500,9 +570,9 @@ class DPNPReal(DPNPUnaryFunc):
             docs,
         )
 
-    def __call__(self, x):
+    def __call__(self, x, out=None, order="K"):
         if numpy.iscomplexobj(x):
-            return super().__call__(x)
+            return super().__call__(x, out=out, order=order)
         return x
 
 
@@ -540,12 +610,44 @@ class DPNPRound(DPNPUnaryFunc):
             if dtype is not None:
                 res_usm = dpt.astype(res_usm, dtype, copy=False)
 
-            dpnp.synchronize_array_data(res_usm)
             if out is not None and isinstance(out, dpnp_array):
                 return out
             return dpnp_array._create_from_usm_ndarray(res_usm)
         else:
             return super().__call__(x, out=out, dtype=dtype)
+
+
+class DPNPSinc(DPNPUnaryFunc):
+    """Class that implements dpnp.sinc unary element-wise functions."""
+
+    def __init__(
+        self,
+        name,
+        result_type_resolver_fn,
+        unary_dp_impl_fn,
+        docs,
+    ):
+        super().__init__(
+            name,
+            result_type_resolver_fn,
+            unary_dp_impl_fn,
+            docs,
+        )
+
+    def __call__(self, x, out=None, order="K"):
+        return super().__call__(x, out=out, order=order)
+
+
+def acceptance_fn_gcd_lcm(
+    arg1_dtype, arg2_dtype, buf1_dt, buf2_dt, res_dt, sycl_dev
+):
+    # gcd/lcm are not defined for boolean data type
+    if arg1_dtype.char == "?" and arg2_dtype.char == "?":
+        raise ValueError(
+            "The function is not supported for inputs of data type bool"
+        )
+    else:
+        return True
 
 
 def acceptance_fn_negative(arg_dtype, buf_dt, res_dt, sycl_dev):
@@ -593,3 +695,24 @@ def acceptance_fn_subtract(
         )
     else:
         return True
+
+
+def resolve_weak_types_2nd_arg_int(o1_dtype, o2_dtype, sycl_dev):
+    """
+    The second weak dtype has to be upcasting up to default integer dtype
+    for a SYCL device where it is possible.
+    For other cases the default weak types resolving will be applied.
+
+    """
+
+    if dtu._is_weak_dtype(o2_dtype):
+        o1_kind_num = dtu._strong_dtype_num_kind(o1_dtype)
+        o2_kind_num = dtu._weak_type_num_kind(o2_dtype)
+        if o2_kind_num < o1_kind_num:
+            if isinstance(
+                o2_dtype, (dtu.WeakBooleanType, dtu.WeakIntegralType)
+            ):
+                return o1_dtype, dpt.dtype(
+                    dti.default_device_int_type(sycl_dev)
+                )
+    return dtu._resolve_weak_types(o1_dtype, o2_dtype, sycl_dev)

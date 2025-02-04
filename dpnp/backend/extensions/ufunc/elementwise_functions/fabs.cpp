@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,19 +40,16 @@
 #include "kernels/elementwise_functions/common.hpp"
 #include "utils/type_dispatch.hpp"
 
-namespace py = pybind11;
-
 namespace dpnp::extensions::ufunc
 {
-namespace ew_cmn_ns = dpctl::tensor::kernels::elementwise_common;
+namespace py = pybind11;
 namespace py_int = dpnp::extensions::py_internal;
-namespace td_ns = dpctl::tensor::type_dispatch;
-
-using ew_cmn_ns::unary_contig_impl_fn_ptr_t;
-using ew_cmn_ns::unary_strided_impl_fn_ptr_t;
 
 namespace impl
 {
+namespace ew_cmn_ns = dpctl::tensor::kernels::elementwise_common;
+namespace td_ns = dpctl::tensor::type_dispatch;
+
 /**
  * @brief A factory to define pairs of supported types for which
  * sycl::fabs<T> function is available.

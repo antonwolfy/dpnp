@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2016-2024, Intel Corporation
+// Copyright (c) 2016-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
 #include <complex>
 #include <iostream>
 #include <iterator>
+#include <stdexcept>
 
 #include <sycl/sycl.hpp>
 
@@ -51,15 +52,6 @@
  */
 #ifndef __SYCL_COMPILER_VECTOR_ABS_CHANGED
 #define __SYCL_COMPILER_VECTOR_ABS_CHANGED 20230503L
-#endif
-
-/**
- * Version of SYCL DPC++ 2023 compiler at which transition to SYCL 2020 occurs.
- * Intel(R) oneAPI DPC++ 2022.2.1 compiler has version 20221020L on Linux and
- * 20221101L on Windows.
- */
-#ifndef __SYCL_COMPILER_VERSION_REQUIRED
-#define __SYCL_COMPILER_VERSION_REQUIRED 20221102L
 #endif
 
 /**
@@ -116,37 +108,6 @@ void get_shape_offsets_inkernel(const _DataType *shape,
 
 /**
  * @ingroup BACKEND_UTILS
- * @brief Calculation of indices in array
- *
- * Calculates indices of element in array with given linear position
- * for example:
- *   idx = 5, shape = (2, 3), ndim = 2,
- *   indices xyz should be [1, 1]
- *
- * @param [in]  idx     linear index of the element in multy-D array.
- * @param [in]  ndim    number of dimensions.
- * @param [in]  shape   offsets of array.
- * @param [out] xyz     indices.
- */
-template <typename _DataType>
-void get_xyz_by_id(size_t idx,
-                   size_t ndim,
-                   const _DataType *offsets,
-                   _DataType *xyz)
-{
-    size_t quotient;
-    size_t remainder = idx;
-
-    for (size_t i = 0; i < ndim; ++i) {
-        quotient = remainder / offsets[i];
-        remainder = remainder - quotient * offsets[i];
-        xyz[i] = quotient;
-    }
-    return;
-}
-
-/**
- * @ingroup BACKEND_UTILS
  * @brief Calculate xyz id for given axis from linear index
  *
  * Calculates xyz id of the array with given shape.
@@ -181,34 +142,6 @@ _DataType get_xyz_id_by_id_inkernel(size_t global_id,
     }
 
     return xyz_id;
-}
-
-/**
- * @ingroup BACKEND_UTILS
- * @brief Calculate linear index from ids array
- *
- * Calculates linear index from ids array by given offsets. This is reverse
- * operation of @ref get_xyz_by_id_inkernel for example: xyz array ids should be
- * [0, 1, 0] input_array_shape_offsets[20, 5, 1] global_id == 5
- *
- * @param [in] xyz       array with array indexes.
- * @param [in] xyz_size  array size for @ref xyz parameter.
- * @param [in] offsets   array with input offsets.
- * @return               linear index id of the element in multy-D array.
- */
-template <typename _DataType>
-size_t get_id_by_xyz_inkernel(const _DataType *xyz,
-                              size_t xyz_size,
-                              const _DataType *offsets)
-{
-    size_t global_id = 0;
-
-    /* calculate linear index based on reconstructed [x][y][z] */
-    for (size_t it = 0; it < xyz_size; ++it) {
-        global_id += (xyz[it] * offsets[it]);
-    }
-
-    return global_id;
 }
 
 /**
@@ -277,83 +210,6 @@ static inline bool array_equal(const _DataType *input1,
 
     return std::equal(std::begin(input1_vec), std::end(input1_vec),
                       std::begin(input2_vec));
-}
-
-/**
- * @ingroup BACKEND_UTILS
- * @brief Cast vector of DPCtl events to vector of SYCL enents.
- *
- * @param [in] events_ref      Reference to vector of DPCtl events.
- *
- * @return                     Vector of SYCL events.
- */
-namespace
-{
-[[maybe_unused]] std::vector<sycl::event>
-    cast_event_vector(const DPCTLEventVectorRef event_vec_ref)
-{
-    const size_t event_vec_size = DPCTLEventVector_Size(event_vec_ref);
-
-    std::vector<sycl::event> event_vec;
-    event_vec.reserve(event_vec_size);
-    for (size_t i = 0; i < event_vec_size; ++i) {
-        DPCTLSyclEventRef event_ref = DPCTLEventVector_GetAt(event_vec_ref, i);
-        sycl::event event = *(reinterpret_cast<sycl::event *>(event_ref));
-        event_vec.push_back(event);
-    }
-    return event_vec;
-}
-} // namespace
-
-/**
- * @ingroup BACKEND_UTILS
- * @brief Get common shape based on input shapes.
- *
- * Example:
- *   Input1 shape A[8, 1, 6, 1]
- *   Input2 shape B[7, 1, 5]
- *   Output shape will be C[8, 7, 6, 5]
- *
- * @param [in] input1_shape        Input1 shape.
- * @param [in] input1_shape_size   Input1 shape size.
- * @param [in] input2_shape        Input2 shape.
- * @param [in] input2_shape_size   Input2 shape size.
- *
- * @exception std::domain_error    Input shapes are not broadcastable.
- * @return                         Common shape.
- */
-template <typename _DataType>
-static inline std::vector<_DataType>
-    get_result_shape(const _DataType *input1_shape,
-                     const size_t input1_shape_size,
-                     const _DataType *input2_shape,
-                     const size_t input2_shape_size)
-{
-    const size_t result_shape_size = (input2_shape_size > input1_shape_size)
-                                         ? input2_shape_size
-                                         : input1_shape_size;
-    std::vector<_DataType> result_shape;
-    result_shape.reserve(result_shape_size);
-
-    for (int irit1 = input1_shape_size - 1, irit2 = input2_shape_size - 1;
-         irit1 >= 0 || irit2 >= 0; --irit1, --irit2)
-    {
-        _DataType input1_val = (irit1 >= 0) ? input1_shape[irit1] : 1;
-        _DataType input2_val = (irit2 >= 0) ? input2_shape[irit2] : 1;
-
-        if (input1_val == input2_val || input1_val == 1) {
-            result_shape.insert(result_shape.begin(), input2_val);
-        }
-        else if (input2_val == 1) {
-            result_shape.insert(result_shape.begin(), input1_val);
-        }
-        else {
-            throw std::domain_error("DPNP Error: get_common_shape() failed "
-                                    "with input shapes check");
-        }
-    }
-
-    return result_shape;
 }
 
 /**

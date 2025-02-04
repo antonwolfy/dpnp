@@ -37,15 +37,14 @@ in the next installation section.
 Installation
 ============
 
-Install Package from Anaconda
------------------------------
+Install Package from Intel(R) channel
+-------------------------------------------
 
-It is recommended to use conda packages from the ``anaconda.org/intel``
-channel. You will need one of the commands below:
+You will need one of the commands below:
 
-* Conda: ``conda install dpnp -c intel -c conda-forge``
+* Conda: ``conda install dpnp -c https://software.repos.intel.com/python/conda/ -c conda-forge``
 
-* Pip: ``pip install -i https://pypi.anaconda.org/intel/simple dpnp``
+* Pip: ``python -m pip install --index-url https://software.repos.intel.com/python/pypi dpnp``
 
 These commands install dpnp package along with its dependencies, including
 ``dpctl`` package with `Data Parallel Control Library`_ and all required
@@ -69,7 +68,7 @@ And to build dpnp package from the sources:
 
 .. code-block:: bash
 
-    conda build conda-recipe -c intel -c conda-forge
+    conda build conda-recipe -c https://software.repos.intel.com/python/conda/ -c conda-forge
 
 Finally, to install the result package:
 
@@ -89,14 +88,14 @@ On Linux:
 
 .. code-block:: bash
 
-    conda create -n build-env dpctl cython dpcpp_linux-64 mkl-devel-dpcpp tbb-devel onedpl-devel cmake scikit-build ninja pytest -c intel -c conda-forge
+    conda create -n build-env dpctl cython dpcpp_linux-64 mkl-devel-dpcpp tbb-devel onedpl-devel cmake scikit-build ninja pytest -c https://software.repos.intel.com/python/conda/ -c conda-forge
     conda activate build-env
 
 On Windows:
 
 .. code-block:: bash
 
-    conda create -n build-env dpctl cython dpcpp_win-64 mkl-devel-dpcpp tbb-devel onedpl-devel cmake scikit-build ninja pytest -c intel -c conda-forge
+    conda create -n build-env dpctl cython dpcpp_win-64 mkl-devel-dpcpp tbb-devel onedpl-devel cmake scikit-build ninja pytest -c https://software.repos.intel.com/python/conda/ -c conda-forge
     conda activate build-env
 
 To build and install the package on Linux OS, run:
@@ -117,6 +116,27 @@ Alternatively, to develop on Linux OS, you can use the driver script:
 
     python scripts/build_locally.py
 
+Building for custom SYCL targets
+--------------------------------
+Project ``dpnp`` is written using generic SYCL and supports building for multiple SYCL targets,
+subject to limitations of `CodePlay <https://codeplay.com/>`_ plugins implementing SYCL
+programming model for classes of devices.
+
+Building ``dpnp`` for these targets requires that these CodePlay plugins be installed into DPC++
+installation layout of compatible version. The following plugins from CodePlay are supported:
+
+    - `oneAPI for NVIDIA(R) GPUs <codeplay_nv_plugin_>`_
+
+.. _codeplay_nv_plugin: https://developer.codeplay.com/products/oneapi/nvidia/
+
+Building ``dpnp`` also requires `building Data Parallel Control Library for custom SYCL targets.
+<https://intelpython.github.io/dpctl/latest/beginners_guides/installation.html#building-for-custom-sycl-targets>`_
+
+Build ``dpnp`` as follows:
+
+.. code-block:: bash
+
+    python scripts/build_locally.py --target=cuda
 
 Testing
 =======

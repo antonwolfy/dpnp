@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +23,13 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
 
+#include <stdexcept>
+
 #include <pybind11/pybind11.h>
 
 // dpctl tensor headers
 #include "utils/memory_overlap.hpp"
+#include "utils/sycl_alloc_utils.hpp"
 #include "utils/type_utils.hpp"
 
 #include "types_matrix.hpp"
@@ -34,19 +37,13 @@
 
 #include "dpnp_utils.hpp"
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 namespace mkl_lapack = oneapi::mkl::lapack;
 namespace py = pybind11;
 namespace type_utils = dpctl::tensor::type_utils;
 
-typedef sycl::event (*ungqr_impl_fn_ptr_t)(sycl::queue,
+typedef sycl::event (*ungqr_impl_fn_ptr_t)(sycl::queue &,
                                            const std::int64_t,
                                            const std::int64_t,
                                            const std::int64_t,
@@ -59,7 +56,7 @@ typedef sycl::event (*ungqr_impl_fn_ptr_t)(sycl::queue,
 static ungqr_impl_fn_ptr_t ungqr_dispatch_vector[dpctl_td_ns::num_types];
 
 template <typename T>
-static sycl::event ungqr_impl(sycl::queue exec_q,
+static sycl::event ungqr_impl(sycl::queue &exec_q,
                               const std::int64_t m,
                               const std::int64_t n,
                               const std::int64_t k,
@@ -127,7 +124,7 @@ static sycl::event ungqr_impl(sycl::queue exec_q,
     if (is_exception_caught) // an unexpected error occurs
     {
         if (scratchpad != nullptr) {
-            sycl::free(scratchpad, exec_q);
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, exec_q);
         }
         throw std::runtime_error(error_msg.str());
     }
@@ -135,7 +132,9 @@ static sycl::event ungqr_impl(sycl::queue exec_q,
     sycl::event clean_up_event = exec_q.submit([&](sycl::handler &cgh) {
         cgh.depends_on(ungqr_event);
         auto ctx = exec_q.get_context();
-        cgh.host_task([ctx, scratchpad]() { sycl::free(scratchpad, ctx); });
+        cgh.host_task([ctx, scratchpad]() {
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, ctx);
+        });
     });
     host_task_events.push_back(clean_up_event);
 
@@ -143,12 +142,12 @@ static sycl::event ungqr_impl(sycl::queue exec_q,
 }
 
 std::pair<sycl::event, sycl::event>
-    ungqr(sycl::queue q,
+    ungqr(sycl::queue &exec_q,
           const std::int64_t m,
           const std::int64_t n,
           const std::int64_t k,
-          dpctl::tensor::usm_ndarray a_array,
-          dpctl::tensor::usm_ndarray tau_array,
+          const dpctl::tensor::usm_ndarray &a_array,
+          const dpctl::tensor::usm_ndarray &tau_array,
           const std::vector<sycl::event> &depends)
 {
     const int a_array_nd = a_array.get_ndim();
@@ -167,7 +166,7 @@ std::pair<sycl::event, sycl::event>
     }
 
     // check compatibility of execution queue and allocation queue
-    if (!dpctl::utils::queues_are_compatible(q, {a_array, tau_array})) {
+    if (!dpctl::utils::queues_are_compatible(exec_q, {a_array, tau_array})) {
         throw py::value_error(
             "Execution queue is not compatible with allocation queues");
     }
@@ -227,11 +226,11 @@ std::pair<sycl::event, sycl::event>
     char *tau_array_data = tau_array.get_data();
 
     std::vector<sycl::event> host_task_events;
-    sycl::event ungqr_ev = ungqr_fn(q, m, n, k, a_array_data, lda,
+    sycl::event ungqr_ev = ungqr_fn(exec_q, m, n, k, a_array_data, lda,
                                     tau_array_data, host_task_events, depends);
 
-    sycl::event args_ev = dpctl::utils::keep_args_alive(q, {a_array, tau_array},
-                                                        host_task_events);
+    sycl::event args_ev = dpctl::utils::keep_args_alive(
+        exec_q, {a_array, tau_array}, host_task_events);
 
     return std::make_pair(args_ev, ungqr_ev);
 }
@@ -257,7 +256,4 @@ void init_ungqr_dispatch_vector(void)
         contig;
     contig.populate_dispatch_vector(ungqr_dispatch_vector);
 }
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+} // namespace dpnp::extensions::lapack

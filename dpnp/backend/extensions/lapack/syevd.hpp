@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2023-2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,29 +25,11 @@
 
 #pragma once
 
-#include <oneapi/mkl.hpp>
-#include <sycl/sycl.hpp>
+#include <pybind11/pybind11.h>
 
-#include <dpctl4pybind11.hpp>
+namespace py = pybind11;
 
-namespace dpnp
+namespace dpnp::extensions::lapack
 {
-namespace backend
-{
-namespace ext
-{
-namespace lapack
-{
-extern std::pair<sycl::event, sycl::event>
-    syevd(sycl::queue exec_q,
-          const std::int8_t jobz,
-          const std::int8_t upper_lower,
-          dpctl::tensor::usm_ndarray eig_vecs,
-          dpctl::tensor::usm_ndarray eig_vals,
-          const std::vector<sycl::event> &depends = {});
-
-extern void init_syevd_dispatch_vector(void);
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+void init_syevd(py::module_ m);
+} // namespace dpnp::extensions::lapack

@@ -1,0 +1,152 @@
+name: Run tests suite
+on:
+  # For Branch-Protection check. Only the default branch is supported. See
+  # https://github.com/ossf/scorecard/blob/main/docs/checks.md#branch-protection
+  branch_protection_rule:
+  # To guarantee Maintained check is occasionally updated. See
+  # https://github.com/ossf/scorecard/blob/main/docs/checks.md#maintained
+  schedule:
+    - cron: '28 2 * * *'
+  workflow_dispatch:
+
+permissions: read-all
+
+env:
+  PACKAGE_NAME: dpnp
+  CHANNELS: '-c dppy/label/dev -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels'
+  TEST_ENV_NAME: test
+  RUN_TESTS_MAX_ATTEMPTS: 2
+
+jobs:
+  test:
+    name: Test
+
+    # disable scheduled workflow to be run in forks
+    if: github.event.repository.fork == false
+
+    runs-on:  ${{ matrix.runner }}
+
+    defaults:
+      run:
+        shell: ${{ matrix.runner == 'windows-2019' && 'cmd /C CALL {0}' || 'bash -el {0}' }}
+
+    permissions:
+      # Needed to cancel any previous runs that are not completed for a given workflow
+      actions: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        runner: [ubuntu-22.04, ubuntu-24.04, windows-2019]
+
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Find the latest tag
+        id: find_latest_tag
+        uses: oprypin/find-latest-tag@dd2729fe78b0bb55523ae2b2a310c6773a652bd1 # 1.1.2
+        with:
+          repository: IntelPython/dpnp
+          releases-only: false
+
+      - name: Print latest tag
+        run: |
+          echo "Latest tag is ${{ steps.find_latest_tag.outputs.tag }}"
+
+      - name: Setup miniconda
+        id: setup_miniconda
+        continue-on-error: true
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        with:
+          miniforge-version: latest
+          use-mamba: 'true'
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          python-version: ${{ matrix.python }}
+          activate-environment: ${{ env.TEST_ENV_NAME }}
+
+      - name: ReSetup miniconda
+        if: steps.setup_miniconda.outcome == 'failure'
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        with:
+          miniforge-version: latest
+          use-mamba: 'true'
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          python-version: ${{ matrix.python }}
+          activate-environment: ${{ env.TEST_ENV_NAME }}
+
+      - name: Install dpnp
+        id: install_dpnp
+        continue-on-error: true
+        run: |
+          mamba install ${{ env.PACKAGE_NAME }}=${{ steps.find_latest_tag.outputs.tag }} pytest ${{ env.CHANNELS }}
+
+      - name: ReInstall dpnp
+        if: steps.install_dpnp.outcome == 'failure'
+        run: |
+          mamba install ${{ env.PACKAGE_NAME }}=${{ steps.find_latest_tag.outputs.tag }} pytest ${{ env.CHANNELS }}
+
+      - name: List installed packages
+        run: mamba list
+
+      - name: Activate OCL CPU RT
+        if: matrix.runner == 'windows-2019'
+        shell: pwsh
+        run: |
+          $script_path="$env:CONDA_PREFIX\Scripts\set-intel-ocl-icd-registry.ps1"
+          if (Test-Path $script_path) {
+            &$script_path
+          } else {
+            Write-Warning "File $script_path was NOT found!"
+          }
+          # Check the variable assisting OpenCL CPU driver to find TBB DLLs which are not located where it expects them by default
+          $cl_cfg="$env:CONDA_PREFIX\Library\lib\cl.cfg"
+          Get-Content -Tail 5 -Path $cl_cfg
+
+      - name: Smoke test
+        run: |
+          python -m dpctl -f
+          python -c "import dpnp; print(dpnp.__version__)"
+
+      - name: Run tests
+        id: run_tests
+        continue-on-error: true
+        run: |
+          python -m pytest -ra --pyargs ${{ env.PACKAGE_NAME }}.tests
+        env:
+          SYCL_CACHE_PERSISTENT: 1
+
+      - name: ReRun tests on Linux
+        if: steps.run_tests.outcome == 'failure' && matrix.runner != 'windows-2019'
+        id: run_tests_linux
+        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
+        with:
+          timeout_minutes: 12
+          max_attempts: ${{ env.RUN_TESTS_MAX_ATTEMPTS }}
+          retry_on: any
+          command: |
+            . $CONDA/etc/profile.d/conda.sh
+            . $CONDA/etc/profile.d/mamba.sh
+            mamba activate ${{ env.TEST_ENV_NAME }}
+
+            python -m pytest -ra --pyargs ${{ env.PACKAGE_NAME }}.tests
+        env:
+          SYCL_CACHE_PERSISTENT: 1
+
+      - name: ReRun tests on Windows
+        if: steps.run_tests.outcome == 'failure' && matrix.runner == 'windows-2019'
+        id: run_tests_win
+        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
+        with:
+          timeout_minutes: 15
+          max_attempts: ${{ env.RUN_TESTS_MAX_ATTEMPTS }}
+          retry_on: any
+          command: |
+            python -m pytest -ra --pyargs ${{ env.PACKAGE_NAME }}.tests
+        env:
+          SYCL_CACHE_PERSISTENT: 1

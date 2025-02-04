@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (c) 2024, Intel Corporation
+# Copyright (c) 2024-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,22 @@
 
 set(_elementwise_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/degrees.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/fabs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/fix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/float_power.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/fmax.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/fmin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/fmod.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/gcd.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/heaviside.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/i0.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/lcm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/ldexp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/logaddexp2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/radians.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/sinc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/elementwise_functions/spacing.cpp
 )
 
 set(python_module_name _ufunc_impl)
@@ -59,6 +71,20 @@ target_include_directories(${python_module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_
 target_include_directories(${python_module_name} PUBLIC ${Dpctl_INCLUDE_DIR})
 target_include_directories(${python_module_name} PUBLIC ${Dpctl_TENSOR_INCLUDE_DIR})
 
+if(_dpnp_sycl_targets)
+  # make fat binary
+  target_compile_options(
+    ${python_module_name}
+    PRIVATE
+    -fsycl-targets=${_dpnp_sycl_targets}
+  )
+  target_link_options(
+    ${python_module_name}
+    PRIVATE
+    -fsycl-targets=${_dpnp_sycl_targets}
+  )
+endif()
+
 if (WIN32)
   target_compile_options(${python_module_name} PRIVATE
     /clang:-fno-approx-func
@@ -75,6 +101,10 @@ target_link_options(${python_module_name} PUBLIC -fsycl-device-code-split=per_ke
 
 if (DPNP_GENERATE_COVERAGE)
     target_link_options(${python_module_name} PRIVATE -fprofile-instr-generate -fcoverage-mapping)
+endif()
+
+if (DPNP_WITH_REDIST)
+    set_target_properties(${python_module_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../../../../../../")
 endif()
 
 install(TARGETS ${python_module_name}

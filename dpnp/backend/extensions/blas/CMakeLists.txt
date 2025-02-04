@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (c) 2024, Intel Corporation
+# Copyright (c) 2024-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,20 @@ set(_module_src
 pybind11_add_module(${python_module_name} MODULE ${_module_src})
 add_sycl_to_target(TARGET ${python_module_name} SOURCES ${_module_src})
 
+if(_dpnp_sycl_targets)
+    # make fat binary
+    target_compile_options(
+        ${python_module_name}
+        PRIVATE
+        -fsycl-targets=${_dpnp_sycl_targets}
+    )
+    target_link_options(
+        ${python_module_name}
+        PRIVATE
+        -fsycl-targets=${_dpnp_sycl_targets}
+    )
+endif()
+
 if (WIN32)
     if (${CMAKE_VERSION} VERSION_LESS "3.27")
         # this is a work-around for target_link_options inserting option after -link option, cause
@@ -69,7 +83,19 @@ if (DPNP_GENERATE_COVERAGE)
     target_link_options(${python_module_name} PRIVATE -fprofile-instr-generate -fcoverage-mapping)
 endif()
 
-target_link_libraries(${python_module_name} PUBLIC MKL::MKL_SYCL::BLAS)
+if(_use_onemkl_interfaces)
+    target_link_libraries(${python_module_name} PUBLIC onemkl)
+    target_compile_options(${python_module_name} PRIVATE -DUSE_ONEMKL_INTERFACES)
+    if(_use_onemkl_interfaces_cuda)
+        target_compile_options(${python_module_name} PRIVATE -DUSE_ONEMKL_CUBLAS)
+    endif()
+else()
+    target_link_libraries(${python_module_name} PUBLIC MKL::MKL_SYCL::BLAS)
+endif()
+
+if (DPNP_WITH_REDIST)
+    set_target_properties(${python_module_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../../../../../../")
+endif()
 
 install(TARGETS ${python_module_name}
   DESTINATION "dpnp/backend/extensions/blas"

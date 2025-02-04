@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,29 +41,22 @@ __all__ = [
     "bool",
     "bool_",
     "cdouble",
-    "complex_",
     "complex128",
     "complex64",
     "complexfloating",
-    "cfloat",
     "csingle",
     "double",
     "dtype",
     "e",
     "euler_gamma",
     "finfo",
-    "float",
-    "float_",
     "float16",
     "float32",
     "float64",
     "floating",
     "iinfo",
     "inexact",
-    "Inf",
     "inf",
-    "Infinity",
-    "infty",
     "int",
     "int_",
     "int32",
@@ -71,23 +64,15 @@ __all__ = [
     "integer",
     "intc",
     "intp",
-    "isscalar",
+    "isdtype",
     "issubdtype",
-    "issubsctype",
     "is_type_supported",
-    "NAN",
-    "NaN",
     "nan",
     "newaxis",
-    "NINF",
-    "NZERO",
     "number",
     "pi",
-    "PINF",
-    "PZERO",
     "signedinteger",
     "single",
-    "singlecomplex",
 ]
 
 
@@ -98,16 +83,12 @@ __all__ = [
 bool = numpy.bool_
 bool_ = numpy.bool_
 cdouble = numpy.cdouble
-complex_ = numpy.complex_
 complex128 = numpy.complex128
 complex64 = numpy.complex64
 complexfloating = numpy.complexfloating
-cfloat = numpy.cfloat
 csingle = numpy.csingle
 double = numpy.double
 dtype = numpy.dtype
-float = numpy.float_
-float_ = numpy.float_
 float16 = numpy.float16
 float32 = numpy.float32
 float64 = numpy.float64
@@ -123,7 +104,6 @@ intp = numpy.intp
 number = numpy.number
 signedinteger = numpy.signedinteger
 single = numpy.single
-singlecomplex = numpy.singlecomplex
 
 
 # =============================================================================
@@ -131,19 +111,10 @@ singlecomplex = numpy.singlecomplex
 # =============================================================================
 e = numpy.e
 euler_gamma = numpy.euler_gamma
-Inf = numpy.Inf
 inf = numpy.inf
-Infinity = numpy.Infinity
-infty = numpy.infty
-NAN = numpy.NAN
-NaN = numpy.NaN
 nan = numpy.nan
 newaxis = None
-NINF = numpy.NINF
-NZERO = numpy.NZERO
 pi = numpy.pi
-PINF = numpy.PINF
-PZERO = numpy.PZERO
 
 
 # pylint: disable=redefined-outer-name
@@ -224,19 +195,64 @@ def iinfo(dtype):
             smallest representable number.
 
     """
+
     if isinstance(dtype, dpnp_array):
         dtype = dtype.dtype
     return dpt.iinfo(dtype)
 
 
-def isscalar(obj):
+def isdtype(dtype, kind):
     """
-    Returns ``True`` if the type of `obj` is a scalar type.
+    Returns a boolean indicating whether a provided `dtype` is
+    of a specified data type `kind`.
 
-    For full documentation refer to :obj:`numpy.isscalar`.
+    Parameters
+    ----------
+    dtype : dtype
+        The input dtype.
+    kind : {dtype, str, tuple of dtypes or strs}
+        The input dtype or dtype kind. Allowed dtype kinds are:
+
+        * ``'bool'`` : boolean kind
+        * ``'signed integer'`` : signed integer data types
+        * ``'unsigned integer'`` : unsigned integer data types
+        * ``'integral'`` : integer data types
+        * ``'real floating'`` : real-valued floating-point data types
+        * ``'complex floating'`` : complex floating-point data types
+        * ``'numeric'`` : numeric data types
+
+    Returns
+    -------
+    out : bool
+        A boolean indicating whether a provided `dtype` is of a specified data
+        type `kind`.
+
+    See Also
+    --------
+    :obj:`dpnp.issubdtype` : Test if the first argument is a type code
+                             lower/equal in type hierarchy.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> np.isdtype(np.float32, np.float64)
+    False
+    >>> np.isdtype(np.float32, "real floating")
+    True
+    >>> np.isdtype(np.complex128, ("real floating", "complex floating"))
+    True
 
     """
-    return numpy.isscalar(obj)
+
+    if isinstance(dtype, type):
+        dtype = dpt.dtype(dtype)
+
+    if isinstance(kind, type):
+        kind = dpt.dtype(kind)
+    elif isinstance(kind, tuple):
+        kind = tuple(dpt.dtype(k) if isinstance(k, type) else k for k in kind)
+
+    return dpt.isdtype(dtype, kind)
 
 
 def issubdtype(arg1, arg2):
@@ -249,17 +265,6 @@ def issubdtype(arg1, arg2):
     """
 
     return numpy.issubdtype(arg1, arg2)
-
-
-def issubsctype(arg1, arg2):
-    """
-    Determine if the first argument is a subclass of the second argument.
-
-    For full documentation refer to :obj:`numpy.issubsctype`.
-
-    """
-
-    return numpy.issubsctype(arg1, arg2)
 
 
 def is_type_supported(obj_type):

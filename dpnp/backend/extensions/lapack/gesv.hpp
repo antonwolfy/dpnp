@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2023-2024, Intel Corporation
+// Copyright (c) 2023-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,22 +30,29 @@
 
 #include <dpctl4pybind11.hpp>
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 extern std::pair<sycl::event, sycl::event>
-    gesv(sycl::queue exec_q,
-         dpctl::tensor::usm_ndarray coeff_matrix,
-         dpctl::tensor::usm_ndarray dependent_vals,
+    gesv(sycl::queue &exec_q,
+         const dpctl::tensor::usm_ndarray &coeff_matrix,
+         const dpctl::tensor::usm_ndarray &dependent_vals,
          const std::vector<sycl::event> &depends);
 
+extern std::pair<sycl::event, sycl::event>
+    gesv_batch(sycl::queue &exec_q,
+               const dpctl::tensor::usm_ndarray &coeff_matrix,
+               const dpctl::tensor::usm_ndarray &dependent_vals,
+               const std::vector<sycl::event> &depends);
+
+extern void common_gesv_checks(sycl::queue &exec_q,
+                               const dpctl::tensor::usm_ndarray &coeff_matrix,
+                               const dpctl::tensor::usm_ndarray &dependent_vals,
+                               const py::ssize_t *coeff_matrix_shape,
+                               const py::ssize_t *dependent_vals_shape,
+                               const int expected_coeff_matrix_ndim,
+                               const int min_dependent_vals_ndim,
+                               const int max_dependent_vals_ndim);
+
 extern void init_gesv_dispatch_vector(void);
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+extern void init_gesv_batch_dispatch_vector(void);
+} // namespace dpnp::extensions::lapack

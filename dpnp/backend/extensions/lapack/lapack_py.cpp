@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2023-2024, Intel Corporation
+// Copyright (c) 2023-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,15 @@
 #include "getri.hpp"
 #include "getrs.hpp"
 #include "heevd.hpp"
+#include "heevd_batch.hpp"
 #include "linalg_exceptions.hpp"
 #include "orgqr.hpp"
 #include "potrf.hpp"
 #include "syevd.hpp"
+#include "syevd_batch.hpp"
 #include "ungqr.hpp"
 
-namespace lapack_ext = dpnp::backend::ext::lapack;
+namespace lapack_ext = dpnp::extensions::lapack;
 namespace py = pybind11;
 
 // populate dispatch vectors
@@ -51,6 +53,7 @@ void init_dispatch_vectors(void)
 {
     lapack_ext::init_geqrf_batch_dispatch_vector();
     lapack_ext::init_geqrf_dispatch_vector();
+    lapack_ext::init_gesv_batch_dispatch_vector();
     lapack_ext::init_gesv_dispatch_vector();
     lapack_ext::init_getrf_batch_dispatch_vector();
     lapack_ext::init_getrf_dispatch_vector();
@@ -60,7 +63,6 @@ void init_dispatch_vectors(void)
     lapack_ext::init_orgqr_dispatch_vector();
     lapack_ext::init_potrf_batch_dispatch_vector();
     lapack_ext::init_potrf_dispatch_vector();
-    lapack_ext::init_syevd_dispatch_vector();
     lapack_ext::init_ungqr_batch_dispatch_vector();
     lapack_ext::init_ungqr_dispatch_vector();
 }
@@ -69,7 +71,7 @@ void init_dispatch_vectors(void)
 void init_dispatch_tables(void)
 {
     lapack_ext::init_gesvd_dispatch_table();
-    lapack_ext::init_heevd_dispatch_table();
+    lapack_ext::init_gesvd_batch_dispatch_table();
 }
 
 PYBIND11_MODULE(_lapack_impl, m)
@@ -81,6 +83,12 @@ PYBIND11_MODULE(_lapack_impl, m)
 
     init_dispatch_vectors();
     init_dispatch_tables();
+
+    lapack_ext::init_heevd(m);
+    lapack_ext::init_syevd(m);
+
+    lapack_ext::init_heevd_batch(m);
+    lapack_ext::init_syevd_batch(m);
 
     m.def("_geqrf_batch", &lapack_ext::geqrf_batch,
           "Call `geqrf_batch` from OneMKL LAPACK library to return "
@@ -103,9 +111,24 @@ PYBIND11_MODULE(_lapack_impl, m)
           py::arg("sycl_queue"), py::arg("coeff_matrix"),
           py::arg("dependent_vals"), py::arg("depends") = py::list());
 
+    m.def("_gesv_batch", &lapack_ext::gesv_batch,
+          "Call `gesv` from OneMKL LAPACK library to return "
+          "the batch solution of a system of linear equations with "
+          "a square coefficient matrix A and multiple dependent variables",
+          py::arg("sycl_queue"), py::arg("coeff_matrix"),
+          py::arg("dependent_vals"), py::arg("depends") = py::list());
+
     m.def("_gesvd", &lapack_ext::gesvd,
           "Call `gesvd` from OneMKL LAPACK library to return "
           "the singular value decomposition of a general rectangular matrix",
+          py::arg("sycl_queue"), py::arg("jobu_val"), py::arg("jobvt_val"),
+          py::arg("a_array"), py::arg("res_s"), py::arg("res_u"),
+          py::arg("res_vt"), py::arg("depends") = py::list());
+
+    m.def("_gesvd_batch", &lapack_ext::gesvd_batch,
+          "Call `gesvd` from OneMKL LAPACK library to return "
+          "the singular value decomposition of a batch of general rectangular "
+          "matrix",
           py::arg("sycl_queue"), py::arg("jobu_val"), py::arg("jobvt_val"),
           py::arg("a_array"), py::arg("res_s"), py::arg("res_u"),
           py::arg("res_vt"), py::arg("depends") = py::list());
@@ -139,13 +162,6 @@ PYBIND11_MODULE(_lapack_impl, m)
           py::arg("sycl_queue"), py::arg("a_array"), py::arg("ipiv_array"),
           py::arg("b_array"), py::arg("depends") = py::list());
 
-    m.def("_heevd", &lapack_ext::heevd,
-          "Call `heevd` from OneMKL LAPACK library to return "
-          "the eigenvalues and eigenvectors of a complex Hermitian matrix",
-          py::arg("sycl_queue"), py::arg("jobz"), py::arg("upper_lower"),
-          py::arg("eig_vecs"), py::arg("eig_vals"),
-          py::arg("depends") = py::list());
-
     m.def("_orgqr_batch", &lapack_ext::orgqr_batch,
           "Call `_orgqr_batch` from OneMKL LAPACK library to return "
           "the real orthogonal matrix Qi of the QR factorization "
@@ -174,13 +190,6 @@ PYBIND11_MODULE(_lapack_impl, m)
           "positive-definite matrix",
           py::arg("sycl_queue"), py::arg("a_array"), py::arg("upper_lower"),
           py::arg("n"), py::arg("stride_a"), py::arg("batch_size"),
-          py::arg("depends") = py::list());
-
-    m.def("_syevd", &lapack_ext::syevd,
-          "Call `syevd` from OneMKL LAPACK library to return "
-          "the eigenvalues and eigenvectors of a real symmetric matrix",
-          py::arg("sycl_queue"), py::arg("jobz"), py::arg("upper_lower"),
-          py::arg("eig_vecs"), py::arg("eig_vals"),
           py::arg("depends") = py::list());
 
     m.def("_ungqr_batch", &lapack_ext::ungqr_batch,

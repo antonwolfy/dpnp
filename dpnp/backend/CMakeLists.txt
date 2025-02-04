@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,10 @@ set(DPNP_SRC
     kernels/dpnp_krnl_arraycreation.cpp
     kernels/dpnp_krnl_common.cpp
     kernels/dpnp_krnl_elemwise.cpp
-    kernels/dpnp_krnl_fft.cpp
     kernels/dpnp_krnl_indexing.cpp
-    kernels/dpnp_krnl_logic.cpp
     kernels/dpnp_krnl_mathematical.cpp
     kernels/dpnp_krnl_random.cpp
-    kernels/dpnp_krnl_reduction.cpp
-    kernels/dpnp_krnl_searching.cpp
     kernels/dpnp_krnl_sorting.cpp
-    kernels/dpnp_krnl_statistics.cpp
-    src/constants.cpp
     src/dpnp_iface_fptr.cpp
     src/memory_sycl.cpp
     src/queue_sycl.cpp
@@ -103,6 +97,10 @@ target_link_libraries(${_trgt} PUBLIC DPCTLSyclInterface)
 add_library(dpnp_backend_library INTERFACE IMPORTED GLOBAL)
 target_include_directories(dpnp_backend_library BEFORE INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dpnp_backend_library INTERFACE ${_trgt})
+
+if (DPNP_WITH_REDIST)
+    set_target_properties(${python_module_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../../../")
+endif()
 
 if (DPNP_BACKEND_TESTS)
   add_subdirectory(tests)

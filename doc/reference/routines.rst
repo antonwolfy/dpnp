@@ -4,7 +4,7 @@ Routines
 
 The following pages describe NumPy-compatible routines.
 These functions cover a subset of
-`NumPy routines <https://docs.scipy.org/doc/numpy/reference/routines.html>`_.
+`NumPy routines <https://numpy.org/doc/stable/reference/routines.html>`_.
 
 .. currentmodule:: dpnp
 
@@ -13,14 +13,14 @@ These functions cover a subset of
 
    creation
    manipulation
-   indexing
    binary
    dtype
    fft
+   functional
+   indexing
    linalg
    logic
    math
-   .. pad
    .. polynomials
    random
    sorting

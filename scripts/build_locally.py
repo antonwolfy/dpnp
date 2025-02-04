@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,9 @@ def run(
     cmake_executable=None,
     verbose=False,
     cmake_opts="",
+    target="intel",
+    onemkl_interfaces=False,
+    onemkl_interfaces_dir=None,
 ):
     build_system = None
 
@@ -93,6 +96,26 @@ def run(
     if use_oneapi:
         if "DPL_ROOT" in os.environ:
             os.environ["DPL_ROOT_HINT"] = os.environ["DPL_ROOT"]
+
+    if target == "cuda":
+        cmake_args += [
+            "-DDPNP_TARGET_CUDA=ON",
+        ]
+        # Always builds using oneMKL interfaces for the cuda target
+        onemkl_interfaces = True
+
+    if onemkl_interfaces:
+        cmake_args += [
+            "-DDPNP_USE_ONEMKL_INTERFACES=ON",
+        ]
+
+        if onemkl_interfaces_dir:
+            cmake_args += [
+                f"-DDPNP_ONEMKL_INTERFACES_DIR={onemkl_interfaces_dir}",
+            ]
+    elif onemkl_interfaces_dir:
+        RuntimeError("--onemkl-interfaces-dir option is not supported")
+
     subprocess.check_call(
         cmake_args, shell=False, cwd=setup_dir, env=os.environ
     )
@@ -145,6 +168,26 @@ if __name__ == "__main__":
         help="Channels through additional cmake options",
         dest="cmake_opts",
         default="",
+        type=str,
+    )
+    driver.add_argument(
+        "--target",
+        help="Target backend for build",
+        dest="target",
+        default="intel",
+        type=str,
+    )
+    driver.add_argument(
+        "--onemkl-interfaces",
+        help="Build using oneMKL Interfaces",
+        dest="onemkl_interfaces",
+        action="store_true",
+    )
+    driver.add_argument(
+        "--onemkl-interfaces-dir",
+        help="Local directory with source of oneMKL Interfaces",
+        dest="onemkl_interfaces_dir",
+        default=None,
         type=str,
     )
     args = parser.parse_args()
@@ -200,4 +243,7 @@ if __name__ == "__main__":
         cmake_executable=args.cmake_executable,
         verbose=args.verbose,
         cmake_opts=args.cmake_opts,
+        target=args.target,
+        onemkl_interfaces=args.onemkl_interfaces,
+        onemkl_interfaces_dir=args.onemkl_interfaces_dir,
     )

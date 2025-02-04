@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ struct FabsFunctor
     // constexpr resT constant_value = resT{};
     // is function defined for sycl::vec
     using supports_vec = typename std::false_type;
-    // do both argT and resT support sugroup store/load operation
+    // do both argT and resT support subgroup store/load operation
     using supports_sg_loadstore = typename std::true_type;
 
     resT operator()(const argT &x) const

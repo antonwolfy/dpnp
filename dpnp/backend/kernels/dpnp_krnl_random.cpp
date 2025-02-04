@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2016-2024, Intel Corporation
+// Copyright (c) 2016-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <exception>
 #include <mkl_vsl.h>
 #include <stdexcept>
 #include <vector>
@@ -2553,7 +2554,8 @@ DPCTLSyclEventRef
 
     const _DataType d_zero = 0.0, d_one = 1.0;
 
-    assert(0. < kappa <= 1.0);
+    assert(0. < kappa);
+    assert(kappa <= 1.0);
 
     r = 1 + sqrt(1 + 4 * kappa * kappa);
     rho_over_kappa = (2) / (r + sqrt(2 * r));

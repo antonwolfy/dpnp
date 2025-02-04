@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.21...3.27 FATAL_ERROR)
 
 project(dpnp
-  VERSION 0.16
+  VERSION 0.17
   LANGUAGES CXX
   DESCRIPTION "NumPy-like API accelerated by SYCL."
 )
 
-option(DPNP_GENERATE_COVERAGE "Enable build DPNP with coverage instrumentation" FALSE)
-option(DPNP_BACKEND_TESTS "Enable building of DPNP backend test suite" FALSE)
+option(DPNP_GENERATE_COVERAGE "Enable build DPNP with coverage instrumentation" OFF)
+option(DPNP_BACKEND_TESTS "Enable building of DPNP backend test suite" OFF)
+option(DPNP_WITH_REDIST "Build DPNP assuming DPC++ redistributable is installed into Python prefix" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -46,15 +47,14 @@ else()
     find_package(oneDPL REQUIRED PATHS ${CMAKE_SOURCE_DIR}/dpnp/backend/cmake/Modules NO_DEFAULT_PATH)
 endif()
 
-
 include(GNUInstallDirs)
 
 # Fetch pybind11
 include(FetchContent)
 FetchContent_Declare(
     pybind11
-    URL https://github.com/pybind/pybind11/archive/refs/tags/v2.12.0.tar.gz
-    URL_HASH SHA256=bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7
+    URL https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz
+    URL_HASH SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20
 )
 FetchContent_MakeAvailable(pybind11)
 
@@ -66,6 +66,69 @@ find_package(Cython REQUIRED)
 find_package(Dpctl REQUIRED)
 message(STATUS "Dpctl_INCLUDE_DIR=" ${Dpctl_INCLUDE_DIR})
 message(STATUS "Dpctl_TENSOR_INCLUDE_DIR=" ${Dpctl_TENSOR_INCLUDE_DIR})
+
+option(DPNP_TARGET_CUDA
+    "Build DPNP to target CUDA devices"
+    OFF
+)
+option(DPNP_USE_ONEMKL_INTERFACES
+    "Build DPNP with oneMKL Interfaces"
+    OFF
+)
+set(_dpnp_sycl_targets)
+set(_use_onemkl_interfaces_cuda OFF)
+if ("x${DPNP_SYCL_TARGETS}" STREQUAL "x")
+   if(DPNP_TARGET_CUDA)
+      set(_dpnp_sycl_targets "nvptx64-nvidia-cuda,spir64-unknown-unknown")
+      set(_use_onemkl_interfaces_cuda ON)
+   else()
+      if(DEFINED ENV{DPNP_TARGET_CUDA})
+          set(_dpnp_sycl_targets "nvptx64-nvidia-cuda,spir64-unknown-unknown")
+          set(_use_onemkl_interfaces_cuda ON)
+      endif()
+   endif()
+else()
+   set(_dpnp_sycl_targets ${DPNP_SYCL_TARGETS})
+endif()
+
+if(_dpnp_sycl_targets)
+   message(STATUS "Compiling for -fsycl-targets=${_dpnp_sycl_targets}")
+endif()
+
+set(_use_onemkl_interfaces OFF)
+if(DPNP_USE_ONEMKL_INTERFACES)
+    set(_use_onemkl_interfaces ON)
+else()
+    if(DEFINED ENV{DPNP_USE_ONEMKL_INTERFACES})
+        set(_use_onemkl_interfaces ON)
+    endif()
+endif()
+
+if(_use_onemkl_interfaces)
+    set(BUILD_FUNCTIONAL_TESTS False)
+    set(BUILD_EXAMPLES False)
+    if(_use_onemkl_interfaces_cuda)
+        set(ENABLE_CUBLAS_BACKEND True)
+        set(ENABLE_CUSOLVER_BACKEND True)
+        set(ENABLE_CUFFT_BACKEND True)
+        # set(ENABLE_CURAND_BACKEND True)
+        set(ENABLE_MKLGPU_BACKEND True)
+        set(ENABLE_MKLCPU_BACKEND True)
+    endif()
+
+    if(DPNP_ONEMKL_INTERFACES_DIR)
+        FetchContent_Declare(onemkl_interfaces_library SOURCE_DIR "${DPNP_ONEMKL_INTERFACES_DIR}")
+    else()
+        FetchContent_Declare(
+                onemkl_interfaces_library
+                GIT_REPOSITORY https://github.com/oneapi-src/oneMKL.git
+                GIT_TAG 8f4312ef966420b9b8b4b82b9d5c22e2c91a1fe7  # v0.6
+        )
+    endif()
+
+    FetchContent_MakeAvailable(onemkl_interfaces_library)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_BINARY_DIR}/lib")
+endif()
 
 if(WIN32)
     string(CONCAT WARNING_FLAGS

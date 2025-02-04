@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,12 +36,13 @@ it contains:
  - The functions parameters check
 
 """
-
+# pylint: disable=protected-access
 
 import os
 
 import dpctl
 import dpctl.tensor as dpt
+import dpctl.tensor._tensor_impl as ti
 import dpctl.utils as dpu
 import numpy
 from dpctl.tensor._device import normalize_queue_device
@@ -54,32 +55,34 @@ from dpnp.linalg import *
 from dpnp.random import *
 
 __all__ = [
-    "array_equal",
+    "are_same_logical_tensors",
     "asnumpy",
     "astype",
+    "as_usm_ndarray",
     "check_limitations",
     "check_supported_arrays_type",
-    "convert_single_elem_array_to_scalar",
     "default_float_type",
-    "from_dlpack",
     "get_dpnp_descriptor",
     "get_include",
     "get_normalized_queue_device",
     "get_result_array",
     "get_usm_ndarray",
     "get_usm_ndarray_or_scalar",
+    "is_cuda_backend",
     "is_supported_array_or_scalar",
     "is_supported_array_type",
     "synchronize_array_data",
 ]
 
-from dpnp import float64, isscalar
+from dpnp import float64
 from dpnp.dpnp_iface_arraycreation import *
 from dpnp.dpnp_iface_arraycreation import __all__ as __all__arraycreation
 from dpnp.dpnp_iface_bitwise import *
 from dpnp.dpnp_iface_bitwise import __all__ as __all__bitwise
 from dpnp.dpnp_iface_counting import *
 from dpnp.dpnp_iface_counting import __all__ as __all__counting
+from dpnp.dpnp_iface_functional import *
+from dpnp.dpnp_iface_functional import __all__ as __all__functional
 from dpnp.dpnp_iface_histograms import *
 from dpnp.dpnp_iface_histograms import __all__ as __all__histograms
 from dpnp.dpnp_iface_indexing import *
@@ -115,6 +118,7 @@ from .dpnp_utils import (
 __all__ += __all__arraycreation
 __all__ += __all__bitwise
 __all__ += __all__counting
+__all__ += __all__functional
 __all__ += __all__histograms
 __all__ += __all__indexing
 __all__ += __all__libmath
@@ -129,22 +133,45 @@ __all__ += __all__statistics
 __all__ += __all__trigonometric
 
 
-def array_equal(a1, a2, equal_nan=False):
+def are_same_logical_tensors(ar1, ar2):
     """
-    True if two arrays have the same shape and elements, False otherwise.
+    Check if two arrays are logical views into the same memory.
 
-    For full documentation refer to :obj:`numpy.array_equal`.
+    Parameters
+    ----------
+    ar1 : {dpnp.ndarray, usm_ndarray}
+        First input array.
+    ar2 : {dpnp.ndarray, usm_ndarray}
+        Second input array.
 
-    See Also
+    Returns
+    -------
+    out : bool
+        ``True`` if two arrays are logical views into the same memory,
+        ``False`` otherwise.
+
+    Examples
     --------
-    :obj:`dpnp.allclose` : Returns True if two arrays are element-wise equal
-                           within a tolerance.
-    :obj:`dpnp.array_equiv` : Returns True if input arrays are shape consistent
-                              and all elements equal.
+    >>> import dpnp as np
+    >>> a = np.array([1, 2, 3])
+    >>> b = a[:]
+    >>> a is b
+    False
+    >>> np.are_same_logical_tensors(a, b)
+    True
+    >>> b[0] = 0
+    >>> a
+    array([0, 2, 3])
+
+    >>> c = a.copy()
+    >>> np.are_same_logical_tensors(a, c)
+    False
 
     """
 
-    return numpy.array_equal(a1, a2, equal_nan=equal_nan)
+    return ti._same_logical_tensors(
+        dpnp.get_usm_ndarray(ar1), dpnp.get_usm_ndarray(ar2)
+    )
 
 
 def asnumpy(a, order="C"):
@@ -240,21 +267,65 @@ def astype(x1, dtype, order="K", casting="unsafe", copy=True, device=None):
         x1_obj, dtype, order=order, casting=casting, copy=copy, device=device
     )
 
-    dpnp.synchronize_array_data(x1)
     if array_obj is x1_obj and isinstance(x1, dpnp_array):
         # return x1 if dpctl returns a zero copy of x1_obj
         return x1
     return dpnp_array._create_from_usm_ndarray(array_obj)
 
 
-def check_limitations(
-    order=None, subok=False, like=None, initial=None, where=True
-):
+def as_usm_ndarray(a, dtype=None, device=None, usm_type=None, sycl_queue=None):
+    """
+    Return :class:`dpctl.tensor.usm_ndarray` from input object `a`.
+
+    Parameters
+    ----------
+    a : {array_like, scalar}
+        Input array or scalar.
+    dtype : {None, dtype}, optional
+        The desired dtype for the result array if new array is creating. If not
+        given, a default dtype will be used that can represent the values (by
+        considering Promotion Type Rule and device capabilities when necessary).
+        Default: ``None``.
+    device : {None, string, SyclDevice, SyclQueue}, optional
+        An array API concept of device where the result array is created if
+        required.
+        The `device` can be ``None`` (the default), an OneAPI filter selector
+        string, an instance of :class:`dpctl.SyclDevice` corresponding to
+        a non-partitioned SYCL device, an instance of :class:`dpctl.SyclQueue`,
+        or a `Device` object returned by
+        :obj:`dpnp.dpnp_array.dpnp_array.device` property.
+        Default: ``None``.
+    usm_type : {None, "device", "shared", "host"}, optional
+        The type of SYCL USM allocation for the result array if new array
+        is created.
+        Default: ``None``.
+    sycl_queue : {None, SyclQueue}, optional
+        A SYCL queue to use for result array allocation if required.
+        Default: ``None``.
+
+    Returns
+    -------
+    out : usm_ndarray
+        A dpctl USM ndarray from input array or scalar `a`.
+        If `a` is instance of :class:`dpnp.ndarray`
+        or :class:`dpctl.tensor.usm_ndarray`, no array allocation will be done
+        and `dtype`, `device`, `usm_type`, `sycl_queue` keywords
+        will be ignored.
+
+    """
+
+    if is_supported_array_type(a):
+        return get_usm_ndarray(a)
+
+    return dpt.asarray(
+        a, dtype=dtype, device=device, usm_type=usm_type, sycl_queue=sycl_queue
+    )
+
+
+def check_limitations(subok=False, like=None, initial=None, where=True):
     """
     Checking limitation kwargs for their supported values.
 
-    Parameter `order` is only supported with values ``"C"``, ``"F"``
-    and ``None``.
     Parameter `subok` is only supported with default value ``False``.
     Parameter `like` is only supported with default value ``None``.
     Parameter `initial` is only supported with default value ``None``.
@@ -267,16 +338,6 @@ def check_limitations(
 
     """
 
-    if order in ("A", "a", "K", "k"):
-        raise NotImplementedError(
-            "Keyword argument `order` is supported only with "
-            f"values ``'C'`` and ``'F'``, but got {order}"
-        )
-    if order not in ("C", "c", "F", "f", None):
-        raise ValueError(
-            "Unrecognized `order` keyword value, expecting "
-            f"``'C'`` or ``'F'``, but got {order}"
-        )
     if like is not None:
         raise NotImplementedError(
             "Keyword argument `like` is supported only with "
@@ -307,7 +368,7 @@ def check_supported_arrays_type(*arrays, scalar_type=False, all_scalars=False):
 
     Parameters
     ----------
-    arrays : {dpnp_array, usm_ndarray}
+    arrays : {dpnp.ndarray, usm_ndarray}
         Input arrays to check for supported types.
     scalar_type : {bool}, optional
         A scalar type is also considered as supported if flag is ``True``.
@@ -348,15 +409,6 @@ def check_supported_arrays_type(*arrays, scalar_type=False, all_scalars=False):
     return True
 
 
-def convert_single_elem_array_to_scalar(obj, keepdims=False):
-    """Convert array with single element to scalar."""
-
-    if (obj.ndim > 0) and (obj.size == 1) and (keepdims is False):
-        return obj.dtype.type(obj[0])
-
-    return obj
-
-
 def default_float_type(device=None, sycl_queue=None):
     """
     Return a floating type used by default in DPNP depending on device
@@ -391,31 +443,6 @@ def default_float_type(device=None, sycl_queue=None):
     return map_dtype_to_device(float64, _sycl_queue.sycl_device)
 
 
-def from_dlpack(obj, /):
-    """
-    Create a dpnp array from a Python object implementing the ``__dlpack__``
-    protocol.
-
-    See https://dmlc.github.io/dlpack/latest/ for more details.
-
-    Parameters
-    ----------
-    obj : object
-        A Python object representing an array that implements the ``__dlpack__``
-        and ``__dlpack_device__`` methods.
-
-    Returns
-    -------
-    out : dpnp_array
-        Returns a new dpnp array containing the data from another array
-        (obj) with the ``__dlpack__`` method on the same device as object.
-
-    """
-
-    usm_ary = dpt.from_dlpack(obj)
-    return dpnp_array._create_from_usm_ndarray(usm_ary)
-
-
 def get_dpnp_descriptor(
     ext_obj,
     copy_when_strides=True,
@@ -440,7 +467,7 @@ def get_dpnp_descriptor(
 
     # If input object is a scalar, it means it was allocated on host memory.
     # We need to copy it to USM memory according to compute follows data.
-    if isscalar(ext_obj):
+    if dpnp.isscalar(ext_obj):
         ext_obj = array(
             ext_obj,
             dtype=alloc_dtype,
@@ -562,9 +589,9 @@ def get_result_array(a, out=None, casting="safe"):
 
     Parameters
     ----------
-    a : {dpnp_array}
+    a : {dpnp.ndarray, usm_ndarray}
         Input array.
-    out : {dpnp_array, usm_ndarray}
+    out : {dpnp.ndarray, usm_ndarray}
         If provided, value of `a` array will be copied into it
         according to ``safe`` casting rule.
         It should be of the appropriate shape.
@@ -579,19 +606,20 @@ def get_result_array(a, out=None, casting="safe"):
     """
 
     if out is None:
+        if isinstance(a, dpt.usm_ndarray):
+            return dpnp_array._create_from_usm_ndarray(a)
         return a
 
-    if a is out:
+    if isinstance(out, dpt.usm_ndarray):
+        out = dpnp_array._create_from_usm_ndarray(out)
+
+    if a is out or dpnp.are_same_logical_tensors(a, out):
         return out
 
-    dpnp.check_supported_arrays_type(out)
     if out.shape != a.shape:
         raise ValueError(
             f"Output array of shape {a.shape} is needed, got {out.shape}."
         )
-
-    if isinstance(out, dpt.usm_ndarray):
-        out = dpnp_array._create_from_usm_ndarray(out)
 
     dpnp.copyto(out, a, casting=casting)
     return out
@@ -603,7 +631,7 @@ def get_usm_ndarray(a):
 
     Parameters
     ----------
-    a : {dpnp_array, usm_ndarray}
+    a : {dpnp.ndarray, usm_ndarray}
         Input array of supported type :class:`dpnp.ndarray`
         or :class:`dpctl.tensor.usm_ndarray`.
 
@@ -651,7 +679,42 @@ def get_usm_ndarray_or_scalar(a):
 
     """
 
-    return a if isscalar(a) else get_usm_ndarray(a)
+    return a if dpnp.isscalar(a) else get_usm_ndarray(a)
+
+
+def is_cuda_backend(obj=None):
+    """
+    Checks that object has a CUDA backend.
+
+    Parameters
+    ----------
+    obj : {Device, SyclDevice, SyclQueue, dpnp.ndarray, usm_ndarray, None},
+          optional
+        An input object with sycl_device property to check device backend.
+        If `obj` is ``None``, device backend will be checked for the default
+        queue.
+        Default: ``None``.
+
+    Returns
+    -------
+    out : bool
+        Return ``True`` if data of the input object resides on a CUDA backend,
+        otherwise ``False``.
+
+    """
+
+    if obj is None:
+        sycl_device = dpctl.select_default_device()
+    elif isinstance(obj, dpctl.SyclDevice):
+        sycl_device = obj
+    else:
+        sycl_device = getattr(obj, "sycl_device", None)
+    if (
+        sycl_device is not None
+        and sycl_device.backend == dpctl.backend_type.cuda
+    ):  # pragma: no cover
+        return True
+    return False
 
 
 def is_supported_array_or_scalar(a):
@@ -673,7 +736,7 @@ def is_supported_array_or_scalar(a):
 
     """
 
-    return isscalar(a) or is_supported_array_type(a)
+    return dpnp.isscalar(a) or is_supported_array_type(a)
 
 
 def is_supported_array_type(a):
@@ -683,7 +746,7 @@ def is_supported_array_type(a):
 
     Parameters
     ----------
-    a : {dpnp_array, usm_ndarray}
+    a : {dpnp.ndarray, usm_ndarray}
         An input array to check the type.
 
     Returns
@@ -705,6 +768,5 @@ def synchronize_array_data(a):
 
     """
 
-    if hasattr(dpu, "SequentialOrderManager"):
-        check_supported_arrays_type(a)
-        dpu.SequentialOrderManager[a.sycl_queue].wait()
+    check_supported_arrays_type(a)
+    dpu.SequentialOrderManager[a.sycl_queue].wait()

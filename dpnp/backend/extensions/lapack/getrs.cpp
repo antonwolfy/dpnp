@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +23,13 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
 
+#include <stdexcept>
+
 #include <pybind11/pybind11.h>
 
 // dpctl tensor headers
 #include "utils/memory_overlap.hpp"
+#include "utils/sycl_alloc_utils.hpp"
 #include "utils/type_utils.hpp"
 
 #include "getrs.hpp"
@@ -35,19 +38,13 @@
 
 #include "dpnp_utils.hpp"
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 namespace mkl_lapack = oneapi::mkl::lapack;
 namespace py = pybind11;
 namespace type_utils = dpctl::tensor::type_utils;
 
-typedef sycl::event (*getrs_impl_fn_ptr_t)(sycl::queue,
+typedef sycl::event (*getrs_impl_fn_ptr_t)(sycl::queue &,
                                            oneapi::mkl::transpose,
                                            const std::int64_t,
                                            const std::int64_t,
@@ -62,7 +59,7 @@ typedef sycl::event (*getrs_impl_fn_ptr_t)(sycl::queue,
 static getrs_impl_fn_ptr_t getrs_dispatch_vector[dpctl_td_ns::num_types];
 
 template <typename T>
-static sycl::event getrs_impl(sycl::queue exec_q,
+static sycl::event getrs_impl(sycl::queue &exec_q,
                               oneapi::mkl::transpose trans,
                               const std::int64_t n,
                               const std::int64_t nrhs,
@@ -128,7 +125,8 @@ static sycl::event getrs_impl(sycl::queue exec_q,
         else if (info > 0) {
             is_exception_caught = false;
             if (scratchpad != nullptr) {
-                sycl::free(scratchpad, exec_q);
+                dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad,
+                                                               exec_q);
             }
             throw LinAlgError("The solve could not be completed.");
         }
@@ -146,7 +144,7 @@ static sycl::event getrs_impl(sycl::queue exec_q,
     if (is_exception_caught) // an unexpected error occurs
     {
         if (scratchpad != nullptr) {
-            sycl::free(scratchpad, exec_q);
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, exec_q);
         }
 
         throw std::runtime_error(error_msg.str());
@@ -155,17 +153,19 @@ static sycl::event getrs_impl(sycl::queue exec_q,
     sycl::event clean_up_event = exec_q.submit([&](sycl::handler &cgh) {
         cgh.depends_on(getrs_event);
         auto ctx = exec_q.get_context();
-        cgh.host_task([ctx, scratchpad]() { sycl::free(scratchpad, ctx); });
+        cgh.host_task([ctx, scratchpad]() {
+            dpctl::tensor::alloc_utils::sycl_free_noexcept(scratchpad, ctx);
+        });
     });
     host_task_events.push_back(clean_up_event);
     return getrs_event;
 }
 
 std::pair<sycl::event, sycl::event>
-    getrs(sycl::queue exec_q,
-          dpctl::tensor::usm_ndarray a_array,
-          dpctl::tensor::usm_ndarray ipiv_array,
-          dpctl::tensor::usm_ndarray b_array,
+    getrs(sycl::queue &exec_q,
+          const dpctl::tensor::usm_ndarray &a_array,
+          const dpctl::tensor::usm_ndarray &ipiv_array,
+          const dpctl::tensor::usm_ndarray &b_array,
           const std::vector<sycl::event> &depends)
 {
     const int a_array_nd = a_array.get_ndim();
@@ -308,7 +308,4 @@ void init_getrs_dispatch_vector(void)
         contig;
     contig.populate_dispatch_vector(getrs_dispatch_vector);
 }
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+} // namespace dpnp::extensions::lapack

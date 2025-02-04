@@ -1,7 +1,7 @@
-Sorting, Searching, and Counting
+Sorting, searching, and counting
 ================================
 
-.. https://docs.scipy.org/doc/numpy/reference/routines.sort.html
+.. https://numpy.org/doc/stable/reference/routines.sort.html
 
 Sorting
 -------
@@ -18,7 +18,7 @@ Sorting
    dpnp.argpartition
 
 .. seealso::
-   :func:`dpnp.dparray.sort`
+   :func:`dpnp.ndarray.sort`
 
 Searching
 ---------

@@ -9,7 +9,7 @@ permissions: read-all
 jobs:
   generate-coverage:
     name: Generate coverage and push to Coveralls.io
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     permissions:
       # Needed to cancel any previous runs that are not completed for a given workflow
@@ -17,11 +17,12 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
 
     env:
-      python-ver: '3.10'
+      python-ver: '3.12'
       CHANNELS: '-c dppy/label/dev -c intel -c conda-forge --override-channels'
+      NO_INTEL_CHANNELS: '-c dppy/label/dev -c conda-forge --override-channels'
       # Install the latest oneAPI compiler to work around an issue
       INSTALL_ONE_API: 'yes'
 
@@ -32,46 +33,56 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Add Intel repository
         if: env.INSTALL_ONE_API == 'yes'
         run: |
-          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-          sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
-          sudo apt-get update
+          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          cat GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt update
 
       - name: Install latest Intel OneAPI
         if: env.INSTALL_ONE_API == 'yes'
         run: |
-          sudo apt-get install intel-oneapi-compiler-dpcpp-cpp
-          sudo apt-get install intel-oneapi-mkl-devel
-          sudo apt-get install intel-oneapi-tbb-devel
+          sudo apt install hwloc                           \
+                           intel-oneapi-mkl                \
+                           intel-oneapi-umf                \
+                           intel-oneapi-mkl-devel          \
+                           intel-oneapi-tbb-devel          \
+                           intel-oneapi-libdpstd-devel     \
+                           intel-oneapi-compiler-dpcpp-cpp
 
       - name: Install Lcov
         run: |
           sudo apt-get install lcov
 
       - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        id: setup_miniconda
+        continue-on-error: true
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
+          use-mamba: 'true'
           channels: conda-forge
+          conda-remove-defaults: 'true'
           python-version: ${{ env.python-ver }}
           activate-environment: 'coverage'
 
-      # Here is an issue in conda gh-12356 causing adding defaults to the list of channels
-      # upon running `conda config --append channels conda-forge`, while mamba requires to have only conda-forge channel
-      - name: Remove defaults channel
-        run: |
-          conda config --remove channels defaults
-          conda config --show
+      - name: ReSetup miniconda
+        if: steps.setup_miniconda.outcome == 'failure'
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        with:
+          miniforge-version: latest
+          use-mamba: 'true'
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          python-version: ${{ env.python-ver }}
+          activate-environment: 'coverage'
 
       # Sometimes `mamba install ...` fails due to slow download speed rate, so disable the check in mamba
       - name: Disable speed limit check in mamba
@@ -81,7 +92,7 @@ jobs:
         if: env.INSTALL_ONE_API == 'yes'
         run: |
           mamba install cython llvm cmake">=3.21" scikit-build ninja pytest pytest-cov coverage[toml] \
-              dpctl">=0.18.0dev0" onedpl-devel ${{ env.CHANNELS }}
+              dpctl">=0.18.0dev0" ${{ env.NO_INTEL_CHANNELS }}
 
       - name: Install dpnp dependencies
         if: env.INSTALL_ONE_API != 'yes'
@@ -107,7 +118,7 @@ jobs:
             conda activate coverage
             [ -f /opt/intel/oneapi/setvars.sh ] && source /opt/intel/oneapi/setvars.sh
             git clean -fxd
-            python scripts/gen_coverage.py --pytest-opts="--ignore tests/test_random.py" --verbose
+            python scripts/gen_coverage.py --verbose
 
       - name: Total number of coverage attempts
         run: |
@@ -116,7 +127,7 @@ jobs:
       - name: Install coverall dependencies
         run: |
           sudo gem install coveralls-lcov
-          pip install coveralls==3.3.1
+          pip install coveralls==4.0.1
 
       - name: Upload coverage data to coveralls.io
         run: |

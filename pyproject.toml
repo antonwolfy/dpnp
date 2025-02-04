@@ -16,9 +16,10 @@ exclude-protected = ["_create_from_usm_ndarray"]
 
 [tool.pylint.design]
 max-args = 11
+max-positional-arguments = 9
 max-locals = 30
 max-branches = 15
-max-returns = 7
+max-returns = 8
 
 [tool.pylint.format]
 max-line-length = 80
@@ -49,13 +50,13 @@ source = [
     "dpnp",
 ]
 omit = [
-    "tests/*",
+    "dpnp/tests/*",
     "dpnp/_version.py",
 ]
 
 [tool.coverage.report]
 omit = [
-    "tests/*",
+    "dpnp/tests/*",
     "dpnp/_version.py",
 ]
 

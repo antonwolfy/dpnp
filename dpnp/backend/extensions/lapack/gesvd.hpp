@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2023, Intel Corporation
+// Copyright (c) 2023-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,26 +30,28 @@
 
 #include <dpctl4pybind11.hpp>
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 extern std::pair<sycl::event, sycl::event>
-    gesvd(sycl::queue exec_q,
+    gesvd(sycl::queue &exec_q,
           const std::int8_t jobu_val,
           const std::int8_t jobvt_val,
-          dpctl::tensor::usm_ndarray a_array,
-          dpctl::tensor::usm_ndarray out_s,
-          dpctl::tensor::usm_ndarray out_u,
-          dpctl::tensor::usm_ndarray out_vt,
+          const dpctl::tensor::usm_ndarray &a_array,
+          const dpctl::tensor::usm_ndarray &out_s,
+          const dpctl::tensor::usm_ndarray &out_u,
+          const dpctl::tensor::usm_ndarray &out_vt,
           const std::vector<sycl::event> &depends);
 
+extern std::pair<sycl::event, sycl::event>
+    gesvd_batch(sycl::queue &exec_q,
+                const std::int8_t jobu_val,
+                const std::int8_t jobvt_val,
+                const dpctl::tensor::usm_ndarray &a_array,
+                const dpctl::tensor::usm_ndarray &out_s,
+                const dpctl::tensor::usm_ndarray &out_u,
+                const dpctl::tensor::usm_ndarray &out_vt,
+                const std::vector<sycl::event> &depends);
+
 extern void init_gesvd_dispatch_table(void);
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+extern void init_gesvd_batch_dispatch_table(void);
+} // namespace dpnp::extensions::lapack

@@ -1,8 +1,6 @@
-# cython: language_level=3
-# distutils: language = c++
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +38,6 @@ it contains:
 """
 
 # pylint: disable=protected-access
-# pylint: disable=c-extension-no-member
 # pylint: disable=duplicate-code
 # pylint: disable=no-name-in-module
 
@@ -50,24 +47,31 @@ import dpctl.tensor._tensor_elementwise_impl as tei
 import numpy
 
 import dpnp
-from dpnp.dpnp_algo import dpnp_allclose
 from dpnp.dpnp_algo.dpnp_elementwise_common import DPNPBinaryFunc, DPNPUnaryFunc
-from dpnp.dpnp_array import dpnp_array
-from dpnp.dpnp_utils import call_origin
+
+from .dpnp_utils import get_usm_allocations
 
 __all__ = [
     "all",
     "allclose",
     "any",
+    "array_equal",
+    "array_equiv",
     "equal",
     "greater",
     "greater_equal",
     "isclose",
+    "iscomplex",
+    "iscomplexobj",
     "isfinite",
+    "isfortran",
     "isinf",
     "isnan",
     "isneginf",
     "isposinf",
+    "isreal",
+    "isrealobj",
+    "isscalar",
     "less",
     "less_equal",
     "logical_and",
@@ -110,7 +114,7 @@ def all(a, /, axis=None, out=None, keepdims=False, *, where=True):
     Returns
     -------
     out : dpnp.ndarray
-        An array with a data type of `bool`
+        An array with a data type of `bool`.
         containing the results of the logical AND reduction is returned
         unless `out` is specified. Otherwise, a reference to `out` is returned.
         The result has the same shape as `a` if `axis` is not ``None``
@@ -164,16 +168,14 @@ def all(a, /, axis=None, out=None, keepdims=False, *, where=True):
 
     dpnp.check_limitations(where=where)
 
-    dpt_array = dpnp.get_usm_ndarray(a)
-    result = dpnp_array._create_from_usm_ndarray(
-        dpt.all(dpt_array, axis=axis, keepdims=keepdims)
-    )
+    usm_a = dpnp.get_usm_ndarray(a)
+    usm_res = dpt.all(usm_a, axis=axis, keepdims=keepdims)
+
     # TODO: temporary solution until dpt.all supports out parameter
-    result = dpnp.get_result_array(result, out)
-    return result
+    return dpnp.get_result_array(usm_res, out)
 
 
-def allclose(a, b, rtol=1.0e-5, atol=1.0e-8, **kwargs):
+def allclose(a, b, rtol=1.0e-5, atol=1.0e-8, equal_nan=False):
     """
     Returns ``True`` if two arrays are element-wise equal within a tolerance.
 
@@ -182,29 +184,36 @@ def allclose(a, b, rtol=1.0e-5, atol=1.0e-8, **kwargs):
     are added together to compare against the absolute difference between `a`
     and `b`.
 
-    If either array contains one or more ``NaNs``, ``False`` is returned.
-    ``Infs`` are treated as equal if they are in the same place and of the same
-    sign in both arrays.
+    ``NaNs`` are treated as equal if they are in the same place and if
+    ``equal_nan=True``. ``Infs`` are treated as equal if they are in the same
+    place and of the same sign in both arrays.
 
     For full documentation refer to :obj:`numpy.allclose`.
+
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray, scalar}
+        First input array, expected to have numeric data type.
+        Both inputs `a` and `b` can not be scalars at the same time.
+    b : {dpnp.ndarray, usm_ndarray, scalar}
+        Second input array, also expected to have numeric data type.
+        Both inputs `a` and `b` can not be scalars at the same time.
+    rtol : {dpnp.ndarray, usm_ndarray, scalar}, optional
+        The relative tolerance parameter.
+        Default: ``1e-05``.
+    atol : {dpnp.ndarray, usm_ndarray, scalar}, optional
+        The absolute tolerance parameter.
+        Default: ``1e-08``.
+    equal_nan : bool
+        Whether to compare ``NaNs`` as equal. If ``True``, ``NaNs`` in `a` will
+        be considered equal to ``NaNs`` in `b` in the output array.
+        Default: ``False``.
 
     Returns
     -------
     out : dpnp.ndarray
         A 0-dim array with ``True`` value if the two arrays are equal within
         the given tolerance; with ``False`` otherwise.
-
-    Limitations
-    -----------
-    Parameters `a` and `b` are supported either as :class:`dpnp.ndarray`,
-    :class:`dpctl.tensor.usm_ndarray` or scalars, but both `a` and `b`
-    can not be scalars at the same time.
-    Keyword argument `kwargs` is currently unsupported.
-    Otherwise the functions will be executed sequentially on CPU.
-    Parameters `rtol` and `atol` are supported as scalars. Otherwise
-    ``TypeError`` exception will be raised.
-    Input array data types are limited by supported integer and
-    floating DPNP :ref:`Data types`.
 
     See Also
     --------
@@ -213,59 +222,36 @@ def allclose(a, b, rtol=1.0e-5, atol=1.0e-8, **kwargs):
     :obj:`dpnp.any` : Test whether any element evaluates to True.
     :obj:`dpnp.equal` : Return (x1 == x2) element-wise.
 
+    Notes
+    -----
+    The comparison of `a` and `b` uses standard broadcasting, which
+    means that `a` and `b` need not have the same shape in order for
+    ``dpnp.allclose(a, b)`` to evaluate to ``True``.
+    The same is true for :obj:`dpnp.equal` but not :obj:`dpnp.array_equal`.
+
     Examples
     --------
     >>> import dpnp as np
     >>> a = np.array([1e10, 1e-7])
     >>> b = np.array([1.00001e10, 1e-8])
     >>> np.allclose(a, b)
-    array([False])
+    array(False)
 
     >>> a = np.array([1.0, np.nan])
     >>> b = np.array([1.0, np.nan])
     >>> np.allclose(a, b)
-    array([False])
+    array(False)
+    >>> np.allclose(a, b, equal_nan=True)
+    array(True)
 
     >>> a = np.array([1.0, np.inf])
     >>> b = np.array([1.0, np.inf])
     >>> np.allclose(a, b)
-    array([ True])
+    array(True)
 
     """
 
-    if dpnp.isscalar(a) and dpnp.isscalar(b):
-        # at least one of inputs has to be an array
-        pass
-    elif not (
-        dpnp.is_supported_array_or_scalar(a)
-        and dpnp.is_supported_array_or_scalar(b)
-    ):
-        pass
-    elif kwargs:
-        pass
-    else:
-        if not dpnp.isscalar(rtol):
-            raise TypeError(
-                f"An argument `rtol` must be a scalar, but got {rtol}"
-            )
-        if not dpnp.isscalar(atol):
-            raise TypeError(
-                f"An argument `atol` must be a scalar, but got {atol}"
-            )
-
-        if dpnp.isscalar(a):
-            a = dpnp.full_like(b, fill_value=a)
-        elif dpnp.isscalar(b):
-            b = dpnp.full_like(a, fill_value=b)
-        elif a.shape != b.shape:
-            a, b = dpt.broadcast_arrays(a.get_array(), b.get_array())
-
-        a_desc = dpnp.get_dpnp_descriptor(a, copy_when_nondefault_queue=False)
-        b_desc = dpnp.get_dpnp_descriptor(b, copy_when_nondefault_queue=False)
-        if a_desc and b_desc:
-            return dpnp_allclose(a_desc, b_desc, rtol, atol).get_pyobj()
-
-    return call_origin(numpy.allclose, a, b, rtol=rtol, atol=atol, **kwargs)
+    return all(isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan))
 
 
 def any(a, /, axis=None, out=None, keepdims=False, *, where=True):
@@ -300,7 +286,7 @@ def any(a, /, axis=None, out=None, keepdims=False, *, where=True):
     Returns
     -------
     out : dpnp.ndarray
-        An array with a data type of `bool`
+        An array with a data type of `bool`.
         containing the results of the logical OR reduction is returned
         unless `out` is specified. Otherwise, a reference to `out` is returned.
         The result has the same shape as `a` if `axis` is not ``None``
@@ -354,13 +340,196 @@ def any(a, /, axis=None, out=None, keepdims=False, *, where=True):
 
     dpnp.check_limitations(where=where)
 
-    dpt_array = dpnp.get_usm_ndarray(a)
-    result = dpnp_array._create_from_usm_ndarray(
-        dpt.any(dpt_array, axis=axis, keepdims=keepdims)
-    )
+    usm_a = dpnp.get_usm_ndarray(a)
+    usm_res = dpt.any(usm_a, axis=axis, keepdims=keepdims)
+
     # TODO: temporary solution until dpt.any supports out parameter
-    result = dpnp.get_result_array(result, out)
-    return result
+    return dpnp.get_result_array(usm_res, out)
+
+
+def array_equal(a1, a2, equal_nan=False):
+    """
+    ``True`` if two arrays have the same shape and elements, ``False``
+    otherwise.
+
+    For full documentation refer to :obj:`numpy.array_equal`.
+
+    Parameters
+    ----------
+    a1 : {dpnp.ndarray, usm_ndarray, scalar}
+        First input array.
+        Both inputs `x1` and `x2` can not be scalars at the same time.
+    a2 : {dpnp.ndarray, usm_ndarray, scalar}
+        Second input array.
+        Both inputs `x1` and `x2` can not be scalars at the same time.
+    equal_nan : bool, optional
+        Whether to compare ``NaNs`` as equal. If the dtype of `a1` and `a2` is
+        complex, values will be considered equal if either the real or the
+        imaginary component of a given value is ``NaN``.
+        Default: ``False``.
+
+    Returns
+    -------
+    b : dpnp.ndarray
+        An array with a data type of `bool`.
+        Returns ``True`` if the arrays are equal.
+
+    See Also
+    --------
+    :obj:`dpnp.allclose`: Returns ``True`` if two arrays are element-wise equal
+                          within a tolerance.
+    :obj:`dpnp.array_equiv`: Returns ``True`` if input arrays are shape
+                             consistent and all elements equal.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> a = np.array([1, 2])
+    >>> b = np.array([1, 2])
+    >>> np.array_equal(a, b)
+    array(True)
+
+    >>> b = np.array([1, 2, 3])
+    >>> np.array_equal(a, b)
+    array(False)
+
+    >>> b = np.array([1, 4])
+    >>> np.array_equal(a, b)
+    array(False)
+
+    >>> a = np.array([1, np.nan])
+    >>> np.array_equal(a, a)
+    array(False)
+
+    >>> np.array_equal(a, a, equal_nan=True)
+    array(True)
+
+    When ``equal_nan`` is ``True``, complex values with NaN components are
+    considered equal if either the real *or* the imaginary components are
+    ``NaNs``.
+
+    >>> a = np.array([1 + 1j])
+    >>> b = a.copy()
+    >>> a.real = np.nan
+    >>> b.imag = np.nan
+    >>> np.array_equal(a, b, equal_nan=True)
+    array(True)
+
+    """
+
+    dpnp.check_supported_arrays_type(a1, a2, scalar_type=True)
+    if dpnp.isscalar(a1):
+        usm_type_alloc = a2.usm_type
+        sycl_queue_alloc = a2.sycl_queue
+        a1 = dpnp.array(
+            a1,
+            dtype=dpnp.result_type(a1, a2),
+            usm_type=usm_type_alloc,
+            sycl_queue=sycl_queue_alloc,
+        )
+    elif dpnp.isscalar(a2):
+        usm_type_alloc = a1.usm_type
+        sycl_queue_alloc = a1.sycl_queue
+        a2 = dpnp.array(
+            a2,
+            dtype=dpnp.result_type(a1, a2),
+            usm_type=usm_type_alloc,
+            sycl_queue=sycl_queue_alloc,
+        )
+    else:
+        usm_type_alloc, sycl_queue_alloc = get_usm_allocations([a1, a2])
+
+    if a1.shape != a2.shape:
+        return dpnp.array(
+            False, usm_type=usm_type_alloc, sycl_queue=sycl_queue_alloc
+        )
+
+    if not equal_nan:
+        return (a1 == a2).all()
+
+    if a1 is a2:
+        # NaN will compare equal so an array will compare equal to itself
+        return dpnp.array(
+            True, usm_type=usm_type_alloc, sycl_queue=sycl_queue_alloc
+        )
+
+    if not (
+        dpnp.issubdtype(a1, dpnp.inexact) or dpnp.issubdtype(a2, dpnp.inexact)
+    ):
+        return (a1 == a2).all()
+
+    # Handling NaN values if equal_nan is True
+    a1nan, a2nan = isnan(a1), isnan(a2)
+    # NaNs occur at different locations
+    if not (a1nan == a2nan).all():
+        return dpnp.array(
+            False, usm_type=usm_type_alloc, sycl_queue=sycl_queue_alloc
+        )
+    # Shapes of a1, a2 and masks are guaranteed to be consistent by this point
+    return (a1[~a1nan] == a2[~a1nan]).all()
+
+
+def array_equiv(a1, a2):
+    """
+    Returns ``True`` if input arrays are shape consistent and all elements
+    equal.
+
+    Shape consistent means they are either the same shape, or one input array
+    can be broadcasted to create the same shape as the other one.
+
+    For full documentation refer to :obj:`numpy.array_equiv`.
+
+    Parameters
+    ----------
+    a1 : {dpnp.ndarray, usm_ndarray, scalar}
+        First input array.
+        Both inputs `x1` and `x2` can not be scalars at the same time.
+    a2 : {dpnp.ndarray, usm_ndarray, scalar}
+        Second input array.
+        Both inputs `x1` and `x2` can not be scalars at the same time.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        An array with a data type of `bool`.
+        ``True`` if equivalent, ``False`` otherwise.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> a = np.array([1, 2])
+    >>> b = np.array([1, 2])
+    >>> c = np.array([1, 3])
+    >>> np.array_equiv(a, b)
+    array(True)
+    >>> np.array_equiv(a, c)
+    array(False)
+
+    Showing the shape equivalence:
+
+    >>> b = np.array([[1, 2], [1, 2]])
+    >>> c = np.array([[1, 2, 1, 2], [1, 2, 1, 2]])
+    >>> np.array_equiv(a, b)
+    array(True)
+    >>> np.array_equiv(a, c)
+    array(False)
+
+    >>> b = np.array([[1, 2], [1, 3]])
+    >>> np.array_equiv(a, b)
+    array(False)
+
+    """
+
+    dpnp.check_supported_arrays_type(a1, a2, scalar_type=True)
+    if not dpnp.isscalar(a1) and not dpnp.isscalar(a2):
+        usm_type_alloc, sycl_queue_alloc = get_usm_allocations([a1, a2])
+        try:
+            dpnp.broadcast_arrays(a1, a2)
+        except ValueError:
+            return dpnp.array(
+                False, usm_type=usm_type_alloc, sycl_queue=sycl_queue_alloc
+            )
+    return (a1 == a2).all()
 
 
 _EQUAL_DOCSTRING = """
@@ -377,6 +546,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array have the correct shape and the expected data type.
@@ -448,6 +619,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -514,6 +687,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -567,47 +742,210 @@ greater_equal = DPNPBinaryFunc(
 )
 
 
-def isclose(x1, x2, rtol=1e-05, atol=1e-08, equal_nan=False):
+def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     """
     Returns a boolean array where two arrays are element-wise equal within
     a tolerance.
 
+    The tolerance values are positive, typically very small numbers. The
+    relative difference (`rtol` * abs(`b`)) and the absolute difference `atol`
+    are added together to compare against the absolute difference between `a`
+    and `b`.
+
+    ``NaNs`` are treated as equal if they are in the same place and if
+    ``equal_nan=True``. ``Infs`` are treated as equal if they are in the same
+    place and of the same sign in both arrays.
+
     For full documentation refer to :obj:`numpy.isclose`.
 
-    Limitations
-    -----------
-    `x2` is supported to be integer if `x1` is :class:`dpnp.ndarray` or
-    at least either `x1` or `x2` should be as :class:`dpnp.ndarray`.
-    Otherwise the function will be executed sequentially on CPU.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray, scalar}
+        First input array, expected to have numeric data type.
+        Both inputs `a` and `b` can not be scalars at the same time.
+    b : {dpnp.ndarray, usm_ndarray, scalar}
+        Second input array, also expected to have numeric data type.
+        Both inputs `a` and `b` can not be scalars at the same time.
+    rtol : {dpnp.ndarray, usm_ndarray, scalar}, optional
+        The relative tolerance parameter.
+        Default: ``1e-05``.
+    atol : {dpnp.ndarray, usm_ndarray, scalar}, optional
+        The absolute tolerance parameter.
+        Default: ``1e-08``.
+    equal_nan : bool
+        Whether to compare ``NaNs`` as equal. If ``True``, ``NaNs`` in `a` will
+        be considered equal to ``NaNs`` in `b` in the output array.
+        Default: ``False``.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Returns a boolean array of where `a` and `b` are equal within the given
+        tolerance.
 
     See Also
     --------
-    :obj:`dpnp.allclose` : Returns True if two arrays are element-wise equal
-                           within a tolerance.
+    :obj:`dpnp.allclose` : Returns ``True`` if two arrays are element-wise
+                           equal within a tolerance.
 
     Examples
     --------
     >>> import dpnp as np
-    >>> x1 = np.array([1e10,1e-7])
-    >>> x2 = np.array([1.00001e10,1e-8])
-    >>> out = np.isclose(x1, x2)
-    >>> [i for i in out]
-    [True, False]
+    >>> a = np.array([1e10, 1e-7])
+    >>> b = np.array([1.00001e10, 1e-8])
+    >>> np.isclose(a, b)
+    array([ True, False])
+
+    >>> a = np.array([1e10, 1e-8])
+    >>> b = np.array([1.00001e10, 1e-9])
+    >>> np.isclose(a, b)
+    array([ True,  True])
+
+    >>> a = np.array([1e10, 1e-8])
+    >>> b = np.array([1.0001e10, 1e-9])
+    >>> np.isclose(a, b)
+    array([False,  True])
+
+    >>> a = np.array([1.0, np.nan])
+    >>> b = np.array([1.0, np.nan])
+    >>> np.isclose(a, b)
+    array([ True, False])
+    >>> np.isclose(a, b, equal_nan=True)
+    array([ True,  True])
+
+    >>> a = np.array([0.0, 0.0])
+    >>> b = np.array([1e-8, 1e-7])
+    >>> np.isclose(a, b)
+    array([ True, False])
+    >>> b = np.array([1e-100, 1e-7])
+    >>> np.isclose(a, b, atol=0.0)
+    array([False, False])
+
+    >>> a = np.array([1e-10, 1e-10])
+    >>> b = np.array([1e-20, 0.0])
+    >>> np.isclose(a, b)
+    array([ True,  True])
+    >>> b = np.array([1e-20, 0.999999e-10])
+    >>> np.isclose(a, b, atol=0.0)
+    array([False,  True])
 
     """
 
-    # x1_desc = dpnp.get_dpnp_descriptor(x1)
-    # x2_desc = dpnp.get_dpnp_descriptor(x2)
-    # if x1_desc and x2_desc:
-    #     result_obj = dpnp_isclose(
-    #         x1_desc, x2_desc, rtol, atol, equal_nan
-    #     ).get_pyobj()
-    #     return result_obj
-
-    return call_origin(
-        numpy.isclose, x1, x2, rtol=rtol, atol=atol, equal_nan=equal_nan
+    dpnp.check_supported_arrays_type(a, b, scalar_type=True)
+    dpnp.check_supported_arrays_type(
+        rtol, atol, scalar_type=True, all_scalars=True
     )
+
+    # make sure b is an inexact type to avoid bad behavior on abs(MIN_INT)
+    if dpnp.isscalar(b):
+        dt = dpnp.result_type(a, b, 1.0, rtol, atol)
+        b = dpnp.asarray(
+            b, dtype=dt, sycl_queue=a.sycl_queue, usm_type=a.usm_type
+        )
+    elif dpnp.issubdtype(b, dpnp.integer):
+        dt = dpnp.result_type(b, 1.0, rtol, atol)
+        b = dpnp.astype(b, dtype=dt)
+
+    # Firstly handle finite values:
+    # result = absolute(a - b) <= atol + rtol * absolute(b)
+    dt = dpnp.result_type(b, rtol, atol)
+    _b = dpnp.abs(b, dtype=dt)
+    _b *= rtol
+    _b += atol
+    result = less_equal(dpnp.abs(a - b), _b)
+
+    # Handle "inf" values: they are treated as equal if they are in the same
+    # place and of the same sign in both arrays
+    result &= isfinite(b)
+    result |= a == b
+
+    if equal_nan:
+        result |= isnan(a) & isnan(b)
+    return result
+
+
+def iscomplex(x):
+    """
+    Returns a bool array, where ``True`` if input element is complex.
+
+    What is tested is whether the input has a non-zero imaginary part, not if
+    the input type is complex.
+
+    For full documentation refer to :obj:`numpy.iscomplex`.
+
+    Parameters
+    ----------
+    x : {dpnp.ndarray, usm_ndarray}
+        Input array.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Output array.
+
+    See Also
+    --------
+    :obj:`dpnp.isreal` : Returns a bool array, where ``True`` if input element
+                         is real.
+    :obj:`dpnp.iscomplexobj` : Return ``True`` if `x` is a complex type or an
+                               array of complex numbers.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> a = np.array([1+1j, 1+0j, 4.5, 3, 2, 2j])
+    >>> np.iscomplex(a)
+    array([ True, False, False, False, False,  True])
+
+    """
+    dpnp.check_supported_arrays_type(x)
+    if dpnp.issubdtype(x.dtype, dpnp.complexfloating):
+        return x.imag != 0
+    return dpnp.zeros_like(x, dtype=dpnp.bool)
+
+
+def iscomplexobj(x):
+    """
+    Check for a complex type or an array of complex numbers.
+
+    The type of the input is checked, not the value. Even if the input has an
+    imaginary part equal to zero, :obj:`dpnp.iscomplexobj` evaluates to
+    ``True``.
+
+    For full documentation refer to :obj:`numpy.iscomplexobj`.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data, in any form that can be converted to an array. This
+        includes scalars, lists, lists of tuples, tuples, tuples of tuples,
+        tuples of lists, and ndarrays.
+
+    Returns
+    -------
+    out : bool
+        The return value, ``True`` if `x` is of a complex type or has at least
+        one complex element.
+
+    See Also
+    --------
+    :obj:`dpnp.isrealobj` : Return ``True`` if `x` is a not complex type or an
+                            array of complex numbers.
+    :obj:`dpnp.iscomplex` : Returns a bool array, where ``True`` if input
+                            element is complex.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> np.iscomplexobj(1)
+    False
+    >>> np.iscomplexobj(1+0j)
+    True
+    >>> np.iscomplexobj([3, 1+0j, True])
+    True
+
+    """
+    return numpy.iscomplexobj(x)
 
 
 _ISFINITE_DOCSTRING = """
@@ -668,6 +1006,76 @@ isfinite = DPNPUnaryFunc(
     tei._isfinite,
     _ISFINITE_DOCSTRING,
 )
+
+
+def isfortran(a):
+    """
+    Check if the array is Fortran contiguous but *not* C contiguous.
+
+    This function is obsolete. If you only want to check if an array is Fortran
+    contiguous use ``a.flags.f_contiguous`` instead.
+
+    For full documentation refer to :obj:`numpy.isfortran`.
+
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray}
+        Input array.
+
+    Returns
+    -------
+    isfortran : bool
+        Returns ``True`` if the array is Fortran contiguous
+        but *not* C contiguous.
+
+    Examples
+    --------
+    :obj:`dpnp.array` allows to specify whether the array is written in
+    C-contiguous order (last index varies the fastest), or FORTRAN-contiguous
+    order in memory (first index varies the fastest).
+
+    >>> import dpnp as np
+    >>> a = np.array([[1, 2, 3], [4, 5, 6]], order='C')
+    >>> a
+    array([[1, 2, 3],
+           [4, 5, 6]])
+    >>> np.isfortran(a)
+    False
+
+    >>> b = np.array([[1, 2, 3], [4, 5, 6]], order='F')
+    >>> b
+    array([[1, 2, 3],
+           [4, 5, 6]])
+    >>> np.isfortran(b)
+    True
+
+    The transpose of a C-ordered array is a FORTRAN-ordered array.
+
+    >>> a = np.array([[1, 2, 3], [4, 5, 6]], order='C')
+    >>> a
+    array([[1, 2, 3],
+           [4, 5, 6]])
+    >>> np.isfortran(a)
+    False
+    >>> b = a.T
+    >>> b
+    array([[1, 4],
+           [2, 5],
+           [3, 6]])
+    >>> np.isfortran(b)
+    True
+
+    C-ordered arrays evaluate as ``False`` even if they are also
+    FORTRAN-ordered.
+
+    >>> np.isfortran(np.array([1, 2], order='F'))
+    False
+
+    """
+
+    dpnp.check_supported_arrays_type(a)
+
+    return a.flags.fnc
 
 
 _ISINF_DOCSTRING = """
@@ -760,8 +1168,6 @@ See Also
 :obj:`dpnp.isposinf` : Test element-wise for positive infinity,
                         return result as bool array.
 :obj:`dpnp.isfinite` : Test element-wise for finiteness.
-:obj:`dpnp.isnat` : Test element-wise for NaT (not a time)
-                    and return result as a boolean array.
 
 Examples
 --------
@@ -923,6 +1329,123 @@ def isposinf(x, out=None):
     return dpnp.logical_and(is_inf, signbit, out=out)
 
 
+def isreal(x):
+    """
+    Returns a bool array, where ``True`` if input element is real.
+
+    If element has complex type with zero imaginary part, the return value
+    for that element is ``True``.
+
+    For full documentation refer to :obj:`numpy.isreal`.
+
+    Parameters
+    ----------
+    x : {dpnp.ndarray, usm_ndarray}
+        Input array.
+
+    Returns
+    -------
+    out : : dpnp.ndarray
+        Boolean array of same shape as `x`.
+
+    See Also
+    --------
+    :obj:`dpnp.iscomplex` : Returns a bool array, where ``True`` if input
+                            element is complex.
+    :obj:`dpnp.isrealobj` : Return ``True`` if `x` is not a complex type.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> a = np.array([1+1j, 1+0j, 4.5, 3, 2, 2j])
+    >>> np.isreal(a)
+    array([False,  True,  True,  True,  True, False])
+
+    """
+    dpnp.check_supported_arrays_type(x)
+    if dpnp.issubdtype(x.dtype, dpnp.complexfloating):
+        return x.imag == 0
+    return dpnp.ones_like(x, dtype=dpnp.bool)
+
+
+def isrealobj(x):
+    """
+    Return ``True`` if `x` is a not complex type or an array of complex numbers.
+
+    The type of the input is checked, not the value. So even if the input has
+    an imaginary part equal to zero, :obj:`dpnp.isrealobj` evaluates to
+    ``False`` if the data type is complex.
+
+    For full documentation refer to :obj:`numpy.isrealobj`.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data, in any form that can be converted to an array. This
+        includes scalars, lists, lists of tuples, tuples, tuples of tuples,
+        tuples of lists, and ndarrays.
+
+    Returns
+    -------
+    out : bool
+        The return value, ``False`` if `x` is of a complex type.
+
+    See Also
+    --------
+    :obj:`dpnp.iscomplexobj` : Check for a complex type or an array of complex
+                               numbers.
+    :obj:`dpnp.isreal` : Returns a bool array, where ``True`` if input element
+                         is real.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> np.isrealobj(False)
+    True
+    >>> np.isrealobj(1)
+    True
+    >>> np.isrealobj(1+0j)
+    False
+    >>> np.isrealobj([3, 1+0j, True])
+    False
+
+    """
+    return not iscomplexobj(x)
+
+
+def isscalar(element):
+    """
+    Returns ``True`` if the type of `element` is a scalar type.
+
+    For full documentation refer to :obj:`numpy.isscalar`.
+
+    Parameters
+    ----------
+    element : any
+        Input argument, can be of any type and shape.
+
+    Returns
+    -------
+    out : bool
+        ``True`` if `element` is a scalar type, ``False`` if it is not.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> np.isscalar(3.1)
+    True
+    >>> np.isscalar(np.array(3.1))
+    False
+    >>> np.isscalar([3.1])
+    False
+    >>> np.isscalar(False)
+    True
+    >>> np.isscalar("dpnp")
+    True
+    """
+    return numpy.isscalar(element)
+
+
 _LESS_DOCSTRING = """
 Computes the less-than test results for each element `x1_i` of
 the input array `x1` with the respective element `x2_i` of the input array `x2`.
@@ -937,6 +1460,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1003,6 +1528,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1069,6 +1596,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1081,6 +1610,7 @@ Returns
 -------
 out : dpnp.ndarray
     An array containing the element-wise logical AND results.
+    The shape is determined by broadcasting.
 
 Limitations
 -----------
@@ -1190,6 +1720,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1202,6 +1734,7 @@ Returns
 -------
 out : dpnp.ndarray
     An array containing the element-wise logical OR results.
+    The shape is determined by broadcasting.
 
 Limitations
 -----------
@@ -1258,6 +1791,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1270,6 +1805,7 @@ Returns
 -------
 out : dpnp.ndarray
     An array containing the element-wise logical XOR results.
+    The shape is determined by broadcasting.
 
 Limitations
 -----------
@@ -1324,6 +1860,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have numeric data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.

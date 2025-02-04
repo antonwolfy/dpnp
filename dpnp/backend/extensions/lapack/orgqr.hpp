@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,21 @@
 
 #include <dpctl4pybind11.hpp>
 
-namespace dpnp
-{
-namespace backend
-{
-namespace ext
-{
-namespace lapack
+namespace dpnp::extensions::lapack
 {
 extern std::pair<sycl::event, sycl::event>
-    orgqr(sycl::queue exec_q,
+    orgqr(sycl::queue &exec_q,
           const std::int64_t m,
           const std::int64_t n,
           const std::int64_t k,
-          dpctl::tensor::usm_ndarray a_array,
-          dpctl::tensor::usm_ndarray tau_array,
+          const dpctl::tensor::usm_ndarray &a_array,
+          const dpctl::tensor::usm_ndarray &tau_array,
           const std::vector<sycl::event> &depends = {});
 
 extern std::pair<sycl::event, sycl::event>
-    orgqr_batch(sycl::queue exec_q,
-                dpctl::tensor::usm_ndarray a_array,
-                dpctl::tensor::usm_ndarray tau_array,
+    orgqr_batch(sycl::queue &exec_q,
+                const dpctl::tensor::usm_ndarray &a_array,
+                const dpctl::tensor::usm_ndarray &tau_array,
                 std::int64_t m,
                 std::int64_t n,
                 std::int64_t k,
@@ -61,7 +55,4 @@ extern std::pair<sycl::event, sycl::event>
 
 extern void init_orgqr_batch_dispatch_vector(void);
 extern void init_orgqr_dispatch_vector(void);
-} // namespace lapack
-} // namespace ext
-} // namespace backend
-} // namespace dpnp
+} // namespace dpnp::extensions::lapack

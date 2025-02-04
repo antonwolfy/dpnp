@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,30 +37,25 @@ it contains:
 
 """
 
-# pylint: disable=no-name-in-module
-
 import dpctl.tensor as dpt
 import dpctl.tensor._tensor_impl as dti
 
 import dpnp
 
 from .dpnp_array import dpnp_array
-from .dpnp_utils import (
-    get_usm_allocations,
-)
 from .dpnp_utils.dpnp_utils_reduction import dpnp_wrap_reduction_call
 
-__all__ = ["argmax", "argmin", "searchsorted", "where"]
+__all__ = ["argmax", "argmin", "argwhere", "searchsorted", "where"]
 
 
-def _get_search_res_dt(a, _dtype, out):
+def _get_search_res_dt(a, out):
     """Get a data type used by dpctl for result array in search function."""
 
     # get a data type used by dpctl for result array in search function
     res_dt = dti.default_device_index_type(a.sycl_device)
 
     # numpy raises TypeError if "out" data type mismatch default index type
-    if not dpnp.can_cast(out.dtype, res_dt, casting="safe"):
+    if out is not None and not dpnp.can_cast(out.dtype, res_dt, casting="safe"):
         raise TypeError(
             f"Cannot cast from {out.dtype} to {res_dt} "
             "according to the rule safe."
@@ -148,11 +143,10 @@ def argmax(a, axis=None, out=None, *, keepdims=False):
 
     usm_a = dpnp.get_usm_ndarray(a)
     return dpnp_wrap_reduction_call(
-        a,
+        usm_a,
         out,
         dpt.argmax,
-        _get_search_res_dt,
-        usm_a,
+        _get_search_res_dt(a, out),
         axis=axis,
         keepdims=keepdims,
     )
@@ -239,14 +233,69 @@ def argmin(a, axis=None, out=None, *, keepdims=False):
 
     usm_a = dpnp.get_usm_ndarray(a)
     return dpnp_wrap_reduction_call(
-        a,
+        usm_a,
         out,
         dpt.argmin,
-        _get_search_res_dt,
-        usm_a,
+        _get_search_res_dt(a, out),
         axis=axis,
         keepdims=keepdims,
     )
+
+
+def argwhere(a):
+    """
+    Find the indices of array elements that are non-zero, grouped by element.
+
+    For full documentation refer to :obj:`numpy.argwhere`.
+
+    Parameters
+    ----------
+    a : {dpnp.ndarray, usm_ndarray}
+        Input array.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Indices of elements that are non-zero. Indices are grouped by element.
+        This array will have shape ``(N, a.ndim)`` where ``N`` is the number of
+        non-zero items.
+
+    See Also
+    --------
+    :obj:`dpnp.where` : Returns elements chosen from input arrays depending on
+                        a condition.
+    :obj:`dpnp.nonzero` : Return the indices of the elements that are non-zero.
+
+    Notes
+    -----
+    ``dpnp.argwhere(a)`` is almost the same as
+    ``dpnp.transpose(dpnp.nonzero(a))``, but produces a result of the correct
+    shape for a 0D array.
+    The output of :obj:`dpnp.argwhere` is not suitable for indexing arrays.
+    For this purpose use :obj:`dpnp.nonzero` instead.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> x = np.arange(6).reshape(2, 3)
+    >>> x
+    array([[0, 1, 2],
+           [3, 4, 5]])
+    >>> np.argwhere(x > 1)
+    array([[0, 2],
+           [1, 0],
+           [1, 1],
+           [1, 2]])
+
+    """
+
+    dpnp.check_supported_arrays_type(a)
+    if a.ndim == 0:
+        # nonzero does not behave well on 0d, so promote to 1d
+        a = dpnp.atleast_1d(a)
+        # and then remove the added dimension
+        return dpnp.argwhere(a)[:, :0]
+    return dpnp.stack(dpnp.nonzero(a)).T
 
 
 def searchsorted(a, v, side="left", sorter=None):
@@ -263,17 +312,17 @@ def searchsorted(a, v, side="left", sorter=None):
         sort it.
     v : {dpnp.ndarray, usm_ndarray, scalar}
         Values to insert into `a`.
-    side : {'left', 'right'}, optional
-        If ``'left'``, the index of the first suitable location found is given.
-        If ``'right'``, return the last such index. If there is no suitable
+    side : {"left", "right"}, optional
+        If ``"left"``, the index of the first suitable location found is given.
+        If ``"right"``, return the last such index. If there is no suitable
         index, return either 0 or N (where N is the length of `a`).
-        Default is ``'left'``.
+        Default: ``"left"``.
     sorter : {dpnp.ndarray, usm_ndarray}, optional
         Optional 1-D array of integer indices that sort array a into ascending
         order. They are typically the result of :obj:`dpnp.argsort`.
-        Out of bound index values of `sorter` array are treated using `"wrap"`
-        mode documented in :py:func:`dpnp.take`.
-        Default is ``None``.
+        Out of bound index values of `sorter` array are treated using
+        ``"wrap"`` mode documented in :py:func:`dpnp.take`.
+        Default: ``None``.
 
     Returns
     -------
@@ -329,7 +378,7 @@ def where(condition, x=None, y=None, /, *, order="K", out=None):
         Values from which to choose. `x`, `y` and `condition` need to be
         broadcastable to some shape.
     order : {"K", "C", "F", "A"}, optional
-        Memory layout of the new output arra, if keyword `out` is ``None``.
+        Memory layout of the new output array, if keyword `out` is ``None``.
         Default: ``"K"``.
     out : {None, dpnp.ndarray, usm_ndarray}, optional
         The array into which the result is written. The data type of `out` must
@@ -395,15 +444,6 @@ def where(condition, x=None, y=None, /, *, order="K", out=None):
     usm_y = dpnp.get_usm_ndarray_or_scalar(y)
     usm_condition = dpnp.get_usm_ndarray(condition)
 
-    usm_type, queue = get_usm_allocations([condition, x, y])
-    if dpnp.isscalar(usm_x):
-        usm_x = dpt.asarray(usm_x, usm_type=usm_type, sycl_queue=queue)
-
-    if dpnp.isscalar(usm_y):
-        usm_y = dpt.asarray(usm_y, usm_type=usm_type, sycl_queue=queue)
-
     usm_out = None if out is None else dpnp.get_usm_ndarray(out)
-    result = dpnp_array._create_from_usm_ndarray(
-        dpt.where(usm_condition, usm_x, usm_y, order=order, out=usm_out)
-    )
-    return dpnp.get_result_array(result, out)
+    usm_res = dpt.where(usm_condition, usm_x, usm_y, order=order, out=usm_out)
+    return dpnp.get_result_array(usm_res, out)

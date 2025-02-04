@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2022-2024, Intel Corporation
+// Copyright (c) 2022-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,6 +22,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
+
+#include <stdexcept>
 
 #include "dpnp_random_state.hpp"
 #include <oneapi/mkl/rng.hpp>

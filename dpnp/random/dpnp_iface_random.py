@@ -1,7 +1,7 @@
 # cython: language_level=3
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -140,6 +140,11 @@ def beta(a, b, size=None):
     """
 
     if not use_origin_backend(a):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `a`, `b`
         if not dpnp.isscalar(a):
@@ -186,6 +191,11 @@ def binomial(n, p, size=None):
     """
 
     if not use_origin_backend(n):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `p` param
         if not dpnp.isscalar(n):
@@ -238,6 +248,11 @@ def chisquare(df, size=None):
     """
 
     if not use_origin_backend(df):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `df`
         if not dpnp.isscalar(df):
@@ -306,6 +321,11 @@ def exponential(scale=1.0, size=None):
     """
 
     if not use_origin_backend(scale):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `scale`
         if not dpnp.isscalar(scale):
@@ -338,6 +358,11 @@ def f(dfnum, dfden, size=None):
     """
 
     if not use_origin_backend(dfnum):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `dfnum` and `dfden`
         if not dpnp.isscalar(dfnum):
@@ -376,6 +401,11 @@ def gamma(shape, scale=1.0, size=None):
     """
 
     if not use_origin_backend(scale):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `scale` and `shape`
         if not dpnp.isscalar(scale):
@@ -414,6 +444,11 @@ def geometric(p, size=None):
     """
 
     if not use_origin_backend(p):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `p` param
         if not dpnp.isscalar(p):
@@ -448,6 +483,11 @@ def gumbel(loc=0.0, scale=1.0, size=None):
     """
 
     if not use_origin_backend(loc):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `loc` and `scale` params
         if not dpnp.isscalar(scale):
@@ -486,6 +526,11 @@ def hypergeometric(ngood, nbad, nsample, size=None):
     """
 
     if not use_origin_backend(ngood):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of ints for `ngood`, `nbad`, `nsample` param
         if not dpnp.isscalar(ngood):
@@ -534,6 +579,11 @@ def laplace(loc=0.0, scale=1.0, size=None):
     """
 
     if not use_origin_backend(loc):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `loc` and `scale`
         if not dpnp.isscalar(loc):
@@ -568,6 +618,11 @@ def logistic(loc=0.0, scale=1.0, size=None):
     """
 
     if not use_origin_backend(loc):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `loc` and `scale`
         if not dpnp.isscalar(loc):
@@ -609,6 +664,11 @@ def lognormal(mean=0.0, sigma=1.0, size=None):
     """
 
     if not use_origin_backend(mean):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `mean` and `sigma` params
         if not dpnp.isscalar(mean):
@@ -666,6 +726,11 @@ def multinomial(n, pvals, size=None):
         pvals_sum = sum(pvals)
         pvals_desc = dpnp.get_dpnp_descriptor(dpnp.array(pvals))
         d = len(pvals)
+        if dpnp.is_cuda_backend(pvals_desc.get_array()):  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         if n < 0:
             pass
         elif n > dpnp.iinfo(dpnp.int32).max:
@@ -713,6 +778,13 @@ def multivariate_normal(mean, cov, size=None, check_valid="warn", tol=1e-8):
     if not use_origin_backend(mean):
         mean_ = dpnp.get_dpnp_descriptor(dpnp.array(mean, dtype=dpnp.float64))
         cov_ = dpnp.get_dpnp_descriptor(dpnp.array(cov, dtype=dpnp.float64))
+        if dpnp.is_cuda_backend(mean_.get_array()) or dpnp.is_cuda_backend(
+            cov_.get_array()
+        ):  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         if size is None:
             shape = []
         elif isinstance(size, (int, dpnp.integer)):
@@ -767,6 +839,11 @@ def negative_binomial(n, p, size=None):
     """
 
     if not use_origin_backend(n):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `p` and `n` params
         if not dpnp.isscalar(n):
@@ -807,7 +884,11 @@ def normal(
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -848,6 +929,11 @@ def noncentral_chisquare(df, nonc, size=None):
     """
 
     if not use_origin_backend(df):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `mean` and `scale`
         if not dpnp.isscalar(df):
@@ -902,6 +988,11 @@ def pareto(a, size=None):
     """
 
     if not use_origin_backend(a):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `a`
         if not dpnp.isscalar(a):
@@ -971,6 +1062,11 @@ def poisson(lam=1.0, size=None):
     """
 
     if not use_origin_backend(lam):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `lam` param
         if not dpnp.isscalar(lam):
@@ -1006,6 +1102,11 @@ def power(a, size=None):
     """
 
     if not use_origin_backend(a):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `a`
         if not dpnp.isscalar(a):
@@ -1018,48 +1119,62 @@ def power(a, size=None):
     return call_origin(numpy.random.power, a, size)
 
 
-def rand(d0, *dn, device=None, usm_type="device", sycl_queue=None):
+def rand(*args, device=None, usm_type="device", sycl_queue=None):
     """
     Random values in a given shape.
 
-    Create an array of the given shape and populate it with random samples
-    from a uniform distribution over [0, 1).
+    Create an array of the given shape and populate it with random samples from
+    a uniform distribution over ``[0, 1)``.
 
     For full documentation refer to :obj:`numpy.random.rand`.
 
     Parameters
     ----------
+    *args : sequence of ints, optional
+        The dimensions of the returned array, must be non-negative.
+        If no argument is given a single Python float is returned.
     device : {None, string, SyclDevice, SyclQueue}, optional
         An array API concept of device where the output array is created.
-        The `device` can be ``None`` (the default), an OneAPI filter selector string,
-        an instance of :class:`dpctl.SyclDevice` corresponding to a non-partitioned SYCL device,
-        an instance of :class:`dpctl.SyclQueue`, or a `Device` object returned by
+        The `device` can be ``None`` (the default), an OneAPI filter selector
+        string, an instance of :class:`dpctl.SyclDevice` corresponding to
+        a non-partitioned SYCL device, an instance of :class:`dpctl.SyclQueue`,
+        or a `Device` object returned by
         :obj:`dpnp.dpnp_array.dpnp_array.device` property.
+        Default: ``None``.
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
+        Default: ``"device"``.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
     out : dpnp.ndarray
-        Random values in a given shape.
-        Output array data type is :obj:`dpnp.float64` if device supports it, or :obj:`dpnp.float32` otherwise.
-
-    Examples
-    --------
-    >>> s = dpnp.random.rand(3, 2)
+        Random values in a given shape ``(d0, d1, ..., dn)``.
+        Output array data type is :obj:`dpnp.float64` if a device supports it,
+        or :obj:`dpnp.float32` type otherwise.
 
     See Also
     --------
-    :obj:`dpnp.random.random`
-    :obj:`dpnp.random.random_sample`
-    :obj:`dpnp.random.uniform`
+    :obj:`dpnp.random.random` : Return random floats in the half-open interval
+                                ``[0.0, 1.0)``.
+    :obj:`dpnp.random.random_sample` : Return random floats in the half-open
+                                       interval ``[0.0, 1.0)``.
+    :obj:`dpnp.random.uniform` : Draw samples from a uniform distribution.
+
+    Examples
+    --------
+    >>> import dpnp as np
+    >>> s = np.random.rand(3, 2)
 
     """
 
     rs = _get_random_state(device=device, sycl_queue=sycl_queue)
-    return rs.rand(d0, *dn, usm_type=usm_type)
+    return rs.rand(*args, usm_type=usm_type)
 
 
 def randint(
@@ -1087,7 +1202,11 @@ def randint(
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1141,7 +1260,11 @@ def randn(d0, *dn, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1189,7 +1312,11 @@ def random(size=None, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1233,7 +1360,11 @@ def random_integers(
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1294,7 +1425,11 @@ def random_sample(size=None, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1337,7 +1472,11 @@ def ranf(size=None, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1385,6 +1524,11 @@ def rayleigh(scale=1.0, size=None):
     """
 
     if not use_origin_backend(scale):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `scale` params
         if not dpnp.isscalar(scale):
@@ -1416,7 +1560,11 @@ def sample(size=None, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1457,6 +1605,12 @@ def shuffle(x1):
 
     x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_strides=False)
     if x1_desc:
+
+        if dpnp.is_cuda_backend(x1_desc.get_array()):  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         if not dpnp.is_type_supported(x1_desc.dtype):
             pass
         else:
@@ -1501,6 +1655,11 @@ def seed(seed=None, device=None, sycl_queue=None):
     )
 
     if not use_origin_backend(seed):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of ints for `seed`
         if seed is None:
@@ -1541,6 +1700,10 @@ def standard_cauchy(size=None):
     """
 
     if not use_origin_backend(size):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
         return dpnp_rng_standard_cauchy(size).get_pyobj()
 
     return call_origin(numpy.random.standard_cauchy, size)
@@ -1566,6 +1729,10 @@ def standard_exponential(size=None):
     """
 
     if not use_origin_backend(size):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
         return dpnp_rng_standard_exponential(size).get_pyobj()
 
     return call_origin(numpy.random.standard_exponential, size)
@@ -1594,6 +1761,11 @@ def standard_gamma(shape, size=None):
     """
 
     if not use_origin_backend(shape):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `shape`
         if not dpnp.isscalar(shape):
@@ -1623,7 +1795,11 @@ def standard_normal(size=None, device=None, usm_type="device", sycl_queue=None):
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1668,6 +1844,11 @@ def standard_t(df, size=None):
     """
 
     if not use_origin_backend(df):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `df`
         if not dpnp.isscalar(df):
@@ -1704,6 +1885,11 @@ def triangular(left, mode, right, size=None):
     """
 
     if not use_origin_backend(left):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `left`, `mode`, `right`.
         if not dpnp.isscalar(left):
@@ -1751,7 +1937,11 @@ def uniform(
     usm_type : {"device", "shared", "host"}, optional
         The type of SYCL USM allocation for the output array.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     Returns
     -------
@@ -1808,6 +1998,11 @@ def vonmises(mu, kappa, size=None):
     """
 
     if not use_origin_backend(mu):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `mu`, `kappa`.
         if not dpnp.isscalar(mu):
@@ -1844,6 +2039,11 @@ def wald(mean, scale, size=None):
     """
 
     if not use_origin_backend(mean):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `mean` and `scale`
         if not dpnp.isscalar(mean):
@@ -1880,6 +2080,11 @@ def weibull(a, size=None):
     """
 
     if not use_origin_backend(a):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `a` param
         if not dpnp.isscalar(a):
@@ -1912,6 +2117,11 @@ def zipf(a, size=None):
     """
 
     if not use_origin_backend(a):
+        if dpnp.is_cuda_backend():  # pragma: no cover
+            raise NotImplementedError(
+                "Running on CUDA is currently not supported"
+            )
+
         # TODO:
         # array_like of floats for `a` param
         if not dpnp.isscalar(a):

@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,6 +22,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
+
+#include <stdexcept>
 
 #include <pybind11/pybind11.h>
 
@@ -58,7 +60,9 @@ typedef sycl::event (*gemm_batch_impl_fn_ptr_t)(
     const char *,
     const char *,
     char *,
+#if !defined(USE_ONEMKL_CUBLAS)
     const bool,
+#endif // !USE_ONEMKL_CUBLAS
     const std::vector<sycl::event> &);
 
 static gemm_batch_impl_fn_ptr_t
@@ -81,7 +85,9 @@ static sycl::event gemm_batch_impl(sycl::queue &exec_q,
                                    const char *matrixA,
                                    const char *matrixB,
                                    char *resultC,
+#if !defined(USE_ONEMKL_CUBLAS)
                                    const bool is_row_major,
+#endif // !USE_ONEMKL_CUBLAS
                                    const std::vector<sycl::event> &depends)
 {
     type_utils::validate_type_for_device<Tab>(exec_q);
@@ -106,6 +112,11 @@ static sycl::event gemm_batch_impl(sycl::queue &exec_q,
                 Tc *c, const std::int64_t ldc, const std::int64_t stridec,
                 const std::int64_t batch_size,
                 const std::vector<sycl::event> &deps) -> sycl::event {
+#if defined(USE_ONEMKL_CUBLAS)
+            return mkl_blas::column_major::gemm_batch(
+                q, transA, transB, m, n, k, alpha, a, lda, stridea, b, ldb,
+                strideb, beta, c, ldc, stridec, batch_size, deps);
+#else
             if (is_row_major) {
                 return mkl_blas::row_major::gemm_batch(
                     q, transA, transB, m, n, k, alpha, a, lda, stridea, b, ldb,
@@ -116,6 +127,7 @@ static sycl::event gemm_batch_impl(sycl::queue &exec_q,
                     q, transA, transB, m, n, k, alpha, a, lda, stridea, b, ldb,
                     strideb, beta, c, ldc, stridec, batch_size, deps);
             }
+#endif // USE_ONEMKL_CUBLAS
         };
         gemm_batch_event = gemm_batch_func(
             exec_q,
@@ -271,32 +283,71 @@ std::tuple<sycl::event, sycl::event, bool>
 
     standardize_strides_to_nonzero(a_stride, a_shape);
     standardize_strides_to_nonzero(b_stride, b_shape);
+    standardize_strides_to_nonzero(c_stride, c_shape);
     const bool A_base_is_f_contig =
         a_stride[1] == 1 && a_stride[2] == a_shape[1];
+    const bool A_base_is_c_contig =
+        a_stride[1] == a_shape[2] && a_stride[2] == 1;
     const bool B_base_is_f_contig =
         b_stride[1] == 1 && b_stride[2] == b_shape[1];
+    const bool B_base_is_c_contig =
+        b_stride[1] == b_shape[2] && b_stride[2] == 1;
+    const bool C_base_is_f_contig =
+        c_stride[1] == 1 && c_stride[2] == c_shape[1];
+    const bool C_base_is_c_contig =
+        c_stride[1] == c_shape[2] && c_stride[2] == 1;
 
+    if (!A_base_is_f_contig and !A_base_is_c_contig) {
+        throw py::value_error("The 2D base of the first input array is not "
+                              "c-contiguous nor f-contiguous.");
+    }
+    if (!B_base_is_f_contig and !B_base_is_c_contig) {
+        throw py::value_error("The 2D base of the second input array is not "
+                              "c-contiguous nor f-contiguous.");
+    }
+    if (!C_base_is_f_contig and !C_base_is_c_contig) {
+        throw py::value_error("The 2D base of result array is not c-contiguous "
+                              "nor f-contiguous.");
+    }
+
+    oneapi::mkl::transpose transA;
+    oneapi::mkl::transpose transB;
+    std::int64_t lda;
+    std::int64_t ldb;
+
+// cuBLAS supports only column-major storage
+#if defined(USE_ONEMKL_CUBLAS)
+    const bool is_row_major = false;
+
+    transA = A_base_is_c_contig ? oneapi::mkl::transpose::T
+                                : oneapi::mkl::transpose::N;
+    transB = B_base_is_c_contig ? oneapi::mkl::transpose::T
+                                : oneapi::mkl::transpose::N;
+
+    if (transA == oneapi::mkl::transpose::N) {
+        lda = m;
+    }
+    else {
+        lda = k;
+    }
+    if (transB == oneapi::mkl::transpose::N) {
+        ldb = k;
+    }
+    else {
+        ldb = n;
+    }
+#else
     bool is_row_major = true;
     if (A_base_is_f_contig && B_base_is_f_contig) {
         is_row_major = false;
     }
 
-    oneapi::mkl::transpose transA;
-    oneapi::mkl::transpose transB;
     if (is_row_major) {
         transA = A_base_is_f_contig ? oneapi::mkl::transpose::T
                                     : oneapi::mkl::transpose::N;
         transB = B_base_is_f_contig ? oneapi::mkl::transpose::T
                                     : oneapi::mkl::transpose::N;
-    }
-    else {
-        transA = oneapi::mkl::transpose::N;
-        transB = oneapi::mkl::transpose::N;
-    }
 
-    std::int64_t lda;
-    std::int64_t ldb;
-    if (is_row_major) {
         if (transA == oneapi::mkl::transpose::N) {
             lda = k;
         }
@@ -311,9 +362,13 @@ std::tuple<sycl::event, sycl::event, bool>
         }
     }
     else {
+        transA = oneapi::mkl::transpose::N;
+        transB = oneapi::mkl::transpose::N;
         lda = m;
         ldb = k;
     }
+#endif // USE_ONEMKL_CUBLAS
+
     const std::int64_t ldc = is_row_major ? n : m;
 
     const int matrixA_typenum = matrixA.get_typenum();
@@ -341,15 +396,22 @@ std::tuple<sycl::event, sycl::event, bool>
     const char *b_typeless_ptr = matrixB.get_data();
     char *r_typeless_ptr = resultC.get_data();
 
+#if defined(USE_ONEMKL_CUBLAS)
+    sycl::event gemm_batch_ev =
+        gemm_batch_fn(exec_q, m, n, k, batch_size, lda, ldb, ldc, stridea,
+                      strideb, stridec, transA, transB, a_typeless_ptr,
+                      b_typeless_ptr, r_typeless_ptr, depends);
+#else
     sycl::event gemm_batch_ev =
         gemm_batch_fn(exec_q, m, n, k, batch_size, lda, ldb, ldc, stridea,
                       strideb, stridec, transA, transB, a_typeless_ptr,
                       b_typeless_ptr, r_typeless_ptr, is_row_major, depends);
+#endif // USE_ONEMKL_CUBLAS
 
-    sycl::event args_batch_ev = dpctl::utils::keep_args_alive(
+    sycl::event args_ev = dpctl::utils::keep_args_alive(
         exec_q, {matrixA, matrixB, resultC}, {gemm_batch_ev});
 
-    return std::make_tuple(args_batch_ev, gemm_batch_ev, is_row_major);
+    return std::make_tuple(args_ev, gemm_batch_ev, is_row_major);
 }
 
 template <typename fnT, typename Tab, typename Tc>

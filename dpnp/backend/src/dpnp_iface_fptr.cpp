@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2016-2024, Intel Corporation
+// Copyright (c) 2016-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,26 +76,6 @@ DPNPFuncData_t get_dpnp_function_ptr(DPNPFuncName func_name,
     return func_info;
 }
 
-template <typename _DataType_output,
-          typename _DataType_input1,
-          typename _DataType_input2>
-void (*dpnp_dot_default_c)(void *,
-                           const size_t,
-                           const size_t,
-                           const shape_elem_type *,
-                           const shape_elem_type *,
-                           const void *,
-                           const size_t,
-                           const size_t,
-                           const shape_elem_type *,
-                           const shape_elem_type *,
-                           const void *,
-                           const size_t,
-                           const size_t,
-                           const shape_elem_type *,
-                           const shape_elem_type *) =
-    dpnp_dot_c<_DataType_output, _DataType_input1, _DataType_input2>;
-
 /**
  * This operator is needed for compatibility with Cython 0.29 which has a bug in
  * Enum handling
@@ -111,34 +91,17 @@ size_t operator-(DPNPFuncType lhs, DPNPFuncType rhs)
     return result;
 }
 
-void *get_dpnp_function_ptr1(DPNPFuncType &result_type,
-                             DPNPFuncName name,
-                             DPNPFuncType first_type,
-                             DPNPFuncType second_type)
-{
-    DPNPFuncData_t result =
-        get_dpnp_function_ptr(name, first_type, second_type);
-
-    result_type = result.return_type;
-    return result.ptr;
-}
-
 static func_map_t func_map_init()
 {
     func_map_t fmap;
 
     func_map_init_arraycreation(fmap);
     func_map_init_elemwise(fmap);
-    func_map_init_fft_func(fmap);
     func_map_init_indexing_func(fmap);
     func_map_init_linalg(fmap);
-    func_map_init_logic(fmap);
     func_map_init_mathematical(fmap);
     func_map_init_random(fmap);
-    func_map_init_reduction(fmap);
-    func_map_init_searching(fmap);
     func_map_init_sorting(fmap);
-    func_map_init_statistics(fmap);
 
     return fmap;
 };

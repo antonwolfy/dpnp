@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,41 @@ set(_module_src
     ${CMAKE_CURRENT_SOURCE_DIR}/geqrf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geqrf_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gesv.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gesv_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gesvd.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gesvd_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/getrf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/getrf_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/getri_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/getrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/heevd.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/heevd_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orgqr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orgqr_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/potrf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/potrf_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/syevd.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/syevd_batch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ungqr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ungqr_batch.cpp
 )
 
 pybind11_add_module(${python_module_name} MODULE ${_module_src})
 add_sycl_to_target(TARGET ${python_module_name} SOURCES ${_module_src})
+
+if(_dpnp_sycl_targets)
+    # make fat binary
+    target_compile_options(
+        ${python_module_name}
+        PRIVATE
+        -fsycl-targets=${_dpnp_sycl_targets}
+    )
+    target_link_options(
+        ${python_module_name}
+        PRIVATE
+        -fsycl-targets=${_dpnp_sycl_targets}
+    )
+endif()
 
 if (WIN32)
     if (${CMAKE_VERSION} VERSION_LESS "3.27")
@@ -82,7 +100,16 @@ if (DPNP_GENERATE_COVERAGE)
     target_link_options(${python_module_name} PRIVATE -fprofile-instr-generate -fcoverage-mapping)
 endif()
 
-target_link_libraries(${python_module_name} PUBLIC MKL::MKL_SYCL::LAPACK)
+if(_use_onemkl_interfaces)
+    target_link_libraries(${python_module_name} PUBLIC onemkl)
+    target_compile_options(${python_module_name} PRIVATE -DUSE_ONEMKL_INTERFACES)
+else()
+    target_link_libraries(${python_module_name} PUBLIC MKL::MKL_SYCL::LAPACK)
+endif()
+
+if (DPNP_WITH_REDIST)
+    set_target_properties(${python_module_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../../../../../../")
+endif()
 
 install(TARGETS ${python_module_name}
   DESTINATION "dpnp/backend/extensions/lapack"

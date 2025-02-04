@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,26 +38,17 @@ it contains:
 """
 
 # pylint: disable=protected-access
-# pylint: disable=c-extension-no-member
-# pylint: disable=duplicate-code
 # pylint: disable=no-name-in-module
 
 
 import dpctl.tensor as dpt
 import dpctl.tensor._tensor_elementwise_impl as ti
 import dpctl.tensor._type_utils as dtu
-import numpy
 
 import dpnp
-import dpnp.backend.extensions.vm._vm_impl as vmi
+import dpnp.backend.extensions.ufunc._ufunc_impl as ufi
 
-from .dpnp_algo import (
-    dpnp_degrees,
-    dpnp_radians,
-    dpnp_unwrap,
-)
 from .dpnp_algo.dpnp_elementwise_common import DPNPBinaryFunc, DPNPUnaryFunc
-from .dpnp_utils import call_origin
 from .dpnp_utils.dpnp_utils_reduction import dpnp_wrap_reduction_call
 
 __all__ = [
@@ -68,6 +59,13 @@ __all__ = [
     "arctan",
     "arctan2",
     "arctanh",
+    "asin",
+    "asinh",
+    "acos",
+    "acosh",
+    "atan",
+    "atan2",
+    "atanh",
     "cbrt",
     "cos",
     "cosh",
@@ -83,6 +81,7 @@ __all__ = [
     "log1p",
     "log2",
     "logaddexp",
+    "logaddexp2",
     "logsumexp",
     "rad2deg",
     "radians",
@@ -99,7 +98,7 @@ __all__ = [
 ]
 
 
-def _get_accumulation_res_dt(a, dtype, _out):
+def _get_accumulation_res_dt(a, dtype):
     """Get a dtype used by dpctl for result array in accumulation function."""
 
     if dtype is None:
@@ -109,8 +108,11 @@ def _get_accumulation_res_dt(a, dtype, _out):
     return dtu._to_device_supported_dtype(dtype, a.sycl_device)
 
 
-_ACOS_DOCSTRING = """
+_ACOS_DOCSTRING = r"""
 Computes inverse cosine for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.cos` so that, if ``y = cos(x)``, then ``x = arccos(y)``.
+Note that :obj:`dpnp.acos` is an alias of :obj:`dpnp.arccos`.
 
 For full documentation refer to :obj:`numpy.arccos`.
 
@@ -146,6 +148,22 @@ See Also
 :obj:`dpnp.arcsin` : Trigonometric inverse sine, element-wise.
 :obj:`dpnp.arccosh` : Hyperbolic inverse cosine, element-wise.
 
+Notes
+-----
+:obj:`dpnp.arccos` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``cos(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[0, pi]`.
+
+For real-valued input data types, :obj:`dpnp.arccos` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arccos` is a complex analytic function that
+has, by convention, the branch cuts `[-inf, -1]` and `[1, inf]` and is continuous
+from above on the former and from below on the latter.
+
+The inverse cos is also known as :math:`acos` or :math:`cos^{-1}`.
+
 Examples
 --------
 >>> import dpnp as np
@@ -159,13 +177,18 @@ arccos = DPNPUnaryFunc(
     ti._acos_result_type,
     ti._acos,
     _ACOS_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_acos_to_call,
-    mkl_impl_fn=vmi._acos,
+    mkl_fn_to_call="_mkl_acos_to_call",
+    mkl_impl_fn="_acos",
 )
 
+acos = arccos  # acos is an alias for arccos
 
-_ACOSH_DOCSTRING = """
+
+_ACOSH_DOCSTRING = r"""
 Computes inverse hyperbolic cosine for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.cosh` so that, if ``y = cosh(x)``, then ``x = arccosh(y)``.
+Note that :obj:`dpnp.acosh` is an alias of :obj:`dpnp.arccosh`.
 
 For full documentation refer to :obj:`numpy.arccosh`.
 
@@ -197,9 +220,26 @@ Otherwise ``NotImplementedError`` exception will be raised.
 See Also
 --------
 :obj:`dpnp.cosh` : Hyperbolic cosine, element-wise.
-:obj:`dpnp.arctanh` : Hyperbolic inverse tangent, element-wise.
 :obj:`dpnp.arcsinh` : Hyperbolic inverse sine, element-wise.
+:obj:`dpnp.sinh` : Hyperbolic sine, element-wise.
+:obj:`dpnp.arctanh` : Hyperbolic inverse tangent, element-wise.
+:obj:`dpnp.tanh` : Hyperbolic tangent, element-wise.
 :obj:`dpnp.arccos` : Trigonometric inverse cosine, element-wise.
+
+Notes
+-----
+:obj:`dpnp.arccosh` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``cosh(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[0, inf]`.
+
+For real-valued input data types, :obj:`dpnp.arccosh` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arccosh` is a complex analytic function that
+has, by convention, the branch cuts `[-inf, 1]` and is continuous from above.
+
+The inverse hyperbolic cos is also known as :math:`acosh` or :math:`cosh^{-1}`.
 
 Examples
 --------
@@ -214,13 +254,18 @@ arccosh = DPNPUnaryFunc(
     ti._acosh_result_type,
     ti._acosh,
     _ACOSH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_acosh_to_call,
-    mkl_impl_fn=vmi._acosh,
+    mkl_fn_to_call="_mkl_acosh_to_call",
+    mkl_impl_fn="_acosh",
 )
 
+acosh = arccosh  # acosh is an alias for arccosh
 
-_ASIN_DOCSTRING = """
+
+_ASIN_DOCSTRING = r"""
 Computes inverse sine for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.sin`, so that if ``y = sin(x)`` then ``x = arcsin(y)``.
+Note that :obj:`dpnp.asin` is an alias of :obj:`dpnp.arcsin`.
 
 For full documentation refer to :obj:`numpy.arcsin`.
 
@@ -252,9 +297,28 @@ Otherwise ``NotImplementedError`` exception will be raised.
 See Also
 --------
 :obj:`dpnp.sin` : Trigonometric sine, element-wise.
-:obj:`dpnp.arctan` : Trigonometric inverse tangent, element-wise.
+:obj:`dpnp.cos` : Trigonometric cosine, element-wise.
 :obj:`dpnp.arccos` : Trigonometric inverse cosine, element-wise.
+:obj:`dpnp.tan` : Trigonometric tangent, element-wise.
+:obj:`dpnp.arctan` : Trigonometric inverse tangent, element-wise.
+:obj:`dpnp.arctan2` : Element-wise arc tangent of `x1/x2` choosing the quadrant correctly.
 :obj:`dpnp.arcsinh` : Hyperbolic inverse sine, element-wise.
+
+Notes
+-----
+:obj:`dpnp.arcsin` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``sin(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[-pi/2, pi/2]`.
+
+For real-valued input data types, :obj:`dpnp.arcsin` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arcsin` is a complex analytic function that
+has, by convention, the branch cuts `[-inf, -1]` and `[1, inf]` and is continuous
+from above on the former and from below on the latter.
+
+The inverse sine is also known as :math:`asin` or :math:`sin^{-1}`.
 
 Examples
 --------
@@ -269,13 +333,18 @@ arcsin = DPNPUnaryFunc(
     ti._asin_result_type,
     ti._asin,
     _ASIN_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_asin_to_call,
-    mkl_impl_fn=vmi._asin,
+    mkl_fn_to_call="_mkl_asin_to_call",
+    mkl_impl_fn="_asin",
 )
 
+asin = arcsin  # asin is an alias for arcsin
 
-_ASINH_DOCSTRING = """
+
+_ASINH_DOCSTRING = r"""
 Computes inverse hyperbolic sine for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.sinh`, so that if ``y = sinh(x)`` then ``x = arcsinh(y)``.
+Note that :obj:`dpnp.asinh` is an alias of :obj:`dpnp.arcsinh`.
 
 For full documentation refer to :obj:`numpy.arcsinh`.
 
@@ -311,6 +380,23 @@ See Also
 :obj:`dpnp.arccosh` : Hyperbolic inverse cosine, element-wise.
 :obj:`dpnp.arcsin` : Trigonometric inverse sine, element-wise.
 
+Notes
+-----
+:obj:`dpnp.arcsinh` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``sin(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[-pi/2, pi/2]`.
+
+For real-valued input data types, :obj:`dpnp.arcsinh` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arcsinh` is a complex analytic function that
+has, by convention, the branch cuts `[1j, infj]` and `[`1j, -infj]` and is continuous
+from above on the former and from below on the latter.
+
+The inverse hyperbolic sine is also known as :math:`asinh` or :math:`sinh^{-1}`.
+
+
 Examples
 --------
 >>> import dpnp as np
@@ -324,13 +410,18 @@ arcsinh = DPNPUnaryFunc(
     ti._asinh_result_type,
     ti._asinh,
     _ASINH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_asinh_to_call,
-    mkl_impl_fn=vmi._asinh,
+    mkl_fn_to_call="_mkl_asinh_to_call",
+    mkl_impl_fn="_asinh",
 )
 
+asinh = arcsinh  # asinh is an alias for arcsinh
 
-_ATAN_DOCSTRING = """
+
+_ATAN_DOCSTRING = r"""
 Computes inverse tangent for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.tan`, so that if ``y = tan(x)`` then ``x = arctan(y)``.
+Note that :obj:`dpnp.atan` is an alias of :obj:`dpnp.arctan`.
 
 For full documentation refer to :obj:`numpy.arctan`.
 
@@ -368,6 +459,22 @@ See Also
 :obj:`dpnp.arccos` : Trigonometric inverse cosine, element-wise.
 :obj:`dpnp.arctanh` : Inverse hyperbolic tangent, element-wise.
 
+Notes
+-----
+:obj:`dpnp.arctan` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``tan(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[-pi/2, pi/2]`.
+
+For real-valued input data types, :obj:`dpnp.arctan` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arctan` is a complex analytic function that
+has, by convention, the branch cuts `[1j, infj]` and `[-1j, -infj]`  and is continuous
+from the left on the former and from the right on the latter.
+
+The inverse tan is also known as :math:`atan` or :math:`tan^{-1}`.
+
 Examples
 --------
 >>> import dpnp as np
@@ -381,15 +488,21 @@ arctan = DPNPUnaryFunc(
     ti._atan_result_type,
     ti._atan,
     _ATAN_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_atan_to_call,
-    mkl_impl_fn=vmi._atan,
+    mkl_fn_to_call="_mkl_atan_to_call",
+    mkl_impl_fn="_atan",
 )
+
+atan = arctan  # atan is an alias for arctan
 
 
 _ATAN2_DOCSTRING = """
 Calculates the inverse tangent of the quotient `x1_i/x2_i` for each element
 `x1_i` of the input array `x1` with the respective element `x2_i` of the
 input array `x2`. Each element-wise result is expressed in radians.
+
+Note that :obj:`dpnp.atan2` is an alias of :obj:`dpnp.arctan2`.
+This function is not defined for complex-valued arguments; for the so-called
+argument of complex values, use :obj:`dpnp.angle`.
 
 For full documentation refer to :obj:`numpy.arctan2`.
 
@@ -403,6 +516,8 @@ x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have a real-valued
     floating-point data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -457,13 +572,18 @@ arctan2 = DPNPBinaryFunc(
     ti._atan2_result_type,
     ti._atan2,
     _ATAN2_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_atan2_to_call,
-    mkl_impl_fn=vmi._atan2,
+    mkl_fn_to_call="_mkl_atan2_to_call",
+    mkl_impl_fn="_atan2",
 )
 
+atan2 = arctan2  # atan2 is an alias for arctan2
 
-_ATANH_DOCSTRING = """
+
+_ATANH_DOCSTRING = r"""
 Computes hyperbolic inverse tangent for each element `x_i` for input array `x`.
+
+The inverse of :obj:`dpnp.tanh`, so that if ``y = tanh(x)`` then ``x = arctanh(y)``.
+Note that :obj:`dpnp.atanh` is an alias of :obj:`dpnp.arctanh`.
 
 For full documentation refer to :obj:`numpy.arctanh`.
 
@@ -499,6 +619,22 @@ See Also
 :obj:`dpnp.arccosh` : Hyperbolic inverse cosine, element-wise.
 :obj:`dpnp.arctan` : Trigonometric inverse tangent, element-wise.
 
+Notes
+-----
+:obj:`dpnp.arctanh` is a multivalued function: for each `x` there are infinitely
+many numbers `z` such that ``tanh(z) = x``. The convention is to return the
+angle `z` whose real part lies in `[-pi/2, pi/2]`.
+
+For real-valued input data types, :obj:`dpnp.arctanh` always returns real output.
+For each value that cannot be expressed as a real number or infinity, it yields
+``nan``.
+
+For complex-valued input, :obj:`dpnp.arctanh` is a complex analytic function that
+has, by convention, the branch cuts `[-1, -inf]` and `[1, inf]` and is is continuous
+from above on the former and from below on the latter.
+
+The inverse hyperbolic tan is also known as :math:`atanh` or :math:`tanh^{-1}`.
+
 Examples
 --------
 >>> import dpnp as np
@@ -512,9 +648,11 @@ arctanh = DPNPUnaryFunc(
     ti._atanh_result_type,
     ti._atanh,
     _ATANH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_atanh_to_call,
-    mkl_impl_fn=vmi._atanh,
+    mkl_fn_to_call="_mkl_atanh_to_call",
+    mkl_impl_fn="_atanh",
 )
+
+atanh = arctanh  # atanh is an alias for arctanh
 
 
 _CBRT_DOCSTRING = """
@@ -564,8 +702,8 @@ cbrt = DPNPUnaryFunc(
     ti._cbrt_result_type,
     ti._cbrt,
     _CBRT_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_cbrt_to_call,
-    mkl_impl_fn=vmi._cbrt,
+    mkl_fn_to_call="_mkl_cbrt_to_call",
+    mkl_impl_fn="_cbrt",
 )
 
 
@@ -618,8 +756,8 @@ cos = DPNPUnaryFunc(
     ti._cos_result_type,
     ti._cos,
     _COS_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_cos_to_call,
-    mkl_impl_fn=vmi._cos,
+    mkl_fn_to_call="_mkl_cos_to_call",
+    mkl_impl_fn="_cos",
 )
 
 
@@ -673,8 +811,8 @@ cosh = DPNPUnaryFunc(
     ti._cosh_result_type,
     ti._cosh,
     _COSH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_cosh_to_call,
-    mkl_impl_fn=vmi._cosh,
+    mkl_fn_to_call="_mkl_cosh_to_call",
+    mkl_impl_fn="_cosh",
 )
 
 
@@ -755,69 +893,127 @@ def cumlogsumexp(
         usm_x = dpnp.get_usm_ndarray(x)
 
     return dpnp_wrap_reduction_call(
-        x,
+        usm_x,
         out,
         dpt.cumulative_logsumexp,
-        _get_accumulation_res_dt,
-        usm_x,
+        _get_accumulation_res_dt(x, dtype),
         axis=axis,
         dtype=dtype,
         include_initial=include_initial,
     )
 
 
-def deg2rad(x1):
-    """
-    Convert angles from degrees to radians.
+_DEG2RAD_DOCSTRING = """
+Convert angles from degrees to radians.
 
-    For full documentation refer to :obj:`numpy.deg2rad`.
+For full documentation refer to :obj:`numpy.deg2rad`.
 
-    See Also
-    --------
-    :obj:`dpnp.rad2deg` : Convert angles from radians to degrees.
-    :obj:`dpnp.unwrap` : Remove large jumps in angle by wrapping.
+Parameters
+----------
+x : {dpnp.ndarray, usm_ndarray}
+    Angles in degrees.
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+    Default: ``None``.
+order : {"C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+    Default: ``"K"``.
 
-    Notes
-    -----
-    This function works exactly the same as :obj:`dpnp.radians`.
+Returns
+-------
+out : dpnp.ndarray
+    The corresponding angle in radians. The data type of the returned array is
+    determined by the Type Promotion Rules.
 
-    """
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword argument `kwargs` is currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
 
-    return radians(x1)
+See Also
+--------
+:obj:`dpnp.rad2deg` : Convert angles from radians to degrees.
+:obj:`dpnp.unwrap` : Remove large jumps in angle by wrapping.
+:obj:`dpnp.radians` : Equivalent function.
+
+Notes
+-----
+dpnp.deg2rad(x) is ``x * pi / 180``.
+
+Examples
+--------
+>>> import dpnp as np
+>>> x = np.array(180)
+>>> np.deg2rad(x)
+array(3.14159265)
+"""
+
+deg2rad = DPNPUnaryFunc(
+    "deg2rad",
+    ufi._radians_result_type,
+    ufi._radians,
+    _DEG2RAD_DOCSTRING,
+)
 
 
-def degrees(x1, **kwargs):
-    """
-    Convert angles from radians to degrees.
+_DEGREES_DOCSTRING = """
+Convert angles from radians to degrees.
 
-    For full documentation refer to :obj:`numpy.degrees`.
+For full documentation refer to :obj:`numpy.degrees`.
 
-    Limitations
-    -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
+Parameters
+----------
+x : {dpnp.ndarray, usm_ndarray}
+    Input array in radians.
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+    Default: ``None``.
+order : {"C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+    Default: ``"K"``.
 
-    .. seealso:: :obj:`dpnp.rad2deg` convert angles from radians to degrees.
+Returns
+-------
+out : dpnp.ndarray
+    The corresponding degree values. The data type of the returned array is
+    determined by the Type Promotion Rules.
 
-    Examples
-    --------
-    >>> import dpnp as np
-    >>> rad = np.arange(6.) * np.pi/6
-    >>> out = np.degrees(rad)
-    >>> [i for i in out]
-    [0.0, 30.0, 60.0, 90.0, 120.0, 150.0]
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword argument `kwargs` is currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
 
-    """
+See Also
+--------
+:obj:`dpnp.rad2deg` : Equivalent function.
 
-    x1_desc = dpnp.get_dpnp_descriptor(
-        x1, copy_when_strides=False, copy_when_nondefault_queue=False
-    )
-    if kwargs:
-        pass
-    elif x1_desc:
-        return dpnp_degrees(x1_desc).get_pyobj()
+Examples
+--------
+>>> import dpnp as np
+>>> rad = np.arange(12.) * np.pi/6
 
-    return call_origin(numpy.degrees, x1, **kwargs)
+Convert a radian array to degrees:
+
+>>> np.degrees(rad)
+array([  0.,  30.,  60.,  90., 120., 150., 180., 210., 240., 270., 300.,
+       330.])
+
+>>> out = np.zeros_like(rad)
+>>> r = np.degrees(rad, out)
+>>> np.all(r == out)
+array(True)
+"""
+
+degrees = DPNPUnaryFunc(
+    "degrees",
+    ufi._degrees_result_type,
+    ufi._degrees,
+    _DEGREES_DOCSTRING,
+)
 
 
 _EXP_DOCSTRING = """
@@ -868,8 +1064,8 @@ exp = DPNPUnaryFunc(
     ti._exp_result_type,
     ti._exp,
     _EXP_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_exp_to_call,
-    mkl_impl_fn=vmi._exp,
+    mkl_fn_to_call="_mkl_exp_to_call",
+    mkl_impl_fn="_exp",
 )
 
 
@@ -922,8 +1118,8 @@ exp2 = DPNPUnaryFunc(
     ti._exp2_result_type,
     ti._exp2,
     _EXP2_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_exp2_to_call,
-    mkl_impl_fn=vmi._exp2,
+    mkl_fn_to_call="_mkl_exp2_to_call",
+    mkl_impl_fn="_exp2",
 )
 
 
@@ -984,8 +1180,8 @@ expm1 = DPNPUnaryFunc(
     ti._expm1_result_type,
     ti._expm1,
     _EXPM1_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_expm1_to_call,
-    mkl_impl_fn=vmi._expm1,
+    mkl_fn_to_call="_mkl_expm1_to_call",
+    mkl_impl_fn="_expm1",
 )
 
 
@@ -1003,6 +1199,8 @@ x1 : {dpnp.ndarray, usm_ndarray, scalar}
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have a real-valued data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1050,8 +1248,8 @@ hypot = DPNPBinaryFunc(
     ti._hypot_result_type,
     ti._hypot,
     _HYPOT_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_hypot_to_call,
-    mkl_impl_fn=vmi._hypot,
+    mkl_fn_to_call="_mkl_hypot_to_call",
+    mkl_impl_fn="_hypot",
 )
 
 
@@ -1105,8 +1303,8 @@ log = DPNPUnaryFunc(
     ti._log_result_type,
     ti._log,
     _LOG_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_ln_to_call,
-    mkl_impl_fn=vmi._ln,
+    mkl_fn_to_call="_mkl_ln_to_call",
+    mkl_impl_fn="_ln",
 )
 
 
@@ -1143,7 +1341,7 @@ Otherwise ``NotImplementedError`` exception will be raised.
 See Also
 --------
 :obj:`dpnp.log` : Natural logarithm, element-wise.
-:obj:`dpnp.log2` : Return the base 2 logarithm of the input array, element-wise.
+:obj:`dpnp.log2` : Return the base-2 logarithm of the input array, element-wise.
 :obj:`dpnp.log1p` : Return the natural logarithm of one plus the input array, element-wise.
 
 Examples
@@ -1162,8 +1360,8 @@ log10 = DPNPUnaryFunc(
     ti._log10_result_type,
     ti._log10,
     _LOG10_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_log10_to_call,
-    mkl_impl_fn=vmi._log10,
+    mkl_fn_to_call="_mkl_log10_to_call",
+    mkl_impl_fn="_log10",
 )
 
 
@@ -1204,7 +1402,7 @@ See Also
 :obj:`dpnp.expm1` : ``exp(x) - 1``, the inverse of :obj:`dpnp.log1p`.
 :obj:`dpnp.log` : Natural logarithm, element-wise.
 :obj:`dpnp.log10` : Return the base 10 logarithm of the input array, element-wise.
-:obj:`dpnp.log2` : Return the base 2 logarithm of the input array, element-wise.
+:obj:`dpnp.log2` : Return the base-2 logarithm of the input array, element-wise.
 
 Examples
 --------
@@ -1225,8 +1423,8 @@ log1p = DPNPUnaryFunc(
     ti._log1p_result_type,
     ti._log1p,
     _LOG1P_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_log1p_to_call,
-    mkl_impl_fn=vmi._log1p,
+    mkl_fn_to_call="_mkl_log1p_to_call",
+    mkl_impl_fn="_log1p",
 )
 
 
@@ -1283,8 +1481,8 @@ log2 = DPNPUnaryFunc(
     ti._log2_result_type,
     ti._log2,
     _LOG2_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_log2_to_call,
-    mkl_impl_fn=vmi._log2,
+    mkl_fn_to_call="_mkl_log2_to_call",
+    mkl_impl_fn="_log2",
 )
 
 
@@ -1308,6 +1506,8 @@ x2 : {dpnp.ndarray, usm_ndarray, scalar}
     Second input array, also expected to have a real-valued
     floating-point data type.
     Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
@@ -1332,7 +1532,10 @@ See Also
 --------
 :obj:`dpnp.log` : Natural logarithm, element-wise.
 :obj:`dpnp.exp` : Exponential, element-wise.
-:obj:`dpnp.logsumdexp` : Logarithm of the sum of exponents of elements in the input array.
+:obj:`dpnp.logaddexp2`: Logarithm of the sum of exponentiation of inputs in
+                        base-2, element-wise.
+:obj:`dpnp.logsumexp` : Logarithm of the sum of exponents of elements in the
+                        input array.
 
 Examples
 --------
@@ -1351,6 +1554,77 @@ logaddexp = DPNPBinaryFunc(
     ti._logaddexp_result_type,
     ti._logaddexp,
     _LOGADDEXP_DOCSTRING,
+)
+
+
+_LOGADDEXP2_DOCSTRING = """
+Calculates the logarithm of the sum of exponents in base-2 for each element
+`x1_i` of the input array `x1` with the respective element `x2_i` of the input
+array `x2`.
+
+This function calculates `log2(2**x1 + 2**x2)`. It is useful in machine
+learning when the calculated probabilities of events may be so small as
+to exceed the range of normal floating point numbers. In such cases the base-2
+logarithm of the calculated probability can be used instead. This function
+allows adding probabilities stored in such a fashion.
+
+For full documentation refer to :obj:`numpy.logaddexp2`.
+
+Parameters
+----------
+x1 : {dpnp.ndarray, usm_ndarray, scalar}
+    First input array, expected to have a real-valued floating-point
+    data type.
+    Both inputs `x1` and `x2` can not be scalars at the same time.
+x2 : {dpnp.ndarray, usm_ndarray, scalar}
+    Second input array, also expected to have a real-valued
+    floating-point data type.
+    Both inputs `x1` and `x2` can not be scalars at the same time.
+    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+    (which becomes the shape of the output).
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+    Default: ``None``.
+order : {"C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+    Default: ``"K"``.
+
+Returns
+-------
+out : dpnp.ndarray
+    An array containing the element-wise results. The data type
+    of the returned array is determined by the Type Promotion Rules.
+
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword arguments `kwargs` are currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
+
+See Also
+--------
+:obj:`dpnp.logaddexp`: Natural logarithm of the sum of exponentiation of
+                       inputs, element-wise.
+:obj:`dpnp.logsumexp` : Logarithm of the sum of exponentiation of the inputs.
+
+Examples
+--------
+>>> import dpnp as np
+>>> prob1 = np.log2(np.array(1e-50))
+>>> prob2 = np.log2(np.array(2.5e-50))
+>>> prob12 = np.logaddexp2(prob1, prob2)
+>>> prob1, prob2, prob12
+(array(-166.09640474), array(-164.77447665), array(-164.28904982))
+>>> 2**prob12
+array(3.5e-50)
+"""
+
+logaddexp2 = DPNPBinaryFunc(
+    "logaddexp2",
+    ufi._logaddexp2_result_type,
+    ufi._logaddexp2,
+    _LOGADDEXP2_DOCSTRING,
 )
 
 
@@ -1414,6 +1688,8 @@ def logsumexp(x, /, *, axis=None, dtype=None, keepdims=False, out=None):
     :obj:`dpnp.exp` : Exponential, element-wise.
     :obj:`dpnp.logaddexp` : Logarithm of the sum of exponents of
                             the inputs, element-wise.
+    :obj:`dpnp.logaddexp2` : Logarithm of the sum of exponents of
+                             the inputs in base-2, element-wise.
 
     Examples
     --------
@@ -1428,15 +1704,128 @@ def logsumexp(x, /, *, axis=None, dtype=None, keepdims=False, out=None):
 
     usm_x = dpnp.get_usm_ndarray(x)
     return dpnp_wrap_reduction_call(
-        x,
+        usm_x,
         out,
         dpt.logsumexp,
-        _get_accumulation_res_dt,
-        usm_x,
+        _get_accumulation_res_dt(x, dtype),
         axis=axis,
         dtype=dtype,
         keepdims=keepdims,
     )
+
+
+_RAD2DEG_DOCSTRING = """
+Convert angles from radians to degrees.
+
+For full documentation refer to :obj:`numpy.rad2deg`.
+
+Parameters
+----------
+x : {dpnp.ndarray, usm_ndarray}
+    Angle in radians.
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+    Default: ``None``.
+order : {"C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+    Default: ``"K"``.
+
+Returns
+-------
+out : dpnp.ndarray
+    The corresponding angle in degrees. The data type of the returned array is
+    determined by the Type Promotion Rules.
+
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword argument `kwargs` is currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
+
+See Also
+--------
+:obj:`dpnp.deg2rad` : Convert angles from degrees to radians.
+:obj:`dpnp.unwrap` : Remove large jumps in angle by wrapping.
+:obj:`dpnp.degrees` : Equivalent function.
+
+Notes
+-----
+dpnp.rad2deg(x) is ``180 * x / pi``.
+
+Examples
+--------
+>>> import dpnp as np
+>>> x = np.array(np.pi / 2)
+>>> np.rad2deg(x)
+array(90.)
+"""
+
+rad2deg = DPNPUnaryFunc(
+    "rad2deg",
+    ufi._degrees_result_type,
+    ufi._degrees,
+    _RAD2DEG_DOCSTRING,
+)
+
+
+_RADIANS_DOCSTRING = """
+Convert angles from degrees to radians.
+
+For full documentation refer to :obj:`numpy.radians`.
+
+Parameters
+----------
+x : {dpnp.ndarray, usm_ndarray}
+    Input array in degrees.
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+    Default: ``None``.
+order : {"C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+    Default: ``"K"``.
+
+Returns
+-------
+out : dpnp.ndarray
+    The corresponding radian values. The data type of the returned array is
+    determined by the Type Promotion Rules.
+
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword argument `kwargs` is currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
+
+See Also
+--------
+:obj:`dpnp.deg2rad` : Equivalent function.
+
+Examples
+--------
+>>> import dpnp as np
+>>> deg = np.arange(12.) * 30.
+
+Convert a degree array to radians:
+
+>>> np.radians(deg)
+array([0.        , 0.52359878, 1.04719755, 1.57079633, 2.0943951 ,
+       2.61799388, 3.14159265, 3.66519143, 4.1887902 , 4.71238898,
+       5.23598776, 5.75958653])
+
+>>> out = np.zeros_like(deg)
+>>> ret = np.radians(deg, out)
+>>> ret is out
+True
+"""
+
+radians = DPNPUnaryFunc(
+    "radians",
+    ufi._radians_result_type,
+    ufi._radians,
+    _RADIANS_DOCSTRING,
+)
 
 
 _RECIPROCAL_DOCSTRING = """
@@ -1561,11 +1950,10 @@ def reduce_hypot(x, /, *, axis=None, dtype=None, keepdims=False, out=None):
 
     usm_x = dpnp.get_usm_ndarray(x)
     return dpnp_wrap_reduction_call(
-        x,
+        usm_x,
         out,
         dpt.reduce_hypot,
-        _get_accumulation_res_dt,
-        usm_x,
+        _get_accumulation_res_dt(x, dtype),
         axis=axis,
         dtype=dtype,
         keepdims=keepdims,
@@ -1621,60 +2009,6 @@ rsqrt = DPNPUnaryFunc(
 )
 
 
-def rad2deg(x1):
-    """
-    Convert angles from radians to degrees.
-
-    For full documentation refer to :obj:`numpy.rad2deg`.
-
-    See Also
-    --------
-    :obj:`dpnp.deg2rad` : Convert angles from degrees to radians.
-    :obj:`dpnp.unwrap` : Remove large jumps in angle by wrapping.
-
-    Notes
-    -----
-    This function works exactly the same as :obj:`dpnp.degrees`.
-
-    """
-
-    return degrees(x1)
-
-
-def radians(x1, **kwargs):
-    """
-    Convert angles from degrees to radians.
-
-    For full documentation refer to :obj:`numpy.radians`.
-
-    Limitations
-    -----------
-    Input array is supported as :obj:`dpnp.ndarray`.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
-
-    .. seealso:: :obj:`dpnp.deg2rad` equivalent function.
-
-    Examples
-    --------
-    >>> import dpnp as np
-    >>> deg = np.arange(6.) * 30.
-    >>> out = np.radians(deg)
-    >>> [i for i in out]
-    [0.0, 0.52359878, 1.04719755, 1.57079633, 2.0943951, 2.61799388]
-
-    """
-
-    x1_desc = dpnp.get_dpnp_descriptor(
-        x1, copy_when_strides=False, copy_when_nondefault_queue=False
-    )
-    if kwargs:
-        pass
-    elif x1_desc:
-        return dpnp_radians(x1_desc).get_pyobj()
-
-    return call_origin(numpy.radians, x1, **kwargs)
-
-
 _SIN_DOCSTRING = """
 Computes sine for each element `x_i` of input array `x`.
 
@@ -1724,8 +2058,8 @@ sin = DPNPUnaryFunc(
     ti._sin_result_type,
     ti._sin,
     _SIN_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_sin_to_call,
-    mkl_impl_fn=vmi._sin,
+    mkl_fn_to_call="_mkl_sin_to_call",
+    mkl_impl_fn="_sin",
 )
 
 
@@ -1777,8 +2111,8 @@ sinh = DPNPUnaryFunc(
     ti._sinh_result_type,
     ti._sinh,
     _SINH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_sinh_to_call,
-    mkl_impl_fn=vmi._sinh,
+    mkl_fn_to_call="_mkl_sinh_to_call",
+    mkl_impl_fn="_sinh",
 )
 
 
@@ -1833,8 +2167,8 @@ sqrt = DPNPUnaryFunc(
     ti._sqrt_result_type,
     ti._sqrt,
     _SQRT_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_sqrt_to_call,
-    mkl_impl_fn=vmi._sqrt,
+    mkl_fn_to_call="_mkl_sqrt_to_call",
+    mkl_impl_fn="_sqrt",
 )
 
 
@@ -1888,8 +2222,8 @@ square = DPNPUnaryFunc(
     ti._square_result_type,
     ti._square,
     _SQUARE_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_sqr_to_call,
-    mkl_impl_fn=vmi._sqr,
+    mkl_fn_to_call="_mkl_sqr_to_call",
+    mkl_impl_fn="_sqr",
 )
 
 
@@ -1942,8 +2276,8 @@ tan = DPNPUnaryFunc(
     ti._tan_result_type,
     ti._tan,
     _TAN_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_tan_to_call,
-    mkl_impl_fn=vmi._tan,
+    mkl_fn_to_call="_mkl_tan_to_call",
+    mkl_impl_fn="_tan",
 )
 
 
@@ -1996,43 +2330,125 @@ tanh = DPNPUnaryFunc(
     ti._tanh_result_type,
     ti._tanh,
     _TANH_DOCSTRING,
-    mkl_fn_to_call=vmi._mkl_tanh_to_call,
-    mkl_impl_fn=vmi._tanh,
+    mkl_fn_to_call="_mkl_tanh_to_call",
+    mkl_impl_fn="_tanh",
 )
 
 
-def unwrap(x1, **kwargs):
-    """
-    Unwrap by changing deltas between values to 2*pi complement.
+def unwrap(p, discont=None, axis=-1, *, period=2 * dpnp.pi):
+    r"""
+    Unwrap by taking the complement of large deltas with respect to the period.
+
+    This unwraps a signal `p` by changing elements which have an absolute
+    difference from their predecessor of more than ``max(discont, period / 2)``
+    to their `period`-complementary values.
+
+    For the default case where `period` is :math:`2\pi` and `discont` is
+    :math:`\pi`, this unwraps a radian phase `p` such that adjacent differences
+    are never greater than :math:`\pi` by adding :math:`2k\pi` for some integer
+    :math:`k`.
 
     For full documentation refer to :obj:`numpy.unwrap`.
 
-    Limitations
-    -----------
-    Input array is supported as :class:`dpnp.ndarray`.
-    Input array data types are limited by supported DPNP :ref:`Data types`.
+    Parameters
+    ----------
+    p : {dpnp.ndarray, usm_ndarray}
+        Input array.
+    discont : {float, None}, optional
+        Maximum discontinuity between values, default is ``None`` which is an
+        alias for ``period / 2``. Values below ``period / 2`` are treated as if
+        they were ``period / 2``. To have an effect different from the default,
+        `discont` should be larger than ``period / 2``.
+        Default: ``None``.
+    axis : int, optional
+        Axis along which unwrap will operate, default is the last axis.
+        Default: ``-1``.
+    period : float, optional
+        Size of the range over which the input wraps.
+        Default: ``2 * pi``.
+
+    Returns
+    -------
+    out : dpnp.ndarray
+        Output array.
 
     See Also
     --------
     :obj:`dpnp.rad2deg` : Convert angles from radians to degrees.
     :obj:`dpnp.deg2rad` : Convert angles from degrees to radians.
 
+    Notes
+    -----
+    If the discontinuity in `p` is smaller than ``period / 2``, but larger than
+    `discont`, no unwrapping is done because taking the complement would only
+    make the discontinuity larger.
+
     Examples
     --------
     >>> import dpnp as np
     >>> phase = np.linspace(0, np.pi, num=5)
-    >>> for i in range(3, 5):
-    >>>     phase[i] += np.pi
-    >>> out = np.unwrap(phase)
-    >>> [i for i in out]
-    [0.0, 0.78539816, 1.57079633, 5.49778714, 6.28318531]
+    >>> phase[3:] += np.pi
+    >>> phase
+    array([0.        , 0.78539816, 1.57079633, 5.49778714, 6.28318531])
+    >>> np.unwrap(phase)
+    array([ 0.        ,  0.78539816,  1.57079633, -0.78539816,  0.        ])
+
+    >>> phase = np.array([0, 1, 2, -1, 0])
+    >>> np.unwrap(phase, period=4)
+    array([0, 1, 2, 3, 4])
+
+    >>> phase = np.array([1, 2, 3, 4, 5, 6, 1, 2, 3])
+    >>> np.unwrap(phase, period=6)
+    array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    >>> phase = np.array([2, 3, 4, 5, 2, 3, 4, 5])
+    >>> np.unwrap(phase, period=4)
+    array([2, 3, 4, 5, 6, 7, 8, 9])
+
+    >>> phase_deg = np.mod(np.linspace(0 ,720, 19), 360) - 180
+    >>> np.unwrap(phase_deg, period=360)
+    array([-180., -140., -100.,  -60.,  -20.,   20.,   60.,  100.,  140.,
+            180.,  220.,  260.,  300.,  340.,  380.,  420.,  460.,  500.,
+            540.])
 
     """
 
-    x1_desc = dpnp.get_dpnp_descriptor(x1, copy_when_nondefault_queue=False)
-    if kwargs:
-        pass
-    elif x1_desc:
-        return dpnp_unwrap(x1_desc).get_pyobj()
+    dpnp.check_supported_arrays_type(p)
 
-    return call_origin(numpy.unwrap, x1, **kwargs)
+    p_nd = p.ndim
+    p_diff = dpnp.diff(p, axis=axis)
+
+    if discont is None:
+        discont = period / 2
+
+    # full slices
+    slice1 = [slice(None, None)] * p_nd
+    slice1[axis] = slice(1, None)
+    slice1 = tuple(slice1)
+
+    dt = dpnp.result_type(p_diff, period)
+    if dpnp.issubdtype(dt, dpnp.integer):
+        interval_high, rem = divmod(period, 2)
+        boundary_ambiguous = rem == 0
+    else:
+        interval_high = period / 2
+        boundary_ambiguous = True
+    interval_low = -interval_high
+
+    ddmod = p_diff - interval_low
+    ddmod = dpnp.remainder(ddmod, period, out=ddmod)
+    ddmod += interval_low
+
+    if boundary_ambiguous:
+        mask = ddmod == interval_low
+        mask &= p_diff > 0
+        ddmod = dpnp.where(mask, interval_high, ddmod, out=ddmod)
+
+    ph_correct = dpnp.subtract(ddmod, p_diff, out=ddmod)
+    abs_p_diff = dpnp.abs(p_diff, out=p_diff)
+    ph_correct = dpnp.where(abs_p_diff < discont, 0, ph_correct, out=ph_correct)
+
+    up = dpnp.astype(p, dtype=dt, copy=True)
+    up[slice1] = p[slice1]
+    up[slice1] += ph_correct.cumsum(axis=axis)
+    return up

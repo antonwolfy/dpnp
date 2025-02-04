@@ -1,7 +1,7 @@
 # cython: language_level=3
 # -*- coding: utf-8 -*-
 # *****************************************************************************
-# Copyright (c) 2016-2024, Intel Corporation
+# Copyright (c) 2016-2025, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,11 @@ class RandomState:
         or a `Device` object returned by
         :obj:`dpnp.dpnp_array.dpnp_array.device` property.
     sycl_queue : {None, SyclQueue}, optional
-        A SYCL queue to use for output array allocation and copying.
+        A SYCL queue to use for output array allocation and copying. The
+        `sycl_queue` can be passed as ``None`` (the default), which means
+        to get the SYCL queue from `device` keyword if present or to use
+        a default queue.
+        Default: ``None``.
 
     """
 
@@ -77,6 +81,7 @@ class RandomState:
         self._sycl_queue = dpnp.get_normalized_queue_device(
             device=device, sycl_queue=sycl_queue
         )
+
         self._sycl_device = self._sycl_queue.sycl_device
 
         is_cpu = self._sycl_device.is_cpu
@@ -230,6 +235,11 @@ class RandomState:
         """
 
         if not use_origin_backend():
+            if dpnp.is_cuda_backend(self):  # pragma: no cover
+                raise NotImplementedError(
+                    "Running on CUDA is currently not supported"
+                )
+
             if not dpnp.isscalar(loc):
                 pass
             elif not dpnp.isscalar(scale):
@@ -359,6 +369,11 @@ class RandomState:
         """
 
         if not use_origin_backend(low):
+            if dpnp.is_cuda_backend(self):  # pragma: no cover
+                raise NotImplementedError(
+                    "Running on CUDA is currently not supported"
+                )
+
             if not dpnp.isscalar(low):
                 pass
             elif not (high is None or dpnp.isscalar(high)):
@@ -583,6 +598,11 @@ class RandomState:
         """
 
         if not use_origin_backend():
+            if dpnp.is_cuda_backend(self):  # pragma: no cover
+                raise NotImplementedError(
+                    "Running on CUDA is currently not supported"
+                )
+
             if not dpnp.isscalar(low):
                 pass
             elif not dpnp.isscalar(high):

@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,16 +43,15 @@
 
 namespace dpnp::extensions::vm
 {
-namespace ew_cmn_ns = dpctl::tensor::kernels::elementwise_common;
 namespace py = pybind11;
 namespace py_int = dpnp::extensions::py_internal;
 namespace td_ns = dpctl::tensor::type_dispatch;
-namespace tu_ns = dpctl::tensor::type_utils;
 
 namespace impl
 {
-// OneMKL namespace with VM functions
-namespace mkl_vm = oneapi::mkl::vm;
+namespace ew_cmn_ns = dpctl::tensor::kernels::elementwise_common;
+namespace mkl_vm = oneapi::mkl::vm; // OneMKL namespace with VM functions
+namespace tu_ns = dpctl::tensor::type_utils;
 
 /**
  * @brief A factory to define pairs of supported types for which

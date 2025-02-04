@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2024, Intel Corporation
+// Copyright (c) 2024-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,14 +39,6 @@ extern std::pair<sycl::event, sycl::event>
          const dpctl::tensor::usm_ndarray &vectorY,
          const bool transpose,
          const std::vector<sycl::event> &depends);
-
-extern std::pair<sycl::event, sycl::event>
-    gemv_batch(sycl::queue &exec_q,
-               const dpctl::tensor::usm_ndarray &matrixA,
-               const dpctl::tensor::usm_ndarray &vectorX,
-               const dpctl::tensor::usm_ndarray &vectorY,
-               const bool transpose,
-               const std::vector<sycl::event> &depends);
 
 extern void init_gemv_dispatch_vector(void);
 extern void init_gemv_batch_dispatch_vector(void);

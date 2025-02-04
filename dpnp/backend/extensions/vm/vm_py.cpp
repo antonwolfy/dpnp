@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright (c) 2023-2024, Intel Corporation
+// Copyright (c) 2023-2025, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +23,11 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //*****************************************************************************
 //
-// This file defines functions of dpnp.backend._lapack_impl extensions
+// This file defines functions of dpnp.backend._vm_impl extensions
 //
 //*****************************************************************************
 
+#if not defined(USE_ONEMKL_INTERFACES)
 #include "abs.hpp"
 #include "acos.hpp"
 #include "acosh.hpp"
@@ -55,6 +56,7 @@
 #include "log1p.hpp"
 #include "log2.hpp"
 #include "mul.hpp"
+#include "nextafter.hpp"
 #include "pow.hpp"
 #include "rint.hpp"
 #include "sin.hpp"
@@ -67,9 +69,13 @@
 #include "trunc.hpp"
 
 namespace vm_ns = dpnp::extensions::vm;
+#endif // USE_ONEMKL_INTERFACES
+
+#include <pybind11/pybind11.h>
 
 PYBIND11_MODULE(_vm_impl, m)
 {
+#if not defined(USE_ONEMKL_INTERFACES)
     vm_ns::init_abs(m);
     vm_ns::init_acos(m);
     vm_ns::init_acosh(m);
@@ -98,6 +104,7 @@ PYBIND11_MODULE(_vm_impl, m)
     vm_ns::init_log1p(m);
     vm_ns::init_log2(m);
     vm_ns::init_mul(m);
+    vm_ns::init_nextafter(m);
     vm_ns::init_pow(m);
     vm_ns::init_rint(m);
     vm_ns::init_sin(m);
@@ -108,4 +115,15 @@ PYBIND11_MODULE(_vm_impl, m)
     vm_ns::init_tan(m);
     vm_ns::init_tanh(m);
     vm_ns::init_trunc(m);
+#endif // USE_ONEMKL_INTERFACES
+    m.def(
+        "_is_available",
+        [](void) {
+#if defined(USE_ONEMKL_INTERFACES)
+            return false;
+#else
+            return true;
+#endif // USE_ONEMKL_INTERFACES
+        },
+        "Check if the OneMKL VM library can be used.");
 }

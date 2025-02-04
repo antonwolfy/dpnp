@@ -1,8 +1,6 @@
-{% set required_compiler_and_mkl_version = "2024.0" %}
-{% set excluded_compiler_version1 = "2024.0.1" %}
-{% set excluded_compiler_version2 = "2024.0.2" %}
-{% set excluded_compiler_version3 = "2024.0.3" %}
-{% set required_dpctl_version = "0.17.0" %}
+{% set max_compiler_and_mkl_version = environ.get("MAX_BUILD_CMPL_MKL_VERSION", "2026.0a0") %}
+{% set required_compiler_and_mkl_version = "2025.0" %}
+{% set required_dpctl_version = "0.19.0*" %}
 
 package:
     name: dpnp
@@ -14,28 +12,33 @@ requirements:
     host:
       - python
       - setuptools
-      - numpy
+      - numpy >=1.23
       - cython
       - cmake >=3.21
       - ninja
       - git
       - dpctl >={{ required_dpctl_version }}
-      - mkl-devel-dpcpp >={{ required_compiler_and_mkl_version }}
+      - mkl-devel-dpcpp >={{ required_compiler_and_mkl_version }},<{{ max_compiler_and_mkl_version }}
       - onedpl-devel
       - tbb-devel
       - wheel
       - scikit-build
     build:
       - {{ compiler('cxx') }}
-      - {{ compiler('dpcpp') }} >={{ required_compiler_and_mkl_version }},!={{ excluded_compiler_version1 }},!={{ excluded_compiler_version2 }},!={{ excluded_compiler_version3 }} # [win]
-      - {{ compiler('dpcpp') }} >={{ required_compiler_and_mkl_version }},!={{ excluded_compiler_version1 }},!={{ excluded_compiler_version2 }} # [linux]
+      - {{ compiler('dpcpp') }} >={{ required_compiler_and_mkl_version }},<{{ max_compiler_and_mkl_version }}
       - sysroot_linux-64 >=2.28 # [linux]
     run:
       - python
       - {{ pin_compatible('dpctl', min_pin='x.x.x', max_pin=None) }}
       - {{ pin_compatible('dpcpp-cpp-rt', min_pin='x.x', max_pin='x') }}
-      - {{ pin_compatible('mkl-dpcpp', min_pin='x.x', max_pin='x') }}
-      - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-blas', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-dft', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-lapack', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-rng', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-stats', min_pin='x.x', max_pin='x') }}
+      - {{ pin_compatible('onemkl-sycl-vm', min_pin='x.x', max_pin='x') }}
+      - numpy
+      - intel-gpu-ocl-icd-system
 
 build:
     number: {{ GIT_DESCRIBE_NUMBER }}
@@ -48,14 +51,6 @@ test:
     requires:
       - pytest
       - setuptools
-    source_files:
-      - examples
-      - tests
-      - setup.cfg
-    commands:
-      - python -c "import dpnp; print(dpnp.__version__)"
-      - python -m dpctl -f
-      - pytest -s
 
 about:
     home: https://github.com/IntelPython/dpnp
@@ -76,6 +71,6 @@ extra:
     recipe-maintainers:
         - oleksandr-pavlyk
         - antonwolfy
-        - npolina4
+        - AlexanderKalistratov
         - vtavana
         - vlad-perevezentsev
