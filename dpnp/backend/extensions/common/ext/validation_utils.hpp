@@ -31,10 +31,11 @@
 
 #include "dpctl4pybind11.hpp"
 
-namespace statistics::validation
+namespace ext::validation
 {
 using array_ptr = const dpctl::tensor::usm_ndarray *;
 using array_names = std::unordered_map<array_ptr, std::string>;
+using dpctl::tensor::type_dispatch::typenum_t;
 
 std::string name_of(const array_ptr &arr, const array_names &names);
 
@@ -56,6 +57,9 @@ void check_no_overlap(const std::vector<array_ptr> &inputs,
 void check_num_dims(const array_ptr &arr,
                     const size_t ndim,
                     const array_names &names);
+void check_num_dims(const std::vector<array_ptr> &arrays,
+                    const size_t ndim,
+                    const array_names &names);
 void check_max_dims(const array_ptr &arr,
                     const size_t max_ndim,
                     const array_names &names);
@@ -64,7 +68,23 @@ void check_size_at_least(const array_ptr &arr,
                          const size_t size,
                          const array_names &names);
 
+void check_has_dtype(const array_ptr &arr,
+                     const typenum_t dtype,
+                     const array_names &names);
+
+void check_same_dtype(const array_ptr &arr1,
+                      const array_ptr &arr2,
+                      const array_names &names);
+
+void check_same_size(const array_ptr &arr1,
+                     const array_ptr &arr2,
+                     const array_names &names);
+void check_same_size(const std::vector<array_ptr> &arrays,
+                     const array_names &names);
+
 void common_checks(const std::vector<array_ptr> &inputs,
                    const std::vector<array_ptr> &outputs,
                    const array_names &names);
-} // namespace statistics::validation
+} // namespace ext::validation
+
+#include "ext/details/validation_utils_internal.hpp"

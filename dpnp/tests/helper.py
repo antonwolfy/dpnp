@@ -2,9 +2,28 @@ from sys import platform
 
 import dpctl
 import numpy
+import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 import dpnp
+
+from . import config
+
+
+def _assert_dtype(a_dt, b_dt, check_only_type_kind=False):
+    if check_only_type_kind:
+        assert a_dt.kind == b_dt.kind, f"{a_dt.kind} != {b_dt.kind}"
+    else:
+        assert a_dt == b_dt, f"{a_dt} != {b_dt}"
+
+
+def _assert_shape(a, b):
+    # it is assumed `a` is a `dpnp.ndarray` and so it has shape attribute
+    if hasattr(b, "shape"):
+        assert a.shape == b.shape, f"{a.shape} != {b.shape}"
+    else:
+        # numpy output is scalar, then dpnp is 0-D array
+        assert a.shape == (), f"{a.shape} != ()"
 
 
 def assert_dtype_allclose(
@@ -13,7 +32,7 @@ def assert_dtype_allclose(
     check_type=True,
     check_only_type_kind=False,
     factor=8,
-    relative_factor=None,
+    check_shape=True,
 ):
     """
     Assert DPNP and NumPy array based on maximum dtype resolution of input arrays
@@ -34,10 +53,13 @@ def assert_dtype_allclose(
     for all data types supported by DPNP when set to True.
     It is effective only when 'check_type' is also set to True.
     The parameter `factor` scales the resolution used for comparing the arrays.
+    The parameter `check_shape`, when True (default), asserts the shape of input arrays is the same.
 
     """
 
-    list_64bit_types = [numpy.float64, numpy.complex128]
+    if check_shape:
+        _assert_shape(dpnp_arr, numpy_arr)
+
     is_inexact = lambda x: hasattr(x, "dtype") and dpnp.issubdtype(
         x.dtype, dpnp.inexact
     )
@@ -54,126 +76,32 @@ def assert_dtype_allclose(
             else -dpnp.inf
         )
         tol = factor * max(tol_dpnp, tol_numpy)
-        assert_allclose(dpnp_arr.asnumpy(), numpy_arr, atol=tol, rtol=tol)
+        assert_allclose(dpnp_arr, numpy_arr, atol=tol, rtol=tol, strict=False)
         if check_type:
+            list_64bit_types = [numpy.float64, numpy.complex128]
             numpy_arr_dtype = numpy_arr.dtype
             dpnp_arr_dtype = dpnp_arr.dtype
             dpnp_arr_dev = dpnp_arr.sycl_device
 
             if check_only_type_kind:
-                assert dpnp_arr_dtype.kind == numpy_arr_dtype.kind
+                _assert_dtype(dpnp_arr_dtype, numpy_arr_dtype, True)
             else:
                 is_np_arr_f2 = numpy_arr_dtype == numpy.float16
 
                 if is_np_arr_f2:
                     if has_support_aspect16(dpnp_arr_dev):
-                        assert dpnp_arr_dtype == numpy_arr_dtype
+                        _assert_dtype(dpnp_arr_dtype, numpy_arr_dtype)
                 elif (
                     numpy_arr_dtype not in list_64bit_types
                     or has_support_aspect64(dpnp_arr_dev)
                 ):
-                    assert dpnp_arr_dtype == numpy_arr_dtype
+                    _assert_dtype(dpnp_arr_dtype, numpy_arr_dtype)
                 else:
-                    assert dpnp_arr_dtype.kind == numpy_arr_dtype.kind
+                    _assert_dtype(dpnp_arr_dtype, numpy_arr_dtype, True)
     else:
-        assert_array_equal(dpnp_arr.asnumpy(), numpy_arr)
+        assert_array_equal(dpnp_arr, numpy_arr, strict=False)
         if check_type and hasattr(numpy_arr, "dtype"):
-            if check_only_type_kind:
-                assert dpnp_arr.dtype.kind == numpy_arr.dtype.kind
-            else:
-                assert dpnp_arr.dtype == numpy_arr.dtype
-
-
-def get_integer_dtypes():
-    """
-    Build a list of integer types supported by DPNP.
-    """
-
-    return [dpnp.int32, dpnp.int64]
-
-
-def get_complex_dtypes(device=None):
-    """
-    Build a list of complex types supported by DPNP based on device capabilities.
-    """
-
-    dev = dpctl.select_default_device() if device is None else device
-
-    # add complex types
-    dtypes = [dpnp.complex64]
-    if dev.has_aspect_fp64:
-        dtypes.append(dpnp.complex128)
-    return dtypes
-
-
-def get_float_dtypes(no_float16=True, device=None):
-    """
-    Build a list of floating types supported by DPNP based on device capabilities.
-    """
-
-    dev = dpctl.select_default_device() if device is None else device
-
-    # add floating types
-    dtypes = []
-    if not no_float16 and dev.has_aspect_fp16:
-        dtypes.append(dpnp.float16)
-
-    dtypes.append(dpnp.float32)
-    if dev.has_aspect_fp64:
-        dtypes.append(dpnp.float64)
-    return dtypes
-
-
-def get_float_complex_dtypes(no_float16=True, device=None):
-    """
-    Build a list of floating and complex types supported by DPNP based on device capabilities.
-    """
-
-    dtypes = get_float_dtypes(no_float16, device)
-    dtypes.extend(get_complex_dtypes(device))
-    return dtypes
-
-
-def get_all_dtypes(
-    no_bool=False, no_float16=True, no_complex=False, no_none=False, device=None
-):
-    """
-    Build a list of types supported by DPNP based on input flags and device capabilities.
-    """
-
-    dev = dpctl.select_default_device() if device is None else device
-
-    # add boolean type
-    dtypes = [dpnp.bool] if not no_bool else []
-
-    # add integer types
-    dtypes.extend(get_integer_dtypes())
-
-    # add floating types
-    dtypes.extend(get_float_dtypes(no_float16=no_float16, device=dev))
-
-    # add complex types
-    if not no_complex:
-        dtypes.extend(get_complex_dtypes(device=dev))
-
-    # add None value to validate a default dtype
-    if not no_none:
-        dtypes.append(None)
-    return dtypes
-
-
-def get_array(xp, a):
-    """
-    Cast input array `a` to a type supported by `xp` interface.
-
-    Implicit conversion of either DPNP or DPCTL array to a NumPy array is not
-    allowed. Input array has to be explicitly casted with `asnumpy` function.
-
-    """
-
-    if xp is numpy and dpnp.is_supported_array_type(a):
-        return dpnp.asnumpy(a)
-    return a
+            _assert_dtype(dpnp_arr.dtype, numpy_arr.dtype, check_only_type_kind)
 
 
 def generate_random_numpy_array(
@@ -241,6 +169,9 @@ def generate_random_numpy_array(
         seed_value = 42
     numpy.random.seed(seed_value)
 
+    if numpy.issubdtype(dtype, numpy.unsignedinteger):
+        low = 0
+
     # dtype=int is needed for 0d arrays
     size = numpy.prod(shape, dtype=int)
     if dtype == dpnp.bool:
@@ -271,27 +202,174 @@ def generate_random_numpy_array(
     return a
 
 
-def is_cpu_device(device=None):
+def factor_to_tol(dtype, factor):
     """
-    Return True if a test is running on CPU device, False otherwise.
+    Calculate the tolerance for comparing floating point and complex arrays.
+    The tolerance is based on the maximum resolution of the input dtype multiplied by the factor.
     """
+
+    tol = 0
+    if numpy.issubdtype(dtype, numpy.inexact):
+        tol = numpy.finfo(dtype).resolution
+
+    return factor * tol
+
+
+def get_abs_array(data, dtype=None):
+    if numpy.issubdtype(dtype, numpy.unsignedinteger):
+        data = numpy.abs(data)
+    # it is better to use astype with the default casting=unsafe
+    # otherwise, we need to skip test for cases where overflow occurs
+    return numpy.array(data).astype(dtype)
+
+
+def get_all_dtypes(
+    no_bool=False,
+    no_float16=True,
+    no_complex=False,
+    no_none=False,
+    xfail_dtypes=None,
+    exclude=None,
+    no_unsigned=False,
+    device=None,
+):
+    """
+    Build a list of types supported by DPNP based on
+    input flags and device capabilities.
+    """
+
     dev = dpctl.select_default_device() if device is None else device
-    return dev.has_aspect_cpu
+
+    # add boolean type
+    dtypes = [dpnp.bool] if not no_bool else []
+
+    # add integer types
+    dtypes.extend(get_integer_dtypes(no_unsigned=no_unsigned))
+
+    # add floating types
+    dtypes.extend(get_float_dtypes(no_float16=no_float16, device=dev))
+
+    # add complex types
+    if not no_complex:
+        dtypes.extend(get_complex_dtypes(device=dev))
+
+    # add None value to validate a default dtype
+    if not no_none:
+        dtypes.append(None)
+
+    def mark_xfail(dtype):
+        if xfail_dtypes is not None and dtype in xfail_dtypes:
+            return pytest.param(dtype, marks=pytest.mark.xfail)
+        return dtype
+
+    def not_excluded(dtype):
+        if exclude is None:
+            return True
+        return dtype not in exclude
+
+    dtypes = [mark_xfail(dtype) for dtype in dtypes if not_excluded(dtype)]
+    return dtypes
 
 
-def is_cuda_device(device=None):
+def get_array(xp, a):
     """
-    Return True if a test is running on CUDA device, False otherwise.
+    Cast input array `a` to a type supported by `xp` interface.
+
+    Implicit conversion of either DPNP or DPCTL array to a NumPy array is not
+    allowed. Input array has to be explicitly casted with `asnumpy` function.
+
     """
+
+    if xp is numpy and dpnp.is_supported_array_type(a):
+        return dpnp.asnumpy(a)
+    return a
+
+
+def get_complex_dtypes(device=None):
+    """
+    Build a list of complex types supported by DPNP based on device capabilities.
+    """
+
     dev = dpctl.select_default_device() if device is None else device
-    return dev.backend == dpctl.backend_type.cuda
+
+    # add complex types
+    dtypes = [dpnp.complex64]
+    if dev.has_aspect_fp64:
+        dtypes.append(dpnp.complex128)
+    return dtypes
 
 
-def is_win_platform():
+def get_float_dtypes(no_float16=True, device=None):
     """
-    Return True if a test is running on Windows OS, False otherwise.
+    Build a list of floating types supported by DPNP based on device capabilities.
     """
-    return platform.startswith("win")
+
+    dev = dpctl.select_default_device() if device is None else device
+
+    # add floating types
+    dtypes = []
+    if not no_float16 and dev.has_aspect_fp16:
+        dtypes.append(dpnp.float16)
+
+    dtypes.append(dpnp.float32)
+    if dev.has_aspect_fp64:
+        dtypes.append(dpnp.float64)
+    return dtypes
+
+
+def get_float_complex_dtypes(no_float16=True, device=None):
+    """
+    Build a list of floating and complex types supported by DPNP based on device capabilities.
+    """
+
+    dtypes = get_float_dtypes(no_float16, device)
+    dtypes.extend(get_complex_dtypes(device))
+    return dtypes
+
+
+def get_integer_dtypes(all_int_types=False, no_unsigned=False):
+    """
+    Build a list of integer types supported by DPNP.
+    """
+
+    dtypes = [dpnp.int32, dpnp.int64]
+
+    if config.all_int_types or all_int_types:
+        dtypes += [dpnp.int8, dpnp.int16]
+        if not no_unsigned:
+            dtypes += [dpnp.uint8, dpnp.uint16, dpnp.uint32, dpnp.uint64]
+
+    return dtypes
+
+
+def get_integer_float_dtypes(
+    all_int_types=False,
+    no_unsigned=False,
+    no_float16=True,
+    device=None,
+    xfail_dtypes=None,
+    exclude=None,
+):
+    """
+    Build a list of integer and float types supported by DPNP.
+    """
+    dtypes = get_integer_dtypes(
+        all_int_types=all_int_types, no_unsigned=no_unsigned
+    )
+    dtypes += get_float_dtypes(no_float16=no_float16, device=device)
+
+    def mark_xfail(dtype):
+        if xfail_dtypes is not None and dtype in xfail_dtypes:
+            return pytest.param(dtype, marks=pytest.mark.xfail)
+        return dtype
+
+    def not_excluded(dtype):
+        if exclude is None:
+            return True
+        return dtype not in exclude
+
+    dtypes = [mark_xfail(dtype) for dtype in dtypes if not_excluded(dtype)]
+    return dtypes
 
 
 def has_support_aspect16(device=None):
@@ -310,6 +388,57 @@ def has_support_aspect64(device=None):
     """
     dev = dpctl.select_default_device() if device is None else device
     return dev.has_aspect_fp64
+
+
+def is_cpu_device(device=None):
+    """
+    Return True if a test is running on CPU device, False otherwise.
+    """
+    dev = dpctl.select_default_device() if device is None else device
+    return dev.has_aspect_cpu
+
+
+def is_cuda_device(device=None):
+    """
+    Return True if a test is running on CUDA device, False otherwise.
+    """
+    dev = dpctl.select_default_device() if device is None else device
+    return dev.backend == dpctl.backend_type.cuda
+
+
+def is_gpu_device(device=None):
+    """
+    Return True if a test is running on GPU device, False otherwise.
+    """
+    dev = dpctl.select_default_device() if device is None else device
+    return dev.has_aspect_gpu
+
+
+def is_intel_numpy():
+    """
+    Return True if Intel NumPy is used during testing.
+
+    The check is based on MKL backend name stored in Build Dependencies, where
+    in case of Intel Numpy there "mkl" is expected at the beginning of the name
+    for both BLAS and LAPACK (the full name is "mkl-dynamic-ilp64-iomp").
+
+    """
+
+    build_deps = numpy.show_config(mode="dicts")["Build Dependencies"]
+    blas = build_deps["blas"]
+    lapack = build_deps["lapack"]
+
+    if numpy_version() < "2.0.0":
+        # numpy 1.26.4 has LAPACK name equals to 'dep140030038112336'
+        return blas["name"].startswith("mkl")
+    return all(dep["name"].startswith("mkl") for dep in [blas, lapack])
+
+
+def is_win_platform():
+    """
+    Return True if a test is running on Windows OS, False otherwise.
+    """
+    return platform.startswith("win")
 
 
 def numpy_version():

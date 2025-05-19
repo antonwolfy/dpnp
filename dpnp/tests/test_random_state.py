@@ -15,11 +15,18 @@ import dpnp
 from dpnp.dpnp_array import dpnp_array
 from dpnp.random import RandomState
 
-from .helper import get_array, is_cpu_device
+from .helper import (
+    assert_dtype_allclose,
+    get_array,
+    is_cpu_device,
+    is_gpu_device,
+)
 
 # aspects of default device:
 _def_device = dpctl.SyclQueue().sycl_device
 _def_dev_has_fp64 = _def_device.has_aspect_fp64
+
+list_of_usm_types = ["host", "device", "shared"]
 
 
 def assert_cfd(data, exp_sycl_queue, exp_usm_type=None):
@@ -35,16 +42,8 @@ def get_default_floating():
 
 
 class TestNormal:
-    @pytest.mark.parametrize(
-        "dtype",
-        [dpnp.float32, dpnp.float64, None],
-        ids=["float32", "float64", "None"],
-    )
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("dtype", [dpnp.float32, dpnp.float64, None])
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, dtype, usm_type):
         seed = 1234567
         sycl_queue = dpctl.SyclQueue()
@@ -89,31 +88,19 @@ class TestNormal:
                     ],
                     dtype=dtype,
                 )
-        # TODO: discuss with opneMKL: there is a difference between CPU and GPU
+        # TODO: discuss with oneMKL: there is a difference between CPU and GPU
         # generated samples since 9 digit while precision=15 for float64
-        # precision = dpnp.finfo(dtype=dtype).precision
-        precision = (
-            8 if dtype == dpnp.float64 else dpnp.finfo(dtype=dtype).precision
-        )
-        assert_array_almost_equal(
-            dpnp_data.asnumpy(), expected, decimal=precision
-        )
+        # precision = dpnp.finfo(dtype).precision
+        precision = 8 if dtype == dpnp.float64 else dpnp.finfo(dtype).precision
+        assert_array_almost_equal(dpnp_data, expected, decimal=precision)
 
         # check if compute follows data isn't broken
         assert_cfd(dpnp_data, sycl_queue, usm_type)
 
-    @pytest.mark.parametrize(
-        "dtype",
-        [dpnp.float32, dpnp.float64, None],
-        ids=["float32", "float64", "None"],
-    )
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("dtype", [dpnp.float32, dpnp.float64, None])
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_scale(self, dtype, usm_type):
-        mean = 7
+        mean = dtype(7.0) if dtype == dpnp.float32 else 7.0
         rs = RandomState(39567)
         func = lambda scale: rs.normal(
             loc=mean, scale=scale, dtype=dtype, usm_type=usm_type
@@ -147,26 +134,22 @@ class TestNormal:
         ],
     )
     def test_inf_loc(self, loc):
-        assert_equal(
-            RandomState(6531).normal(loc=loc, scale=1, size=1000),
-            get_default_floating()(loc),
-        )
+        a = RandomState(6531).normal(loc=loc, scale=1, size=1000)
+        assert_equal(a, get_default_floating()(loc), strict=False)
 
     def test_inf_scale(self):
-        a = RandomState().normal(0, numpy.inf, size=1000).asnumpy()
-        assert_equal(numpy.isnan(a).any(), False)
-        assert_equal(numpy.isinf(a).all(), True)
+        a = RandomState().normal(0, numpy.inf, size=1000)
+        assert not dpnp.isnan(a).any()
+        assert dpnp.isinf(a).all()
         assert_equal(a.max(), numpy.inf)
         assert_equal(a.min(), -numpy.inf)
 
-    @pytest.mark.parametrize(
-        "loc", [numpy.inf, -numpy.inf], ids=["numpy.inf", "-numpy.inf"]
-    )
+    @pytest.mark.parametrize("loc", [numpy.inf, -numpy.inf])
     def test_inf_loc_scale(self, loc):
-        a = RandomState().normal(loc=loc, scale=numpy.inf, size=1000).asnumpy()
-        assert_equal(numpy.isnan(a).all(), False)
-        assert_equal(numpy.nanmin(a), loc)
-        assert_equal(numpy.nanmax(a), loc)
+        a = RandomState().normal(loc=loc, scale=numpy.inf, size=1000)
+        assert not dpnp.isnan(a).all()
+        assert_equal(dpnp.nanmin(a), loc)
+        assert_equal(dpnp.nanmax(a), loc)
 
     def test_extreme_bounds(self):
         dtype = get_default_floating()
@@ -222,14 +205,12 @@ class TestNormal:
         )
 
         # dpnp accepts only scalar as low and/or high, in other cases it will be a fallback to numpy
-        actual = data.asnumpy()
         expected = numpy.random.RandomState(seed).normal(
             loc=get_array(numpy, loc), scale=get_array(numpy, scale), size=size
         )
 
-        dtype = get_default_floating()
-        precision = dpnp.finfo(dtype=dtype).precision
-        assert_array_almost_equal(actual, expected, decimal=precision)
+        precision = dpnp.finfo(get_default_floating()).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # check if compute follows data isn't broken
         assert_cfd(data, sycl_queue)
@@ -241,7 +222,7 @@ class TestNormal:
             float,
             dpnp.int64,
             dpnp.int32,
-            dpnp.int,
+            dpnp.int_,
             int,
             numpy.clongdouble,
             dpnp.complex128,
@@ -254,7 +235,7 @@ class TestNormal:
             "float",
             "dpnp.int64",
             "dpnp.int32",
-            "dpnp.int",
+            "dpnp.int_",
             "int",
             "numpy.clongdouble",
             "dpnp.complex128",
@@ -276,11 +257,7 @@ class TestNormal:
 
 
 class TestRand:
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, usm_type):
         seed = 28042
         sycl_queue = dpctl.SyclQueue()
@@ -308,22 +285,20 @@ class TestRand:
                 dtype=dtype,
             )
 
-        precision = dpnp.finfo(dtype=dtype).precision
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        precision = dpnp.finfo(dtype).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
         assert_cfd(data, sycl_queue, usm_type)
 
         # call with the same seed has to draw the same values
         data = RandomState(seed, sycl_queue=sycl_queue).rand(
             3, 2, usm_type=usm_type
         )
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        assert_array_almost_equal(data, expected, decimal=precision)
         assert_cfd(data, sycl_queue, usm_type)
 
         # call with omitted dimensions has to draw the first element from expected
         data = RandomState(seed, sycl_queue=sycl_queue).rand(usm_type=usm_type)
-        assert_array_almost_equal(
-            data.asnumpy(), expected[0, 0], decimal=precision
-        )
+        assert_array_almost_equal(data, expected[0, 0], decimal=precision)
         assert_cfd(data, sycl_queue, usm_type)
 
         # rand() is an alias on random_sample(), map arguments
@@ -364,20 +339,16 @@ class TestRand:
 class TestRandInt:
     @pytest.mark.parametrize(
         "dtype",
-        [int, dpnp.int32, dpnp.int],
-        ids=["int", "dpnp.int32", "dpnp.int"],
+        [int, dpnp.int32, dpnp.int_],
+        ids=["int", "dpnp.int32", "dpnp.int_"],
     )
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, dtype, usm_type):
         seed = 9864
         low = 1
         high = 10
 
-        if dtype == dpnp.int and dtype != dpnp.dtype("int32"):
+        if dtype == dpnp.int_ and dtype != dpnp.dtype("int32"):
             pytest.skip(
                 "dtype isn't alias on dpnp.int32 on the target OS, so there will be a fallback"
             )
@@ -390,21 +361,21 @@ class TestRandInt:
             expected = numpy.array([[4, 1], [5, 3], [5, 7]], dtype=numpy.int32)
         else:
             expected = numpy.array([[1, 2], [1, 5], [3, 7]], dtype=numpy.int32)
-        assert_array_equal(data.asnumpy(), expected)
+        assert_array_equal(data, expected)
         assert_cfd(data, sycl_queue, usm_type)
 
         # call with the same seed has to draw the same values
         data = RandomState(seed, sycl_queue=sycl_queue).randint(
             low=low, high=high, size=(3, 2), dtype=dtype, usm_type=usm_type
         )
-        assert_array_equal(data.asnumpy(), expected)
+        assert_array_equal(data, expected)
         assert_cfd(data, sycl_queue, usm_type)
 
         # call with omitted dimensions has to draw the first element from expected
         data = RandomState(seed, sycl_queue=sycl_queue).randint(
             low=low, high=high, dtype=dtype, usm_type=usm_type
         )
-        assert_array_equal(data.asnumpy(), expected[0, 0])
+        assert_array_equal(data, expected[0, 0])
         assert_cfd(data, sycl_queue, usm_type)
 
         # rand() is an alias on random_sample(), map arguments
@@ -428,7 +399,7 @@ class TestRandInt:
             expected = numpy.array([4, 4, 3, 3, 1, 0, 3], dtype=numpy.int32)
         else:
             expected = numpy.array([0, 1, 4, 0, 3, 3, 3], dtype=numpy.int32)
-        assert_array_equal(actual.asnumpy(), expected)
+        assert_array_equal(actual, expected)
 
     def test_negative_bounds(self):
         actual = RandomState(5143).randint(low=-15.74, high=-3, size=(2, 7))
@@ -448,16 +419,16 @@ class TestRandInt:
                 ],
                 dtype=numpy.int32,
             )
-        assert_array_equal(actual.asnumpy(), expected)
+        assert_array_equal(actual, expected)
 
     def test_negative_interval(self):
         rs = RandomState(3567)
 
-        assert_equal(-5 <= rs.randint(-5, -1) < -1, True)
+        assert -5 <= rs.randint(-5, -1) < -1
 
         x = rs.randint(-7, -1, 5)
-        assert_equal(-7 <= x, True)
-        assert_equal(x < -1, True)
+        assert_equal(-7 <= x, True, strict=False)
+        assert_equal(x < -1, True, strict=False)
 
     def test_bounds_checking(self):
         dtype = dpnp.int32
@@ -495,13 +466,13 @@ class TestRandInt:
             )
 
         tgt = high - 1
-        assert_equal(func(tgt, tgt + 1, size=1000), tgt)
+        assert_equal(func(tgt, tgt + 1, size=1000), tgt, strict=False)
 
         tgt = low
-        assert_equal(func(tgt, tgt + 1, size=1000), tgt)
+        assert_equal(func(tgt, tgt + 1, size=1000), tgt, strict=False)
 
         tgt = (low + high) // 2
-        assert_equal(func(tgt, tgt + 1, size=1000), tgt)
+        assert_equal(func(tgt, tgt + 1, size=1000), tgt, strict=False)
 
     def test_full_range(self):
         dtype = dpnp.int32
@@ -520,8 +491,8 @@ class TestRandInt:
     def test_in_bounds_fuzz(self):
         for high in [4, 8, 16]:
             vals = RandomState().randint(2, high, size=2**16)
-            assert_equal(vals.max() < high, True)
-            assert_equal(vals.min() >= 2, True)
+            assert vals.max() < high
+            assert vals.min() >= 2
 
     @pytest.mark.parametrize(
         "zero_size",
@@ -553,9 +524,7 @@ class TestRandInt:
         size = (3, 2, 5)
 
         # dpnp accepts only scalar as low and/or high, in other cases it will be a fallback to numpy
-        actual = (
-            RandomState(seed).randint(low=low, high=high, size=size).asnumpy()
-        )
+        actual = RandomState(seed).randint(low=low, high=high, size=size)
         expected = numpy.random.RandomState(seed).randint(
             low=get_array(numpy, low), high=get_array(numpy, high), size=size
         )
@@ -564,10 +533,10 @@ class TestRandInt:
     @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     @pytest.mark.parametrize(
         "dtype",
-        [dpnp.int64, dpnp.int, dpnp.bool, dpnp.bool_, bool],
+        [dpnp.int64, dpnp.int_, dpnp.bool, dpnp.bool_, bool],
         ids=[
             "dpnp.int64",
-            "dpnp.int",
+            "dpnp.int_",
             "dpnp.bool",
             "dpnp.bool_",
             "bool",
@@ -579,21 +548,19 @@ class TestRandInt:
         high = 37 if not dtype in {dpnp.bool_, bool} else 2
         size = (3, 2, 5)
 
-        if dtype == dpnp.int and dtype == dpnp.dtype("int32"):
+        if dtype == dpnp.int_ and dtype == dpnp.dtype("int32"):
             pytest.skip(
                 "dtype is alias on dpnp.int32 on the target OS, so no fallback here"
             )
 
         # dtype must be int or dpnp.int32, in other cases it will be a fallback to numpy
-        actual = (
-            RandomState(seed)
-            .randint(low=low, high=high, size=size, dtype=dtype)
-            .asnumpy()
+        actual = RandomState(seed).randint(
+            low=low, high=high, size=size, dtype=dtype
         )
         expected = numpy.random.RandomState(seed).randint(
             low=low, high=high, size=size, dtype=dtype
         )
-        assert_equal(actual, expected)
+        assert_array_equal(actual, expected)
         assert_raises(TypeError, RandomState().randint, dtype=dtype)
 
     @pytest.mark.parametrize(
@@ -605,11 +572,7 @@ class TestRandInt:
 
 
 class TestRandN:
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, usm_type):
         seed = 3649
         sycl_queue = dpctl.SyclQueue()
@@ -637,20 +600,20 @@ class TestRandN:
                 dtype=dtype,
             )
 
-        # TODO: discuss with opneMKL: there is a difference between CPU and GPU
+        # TODO: discuss with oneMKL: there is a difference between CPU and GPU
         # generated samples since 9 digit while precision=15 for float64
-        # precision = dpnp.finfo(dtype=numpy.float64).precision
-        precision = dpnp.finfo(dtype=numpy.float32).precision
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        # precision = dpnp.finfo(numpy.float64).precision
+        precision = dpnp.finfo(numpy.float32).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # call with the same seed has to draw the same values
         data = RandomState(seed, sycl_queue=sycl_queue).randn(
             3, 2, usm_type=usm_type
         )
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # call with omitted dimensions has to draw the first element from expected
-        actual = dpnp.asnumpy(RandomState(seed).randn(usm_type=usm_type))
+        actual = RandomState(seed).randn(usm_type=usm_type)
         assert_array_almost_equal(actual, expected[0, 0], decimal=precision)
 
         # randn() is an alias on standard_normal(), map arguments
@@ -690,21 +653,19 @@ class TestRandN:
 
 class TestSeed:
     @pytest.mark.parametrize(
-        "func",
-        ["normal", "standard_normal", "random_sample", "uniform"],
-        ids=["normal", "standard_normal", "random_sample", "uniform"],
+        "func", ["normal", "standard_normal", "random_sample", "uniform"]
     )
     def test_scalar(self, func):
         seed = 28041997
         size = (3, 2, 4)
 
         rs = RandomState(seed)
-        a1 = getattr(rs, func)(size=size).asnumpy()
+        a1 = getattr(rs, func)(size=size)
 
         rs = RandomState(seed)
-        a2 = getattr(rs, func)(size=size).asnumpy()
+        a2 = getattr(rs, func)(size=size)
 
-        precision = dpnp.finfo(dtype=numpy.float64).precision
+        precision = dpnp.finfo(numpy.float64).precision
         assert_array_almost_equal(a1, a2, decimal=precision)
 
     @pytest.mark.usefixtures("allow_fall_back_on_numpy")
@@ -732,13 +693,13 @@ class TestSeed:
         ],
     )
     def test_array_range(self, seed):
-        if not is_cpu_device():
+        if is_gpu_device():
             pytest.skip("seed as a scalar is only supported on GPU")
 
         size = 15
-        a1 = RandomState(seed).uniform(size=size).asnumpy()
-        a2 = RandomState(seed).uniform(size=size).asnumpy()
-        assert_allclose(a1, a2, rtol=1e-07, atol=0)
+        a1 = RandomState(seed).uniform(size=size)
+        a2 = RandomState(seed).uniform(size=size)
+        assert dpnp.allclose(a1, a2)
 
     @pytest.mark.parametrize(
         "seed",
@@ -840,11 +801,7 @@ class TestSeed:
 
 
 class TestStandardNormal:
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, usm_type):
         seed = 1234567
         sycl_queue = dpctl.SyclQueue()
@@ -874,22 +831,20 @@ class TestStandardNormal:
                 dtype=dtype,
             )
 
-        # TODO: discuss with opneMKL: there is a difference between CPU and GPU
+        # TODO: discuss with oneMKL: there is a difference between CPU and GPU
         # generated samples since 9 digit while precision=15 for float64
-        # precision = dpnp.finfo(dtype=numpy.float64).precision
-        precision = dpnp.finfo(dtype=numpy.float32).precision
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        # precision = dpnp.finfo(numpy.float64).precision
+        precision = dpnp.finfo(numpy.float32).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # call with the same seed has to draw the same values
         data = RandomState(seed, sycl_queue=sycl_queue).standard_normal(
             size=(4, 2), usm_type=usm_type
         )
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # call with omitted dimensions has to draw the first element from expected
-        actual = dpnp.asnumpy(
-            RandomState(seed).standard_normal(usm_type=usm_type)
-        )
+        actual = RandomState(seed).standard_normal(usm_type=usm_type)
         assert_array_almost_equal(actual, expected[0, 0], decimal=precision)
 
         # random_sample() is an alias on uniform(), map arguments
@@ -920,11 +875,7 @@ class TestStandardNormal:
 
 
 class TestRandSample:
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, usm_type):
         seed = 12657
         sycl_queue = dpctl.SyclQueue()
@@ -954,17 +905,14 @@ class TestRandSample:
                 dtype=dtype,
             )
 
-        precision = dpnp.finfo(dtype=dtype).precision
-        assert_array_almost_equal(data.asnumpy(), expected, decimal=precision)
+        precision = dpnp.finfo(dtype).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # call with omitted dimensions has to draw the first element from expected
         data = RandomState(seed, sycl_queue=sycl_queue).random_sample(
             usm_type=usm_type
         )
-        assert_array_almost_equal(
-            data.asnumpy(), expected[0, 0], decimal=precision
-        )
-
+        assert_array_almost_equal(data, expected[0, 0], decimal=precision)
         # random_sample() is an alias on uniform(), map arguments
         with mock.patch("dpnp.random.RandomState.uniform") as m:
             RandomState(seed).random_sample((4, 2), usm_type=usm_type)
@@ -999,15 +947,9 @@ class TestUniform:
         ids=["(low, high)=[1.23, 10.54]", "(low, high)=[10.54, 1.23]"],
     )
     @pytest.mark.parametrize(
-        "dtype",
-        [dpnp.float32, dpnp.float64, dpnp.int32, None],
-        ids=["float32", "float64", "int32", "None"],
+        "dtype", [dpnp.float32, dpnp.float64, dpnp.int32, None]
     )
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_distr(self, bounds, dtype, usm_type):
         seed = 28041997
         low = bounds[0]
@@ -1024,55 +966,44 @@ class TestUniform:
             return
 
         # get drawn samples by dpnp
-        dpnp_data = func()
-        actual = dpnp_data.asnumpy()
+        actual = func()
 
         # default dtype depends on fp64 support by the device
         dtype = get_default_floating() if dtype is None else dtype
         if sycl_queue.sycl_device.is_cpu:
             if dtype != dpnp.int32:
-                expected = numpy.array(
-                    [
-                        [4.023770128630567, 8.87456423597643],
-                        [2.888630247435067, 4.823004481580574],
-                        [2.030351535445079, 4.533497077834326],
-                    ]
-                )
-                assert_array_almost_equal(
-                    actual, expected, decimal=dpnp.finfo(dtype=dtype).precision
-                )
+                data = [
+                    [4.023770128630567, 8.87456423597643],
+                    [2.888630247435067, 4.823004481580574],
+                    [2.030351535445079, 4.533497077834326],
+                ]
+                expected = numpy.array(data, dtype=dtype)
+                precision = dpnp.finfo(dtype).precision
+                assert_array_almost_equal(actual, expected, decimal=precision)
             else:
-                expected = numpy.array([[3, 8], [2, 4], [1, 4]])
+                expected = numpy.array([[3, 8], [2, 4], [1, 4]], dtype=dtype)
                 assert_array_equal(actual, expected)
         else:
             if dtype != dpnp.int32:
-                expected = numpy.array(
-                    [
-                        [1.230000000452886, 4.889115418092382],
-                        [6.084098950993071, 1.682066500463302],
-                        [3.316473517549554, 8.428297791221597],
-                    ]
-                )
-                assert_array_almost_equal(
-                    actual, expected, decimal=dpnp.finfo(dtype=dtype).precision
-                )
+                data = [
+                    [1.230000000452886, 4.889115418092382],
+                    [6.084098950993071, 1.682066500463302],
+                    [3.316473517549554, 8.428297791221597],
+                ]
+                expected = numpy.array(data, dtype=dtype)
+                precision = dpnp.finfo(dtype).precision
+                assert_array_almost_equal(actual, expected, decimal=precision)
             else:
-                expected = numpy.array([[1, 4], [5, 1], [3, 7]])
+                expected = numpy.array([[1, 4], [5, 1], [3, 7]], dtype=dtype)
                 assert_array_equal(actual, expected)
 
         # check if compute follows data isn't broken
-        assert_cfd(dpnp_data, sycl_queue, usm_type)
+        assert_cfd(actual, sycl_queue, usm_type)
 
     @pytest.mark.parametrize(
-        "dtype",
-        [dpnp.float32, dpnp.float64, dpnp.int32, None],
-        ids=["float32", "float64", "int32", "None"],
+        "dtype", [dpnp.float32, dpnp.float64, dpnp.int32, None]
     )
-    @pytest.mark.parametrize(
-        "usm_type",
-        ["host", "device", "shared"],
-        ids=["host", "device", "shared"],
-    )
+    @pytest.mark.parametrize("usm_type", list_of_usm_types)
     def test_low_high_equal(self, dtype, usm_type):
         seed = 28045
         low = high = 3.75
@@ -1088,18 +1019,13 @@ class TestUniform:
             return
 
         # get drawn samples by dpnp
-        actual = func().asnumpy()
+        actual = func()
 
         # default dtype depends on fp64 support by the device
         dtype = get_default_floating() if dtype is None else dtype
         expected = numpy.full(shape=shape, fill_value=low, dtype=dtype)
 
-        if dtype == dpnp.int32:
-            assert_array_equal(actual, expected)
-        else:
-            assert_array_almost_equal(
-                actual, expected, decimal=dpnp.finfo(dtype=dtype).precision
-            )
+        assert_dtype_allclose(actual, expected)
 
     @pytest.mark.usefixtures("allow_fall_back_on_numpy")
     def test_range_bounds(self):
@@ -1137,14 +1063,12 @@ class TestUniform:
         )
 
         # dpnp accepts only scalar as low and/or high, in other cases it will be a fallback to numpy
-        actual = data.asnumpy()
         expected = numpy.random.RandomState(seed).uniform(
             low=get_array(numpy, low), high=get_array(numpy, high), size=size
         )
 
-        dtype = get_default_floating()
-        precision = dpnp.finfo(dtype=dtype).precision
-        assert_array_almost_equal(actual, expected, decimal=precision)
+        precision = dpnp.finfo(get_default_floating()).precision
+        assert_array_almost_equal(data, expected, decimal=precision)
 
         # check if compute follows data isn't broken
         assert_cfd(data, sycl_queue)
@@ -1155,7 +1079,7 @@ class TestUniform:
             dpnp.float16,
             float,
             dpnp.int64,
-            dpnp.int,
+            dpnp.int_,
             int,
             numpy.clongdouble,
             dpnp.complex128,
@@ -1167,7 +1091,7 @@ class TestUniform:
             "dpnp.float16",
             "float",
             "dpnp.int64",
-            "dpnp.int",
+            "dpnp.int_",
             "int",
             "numpy.clongdouble",
             "dpnp.complex128",
@@ -1177,7 +1101,7 @@ class TestUniform:
         ],
     )
     def test_invalid_dtype(self, dtype):
-        if dtype == dpnp.int and dtype == dpnp.dtype("int32"):
+        if dtype == dpnp.int_ and dtype == dpnp.dtype("int32"):
             pytest.skip(
                 "dtype is alias on dpnp.int32 on the target OS, so no error here"
             )

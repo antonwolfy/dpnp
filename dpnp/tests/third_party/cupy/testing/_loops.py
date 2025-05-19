@@ -8,10 +8,12 @@ import warnings
 from typing import Tuple, Type
 
 import numpy
+import pytest
 from dpctl import select_default_device
 from dpctl.tensor._numpy_helper import AxisError
 
 import dpnp as cupy
+from dpnp.tests import config
 from dpnp.tests.third_party.cupy.testing import _array, _parameterized
 from dpnp.tests.third_party.cupy.testing._pytest_impl import is_available
 
@@ -305,12 +307,9 @@ def _make_decorator(
         @_wraps_partial_xp(impl, name, sp_name, scipy_name)
         def test_func(*args, **kw):
             # Run cupy and numpy
-            (
-                cupy_result,
-                cupy_error,
-                numpy_result,
-                numpy_error,
-            ) = _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            (cupy_result, cupy_error, numpy_result, numpy_error) = (
+                _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            )
             assert cupy_result is not None or cupy_error is not None
             assert numpy_result is not None or numpy_error is not None
 
@@ -409,7 +408,9 @@ numpy: {}""".format(
                     if cupy_r.shape == ():
                         skip = (mask == 0).all()
                     else:
-                        cupy_r = cupy_r[mask].get()
+                        # mask is numpy.ndarray here which is not supported now
+                        # TODO remove asarray() once dpctl-2053 is addressed
+                        cupy_r = cupy_r[cupy.asarray(mask)].asnumpy()
                         numpy_r = numpy_r[mask]
 
                 if not skip:
@@ -444,7 +445,7 @@ def _convert_output_to_ndarray(c_out, n_out, sp_name, check_sparse_format):
         assert scipy.sparse.issparse(n_out)
         if check_sparse_format:
             assert c_out.format == n_out.format
-        return c_out.A, n_out.A
+        return c_out.toarray(), n_out.toarray()
     if isinstance(c_out, cupy.ndarray) and isinstance(
         n_out, (numpy.ndarray, numpy.generic)
     ):
@@ -453,7 +454,6 @@ def _convert_output_to_ndarray(c_out, n_out, sp_name, check_sparse_format):
     if (
         hasattr(cupy, "poly1d")
         and isinstance(c_out, cupy.poly1d)
-        and hasattr(numpy, "poly1d")
         and isinstance(n_out, numpy.poly1d)
     ):
         # poly1d output case.
@@ -461,9 +461,6 @@ def _convert_output_to_ndarray(c_out, n_out, sp_name, check_sparse_format):
         return c_out.coeffs, n_out.coeffs
     if isinstance(c_out, numpy.generic) and isinstance(n_out, numpy.generic):
         # numpy scalar output case.
-        return c_out, n_out
-    if isinstance(c_out, numpy.ndarray) and isinstance(n_out, numpy.ndarray):
-        # fallback on numpy output case.
         return c_out, n_out
     if numpy.isscalar(c_out) and numpy.isscalar(n_out):
         # python scalar output case.
@@ -592,7 +589,9 @@ def numpy_cupy_allclose(
 
     def check_func(c, n):
         rtol1, atol1 = _resolve_tolerance(type_check, c, rtol, atol)
-        _array.assert_allclose(c, n, rtol1, atol1, err_msg, verbose)
+        _array.assert_allclose(
+            c, n, rtol1, atol1, err_msg=err_msg, verbose=verbose
+        )
 
     return _make_decorator(
         check_func,
@@ -793,7 +792,9 @@ def numpy_cupy_array_equal(
     """
 
     def check_func(x, y):
-        _array.assert_array_equal(x, y, err_msg, verbose, strides_check)
+        _array.assert_array_equal(
+            x, y, err_msg, verbose, strides_check=strides_check
+        )
 
     return _make_decorator(
         check_func, name, type_check, False, accept_error, sp_name, scipy_name
@@ -903,12 +904,9 @@ def numpy_cupy_equal(name="xp", sp_name=None, scipy_name=None):
         @_wraps_partial_xp(impl, name, sp_name, scipy_name)
         def test_func(*args, **kw):
             # Run cupy and numpy
-            (
-                cupy_result,
-                cupy_error,
-                numpy_result,
-                numpy_error,
-            ) = _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            (cupy_result, cupy_error, numpy_result, numpy_error) = (
+                _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            )
 
             if cupy_error or numpy_error:
                 _check_cupy_numpy_error(
@@ -962,12 +960,9 @@ def numpy_cupy_raises(
         @_wraps_partial_xp(impl, name, sp_name, scipy_name)
         def test_func(*args, **kw):
             # Run cupy and numpy
-            (
-                cupy_result,
-                cupy_error,
-                numpy_result,
-                numpy_error,
-            ) = _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            (cupy_result, cupy_error, numpy_result, numpy_error) = (
+                _call_func_numpy_cupy(impl, args, kw, name, sp_name, scipy_name)
+            )
 
             _check_cupy_numpy_error(
                 cupy_error, numpy_error, accept_error=accept_error
@@ -978,7 +973,7 @@ def numpy_cupy_raises(
     return decorator
 
 
-def for_dtypes(dtypes, name="dtype"):
+def for_dtypes(dtypes, name="dtype", xfail_dtypes=None):
     """Decorator for parameterized dtype test.
 
     Args:
@@ -1009,7 +1004,11 @@ def for_dtypes(dtypes, name="dtype"):
 
                 try:
                     kw[name] = numpy.dtype(dtype).type
-                    impl(*args, **kw)
+                    if xfail_dtypes is not None and dtype in xfail_dtypes:
+                        impl_ = pytest.mark.xfail(impl)
+                    else:
+                        impl_ = impl
+                    impl_(*args, **kw)
                 except _skip_classes as e:
                     print("skipped: {} = {} ({})".format(name, dtype, e))
                 except Exception:
@@ -1039,23 +1038,80 @@ def _get_supported_complex_dtypes():
         return (numpy.complex64,)
 
 
+def _get_int_dtypes():
+    if config.all_int_types:
+        return _signed_dtypes + _unsigned_dtypes
+    else:
+        return (numpy.int64, numpy.int32)
+
+
+def _get_float_dtypes():
+    if config.float16_types:
+        return _regular_float_dtypes + (numpy.float16,)
+    else:
+        return _regular_float_dtypes
+
+
+def _get_signed_dtypes():
+    if config.all_int_types:
+        return tuple(numpy.dtype(i).type for i in "bhilq")
+    else:
+        return (numpy.int32,)
+
+
+def _get_unsigned_dtypes():
+    if config.all_int_types:
+        return tuple(numpy.dtype(i).type for i in "BHILQ")
+    else:
+        return (numpy.uint32,)
+
+
+def _get_int_bool_dtypes():
+    if config.bool_types:
+        return _int_dtypes + (numpy.bool_,)
+    else:
+        return _int_dtypes
+
+
 _complex_dtypes = _get_supported_complex_dtypes()
 _regular_float_dtypes = _get_supported_float_dtypes()
-_float_dtypes = _regular_float_dtypes
-_signed_dtypes = ()
-_unsigned_dtypes = tuple(numpy.dtype(i).type for i in "BHILQ")
-_int_dtypes = _signed_dtypes + _unsigned_dtypes
-_int_bool_dtypes = _int_dtypes
+_float_dtypes = _get_float_dtypes()
+_signed_dtypes = _get_signed_dtypes()
+_unsigned_dtypes = _get_unsigned_dtypes()
+_int_dtypes = _get_int_dtypes()
+_int_bool_dtypes = _get_int_bool_dtypes()
 _regular_dtypes = _regular_float_dtypes + _int_bool_dtypes
 _dtypes = _float_dtypes + _int_bool_dtypes
 
 
-def _make_all_dtypes(no_float16, no_bool, no_complex):
-    return (numpy.int64, numpy.int32) + _get_supported_float_dtypes()
+def _make_all_dtypes(no_float16, no_bool, no_complex, no_int8):
+    if no_float16:
+        dtypes = _regular_float_dtypes
+    else:
+        dtypes = _float_dtypes
+
+    if no_bool:
+        dtypes += _int_dtypes
+    else:
+        dtypes += _int_bool_dtypes
+
+    if no_int8:
+        dtypes = tuple(
+            filter(lambda dt: dt not in [numpy.int8, numpy.uint8], dtypes)
+        )
+
+    if config.complex_types and not no_complex:
+        dtypes += _complex_dtypes
+
+    return dtypes
 
 
 def for_all_dtypes(
-    name="dtype", no_float16=False, no_bool=False, no_complex=False
+    name="dtype",
+    no_float16=False,
+    no_bool=False,
+    no_complex=False,
+    no_int8=False,
 ):
     """Decorator that checks the fixture with all dtypes.
 
@@ -1067,6 +1123,9 @@ def for_all_dtypes(
              omitted from candidate dtypes.
          no_complex(bool): If ``True``, ``numpy.complex64`` and
              ``numpy.complex128`` are omitted from candidate dtypes.
+         no_int8(bool): If ``True``, ``numpy.int8`` and
+             ``numpy.uint8`` are omitted from candidate dtypes.
+             This option is generally used to avoid overflow.
 
     dtypes to be tested: ``numpy.complex64`` (optional),
     ``numpy.complex128`` (optional),
@@ -1110,7 +1169,7 @@ def for_all_dtypes(
     .. seealso:: :func:`cupy.testing.for_dtypes`
     """
     return for_dtypes(
-        _make_all_dtypes(no_float16, no_bool, no_complex), name=name
+        _make_all_dtypes(no_float16, no_bool, no_complex, no_int8), name=name
     )
 
 
@@ -1280,6 +1339,7 @@ def for_all_dtypes_combination(
     no_bool=False,
     full=None,
     no_complex=False,
+    no_int8=False,
 ):
     """Decorator that checks the fixture with a product set of all dtypes.
 
@@ -1293,12 +1353,15 @@ def for_all_dtypes_combination(
              will be tested.
              Otherwise, the subset of combinations will be tested
              (see description in :func:`cupy.testing.for_dtypes_combination`).
-         no_complex(bool): If, True, ``numpy.complex64`` and
+         no_complex(bool): If, ``True``, ``numpy.complex64`` and
              ``numpy.complex128`` are omitted from candidate dtypes.
+         no_int8(bool): If, ``True``, ``numpy.int8`` and
+             ``numpy.uint8`` are omitted from candidate dtypes.
+             This option is generally used to avoid overflow.
 
     .. seealso:: :func:`cupy.testing.for_dtypes_combination`
     """
-    types = _make_all_dtypes(no_float16, no_bool, no_complex)
+    types = _make_all_dtypes(no_float16, no_bool, no_complex, no_int8)
     return for_dtypes_combination(types, names, full)
 
 

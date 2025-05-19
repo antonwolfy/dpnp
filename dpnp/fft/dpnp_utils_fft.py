@@ -57,10 +57,7 @@ from ..dpnp_utils.dpnp_utils_linearalgebra import (
     _standardize_strides_to_nonzero,
 )
 
-__all__ = [
-    "dpnp_fft",
-    "dpnp_fftn",
-]
+__all__ = ["dpnp_fft", "dpnp_fftn", "dpnp_fillfreq", "swap_direction"]
 
 
 def _check_norm(norm):
@@ -282,23 +279,13 @@ def _copy_array(x, complex_input):
         # r2c FFT, if input is integer or float16 dtype, convert to
         # float32 or float64 depending on device capabilities
         copy_flag = True
-        dtype = map_dtype_to_device(dpnp.float64, x.sycl_device)
+        if dtype == dpnp.float16:
+            dtype = dpnp.float32
+        else:
+            dtype = map_dtype_to_device(dpnp.float64, x.sycl_device)
 
     if copy_flag:
-        x_copy = dpnp.empty_like(x, dtype=dtype, order="C")
-
-        exec_q = x.sycl_queue
-        _manager = dpu.SequentialOrderManager[exec_q]
-        dep_evs = _manager.submitted_events
-
-        ht_copy_ev, copy_ev = ti._copy_usm_ndarray_into_usm_ndarray(
-            src=dpnp.get_usm_ndarray(x),
-            dst=x_copy.get_array(),
-            sycl_queue=exec_q,
-            depends=dep_evs,
-        )
-        _manager.add_event_pair(ht_copy_ev, copy_ev)
-        x = x_copy
+        x = x.astype(dtype, order="C", copy=True)
 
     # if copying is done, FFT can be in-place (copy_flag = in_place flag)
     return x, copy_flag
@@ -392,12 +379,32 @@ def _fft(a, norm, out, forward, in_place, c2c, axes, batch_fft=True):
         a = dpnp.reshape(a, local_shape)
         index = 1
 
+        # cuFFT requires input arrays to be C-contiguous (row-major)
+        # for correct execution
+        if (
+            dpnp.is_cuda_backend(a) and not a.flags.c_contiguous
+        ):  # pragma: no cover
+            a = dpnp.ascontiguousarray(a)
+
+    # w/a for cuFFT to avoid "Invalid strides" error when
+    # the last dimension is 1 and there are multiple axes
+    # by swapping the last two axes to correct the input.
+    # TODO: Remove this ones the OneMath issue is resolved
+    # https://github.com/uxlfoundation/oneMath/issues/631
+    cufft_wa = dpnp.is_cuda_backend(a) and a.shape[-1] == 1 and len(axes) > 1
+    if cufft_wa:  # pragma: no cover
+        a = dpnp.moveaxis(a, -1, -2)
+
     a_strides = _standardize_strides_to_nonzero(a.strides, a.shape)
     dsc, out_strides = _commit_descriptor(
         a, forward, in_place, c2c, a_strides, index, batch_fft
     )
     res = _compute_result(dsc, a, out, forward, c2c, out_strides)
     res = _scale_result(res, a.shape, norm, forward, index)
+
+    # Revert swapped axes
+    if cufft_wa:  # pragma: no cover
+        res = dpnp.moveaxis(res, -1, -2)
 
     if batch_fft:
         tmp_shape = a_shape_orig[:-1] + (res.shape[-1],)
@@ -411,6 +418,40 @@ def _fft(a, norm, out, forward, in_place, c2c, axes, batch_fft=True):
         result = dpnp.ascontiguousarray(result)
 
     return result
+
+
+def _make_array_hermitian(a, axis, copy_needed):
+    """
+    For complex-to-real FFT, the input array should be Hermitian. If it is not,
+    the behavior is undefined. This function makes necessary changes to make
+    sure the given array is Hermitian.
+
+    It is assumed that this function is called after `_cook_nd_args` and so
+    `n` is always ``None``. It is also assumed that it is called after
+    `_truncate_or_pad`, so the array has enough length.
+    """
+
+    a = dpnp.moveaxis(a, axis, 0)
+    n = a.shape[0]
+
+    # TODO: if the input array is already Hermitian, the following steps are
+    # not needed, however, validating the input array is hermitian results in
+    # synchronization of the SYCL queue, find an alternative.
+    if copy_needed:
+        a = a.astype(a.dtype, order="C", copy=True)
+
+    a[0].imag = 0
+    assert n is not None
+    if n % 2 == 0:
+        # Nyquist mode (n//2+1 mode) is n//2-th element
+        f_ny = n // 2
+        assert a.shape[0] > f_ny
+        a[f_ny].imag = 0
+    else:
+        # No Nyquist mode
+        pass
+
+    return dpnp.moveaxis(a, 0, axis)
 
 
 def _scale_result(res, a_shape, norm, forward, index):
@@ -539,6 +580,7 @@ def dpnp_fft(a, forward, real, n=None, axis=-1, norm=None, out=None):
     """Calculates 1-D FFT of the input array along axis"""
 
     _check_norm(norm)
+    a_orig = a
     a_ndim = a.ndim
     if a_ndim == 0:
         raise ValueError("Input array must be at least 1D")
@@ -560,7 +602,6 @@ def dpnp_fft(a, forward, real, n=None, axis=-1, norm=None, out=None):
     if n < 1:
         raise ValueError(f"Invalid number of FFT data points ({n}) specified")
 
-    _check_norm(norm)
     a = _truncate_or_pad(a, (n,), (axis,))
     _validate_out_keyword(a, out, (n,), (axis,), c2c, c2r, r2c)
     # if input array is copied, in-place FFT can be used
@@ -571,6 +612,12 @@ def dpnp_fft(a, forward, real, n=None, axis=-1, norm=None, out=None):
 
     if a.size == 0:
         return dpnp.get_result_array(a, out=out, casting="same_kind")
+
+    if c2r:
+        # input array should be Hermitian for c2r FFT
+        a = _make_array_hermitian(
+            a, axis, dpnp.are_same_logical_tensors(a, a_orig)
+        )
 
     return _fft(
         a,
@@ -588,6 +635,7 @@ def dpnp_fft(a, forward, real, n=None, axis=-1, norm=None, out=None):
 def dpnp_fftn(a, forward, real, s=None, axes=None, norm=None, out=None):
     """Calculates N-D FFT of the input array along axes"""
 
+    a_orig = a
     if isinstance(axes, Sequence) and len(axes) == 0:
         if real:
             raise IndexError("Empty axes.")
@@ -617,8 +665,12 @@ def dpnp_fftn(a, forward, real, s=None, axes=None, norm=None, out=None):
     len_axes = len(axes)
     if len_axes == 1:
         a = _truncate_or_pad(a, (s[-1],), (axes[-1],))
+        if c2r:
+            a = _make_array_hermitian(
+                a, axes[-1], dpnp.are_same_logical_tensors(a, a_orig)
+            )
         return _fft(
-            a, norm, out, forward, in_place and c2c, c2c, axes[0], a.ndim != 1
+            a, norm, out, forward, in_place and c2c, c2c, axes[-1], a.ndim != 1
         )
 
     if r2c:
@@ -667,6 +719,10 @@ def dpnp_fftn(a, forward, real, s=None, axes=None, norm=None, out=None):
             batch_fft=a.ndim != len_axes - 1,
         )
         a = _truncate_or_pad(a, (s[-1],), (axes[-1],))
+        if c2r:
+            a = _make_array_hermitian(
+                a, axes[-1], dpnp.are_same_logical_tensors(a, a_orig)
+            )
         return _fft(
             a, norm, out, forward, in_place and c2c, c2c, axes[-1], a.ndim != 1
         )
@@ -675,3 +731,32 @@ def dpnp_fftn(a, forward, real, s=None, axes=None, norm=None, out=None):
     return _complex_nd_fft(
         a, s, norm, out, forward, in_place, c2c, axes, a.ndim != len_axes
     )
+
+
+def dpnp_fillfreq(a, m, n, val):
+    """Fill an array with the sample frequencies"""
+
+    exec_q = a.sycl_queue
+    _manager = dpctl.utils.SequentialOrderManager[exec_q]
+
+    # it's assumed there are no dependent events to populate the array
+    ht_lin_ev, lin_ev = ti._linspace_step(0, 1, a[:m].get_array(), exec_q)
+    _manager.add_event_pair(ht_lin_ev, lin_ev)
+
+    ht_lin_ev, lin_ev = ti._linspace_step(m - n, 1, a[m:].get_array(), exec_q)
+    _manager.add_event_pair(ht_lin_ev, lin_ev)
+    return a * val
+
+
+def swap_direction(norm):
+    """Swap the direction of the FFT."""
+
+    _check_norm(norm)
+    _swap_direction_map = {
+        "backward": "forward",
+        None: "forward",
+        "ortho": "ortho",
+        "forward": "backward",
+    }
+
+    return _swap_direction_map[norm]

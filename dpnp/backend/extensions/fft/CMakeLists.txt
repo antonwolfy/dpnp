@@ -27,8 +27,6 @@
 set(python_module_name _fft_impl)
 set(_module_src
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_py.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/in_place.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/out_of_place.cpp
 )
 
 pybind11_add_module(${python_module_name} MODULE ${_module_src})
@@ -39,12 +37,12 @@ if(_dpnp_sycl_targets)
     target_compile_options(
         ${python_module_name}
         PRIVATE
-        -fsycl-targets=${_dpnp_sycl_targets}
+        ${_dpnp_sycl_target_compile_options}
     )
     target_link_options(
         ${python_module_name}
         PRIVATE
-        -fsycl-targets=${_dpnp_sycl_targets}
+        ${_dpnp_sycl_target_link_options}
     )
 endif()
 
@@ -83,7 +81,7 @@ if (DPNP_GENERATE_COVERAGE)
 endif()
 
 if(_use_onemkl_interfaces)
-    target_link_libraries(${python_module_name} PUBLIC onemkl)
+    target_link_libraries(${python_module_name} PRIVATE ${MKL_INTERFACES_LIB})
     target_compile_options(${python_module_name} PRIVATE -DUSE_ONEMKL_INTERFACES)
 else()
     target_link_libraries(${python_module_name} PUBLIC MKL::MKL_SYCL::DFT)

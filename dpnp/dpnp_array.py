@@ -760,12 +760,14 @@ class dpnp_array:
 
     def asnumpy(self):
         """
-        Copy content of the array into :class:`numpy.ndarray` instance of the same shape and data type.
+        Copy content of the array into :class:`numpy.ndarray` instance of
+        the same shape and data type.
 
         Returns
         -------
-        numpy.ndarray
-            An instance of :class:`numpy.ndarray` populated with the array content.
+        out : numpy.ndarray
+            An instance of :class:`numpy.ndarray` populated with the array
+            content.
 
         """
 
@@ -787,47 +789,51 @@ class dpnp_array:
 
         Parameters
         ----------
-        x1 : {dpnp.ndarray, usm_ndarray}
-            Array data type casting.
-        dtype : dtype
+        dtype : {None, str, dtype object}
             Target data type.
-        order : {"C", "F", "A", "K"}, optional
+        order : {None, "C", "F", "A", "K"}, optional
             Row-major (C-style) or column-major (Fortran-style) order.
-            When ``order`` is 'A', it uses 'F' if ``a`` is column-major and uses 'C' otherwise.
-            And when ``order`` is 'K', it keeps strides as closely as possible.
-        copy : bool
-            If it is False and no cast happens, then this method returns the array itself.
-            Otherwise, a copy is returned.
-        casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
-            Controls what kind of data casting may occur.
-            Defaults to ``'unsafe'`` for backwards compatibility.
+            When `order` is ``"A"``, it uses ``"F"`` if `a` is column-major and
+            uses ``"C"`` otherwise. And when `order` is ``"K"``, it keeps
+            strides as closely as possible.
 
-            - 'no' means the data types should not be cast at all.
-            - 'equiv' means only byte-order changes are allowed.
-            - 'safe' means only casts which can preserve values are allowed.
-            - 'same_kind' means only safe casts or casts within a kind, like
-              float64 to float32, are allowed.
-            - 'unsafe' means any data conversions may be done.
+            Default: ``"K"``.
+        casting : {"no", "equiv", "safe", "same_kind", "unsafe"}, optional
+            Controls what kind of data casting may occur. Defaults to
+            ``"unsafe"`` for backwards compatibility.
 
-        copy : {bool}, optional
-            By default, ``astype`` always returns a newly allocated array. If
-            this is set to ``False``, and the `dtype`, `order`, and `subok`
-            requirements are satisfied, the input array is returned instead of
-            a copy.
-        device : {None, string, SyclDevice, SyclQueue}, optional
+                - "no" means the data types should not be cast at all.
+                - "equiv" means only byte-order changes are allowed.
+                - "safe" means only casts which can preserve values are allowed.
+                - "same_kind" means only safe casts or casts within a kind,
+                  like float64 to float32, are allowed.
+                - "unsafe" means any data conversions may be done.
+
+            Default: ``"unsafe"``.
+        copy : bool, optional
+            Specifies whether to copy an array when the specified dtype matches
+            the data type of that array. If ``True``, a newly allocated array
+            must always be returned. If ``False`` and the specified dtype
+            matches the data type of that array, the self array must be returned;
+            otherwise, a newly allocated array must be returned.
+
+            Default: ``True``.
+        device : {None, string, SyclDevice, SyclQueue, Device}, optional
             An array API concept of device where the output array is created.
-            The `device` can be ``None`` (the default), an OneAPI filter selector
-            string, an instance of :class:`dpctl.SyclDevice` corresponding to
-            a non-partitioned SYCL device, an instance of :class:`dpctl.SyclQueue`,
-            or a `Device` object returned by
-            :obj:`dpnp.dpnp_array.dpnp_array.device` property. Default: ``None``.
+            `device` can be ``None``, a oneAPI filter selector string,
+            an instance of :class:`dpctl.SyclDevice` corresponding to
+            a non-partitioned SYCL device, an instance of
+            :class:`dpctl.SyclQueue`, or a :class:`dpctl.tensor.Device` object
+            returned by :attr:`dpnp.ndarray.device`.
+            If the value is ``None``, returned array is created on the same
+            device as that array.
+
+            Default: ``None``.
 
         Returns
         -------
-        arr_t : dpnp.ndarray
-            Unless `copy` is ``False`` and the other conditions for returning the input array
-            are satisfied, `arr_t` is a new array of the same shape as the input array,
-            with dtype, order given by dtype, order.
+        out : dpnp.ndarray
+            An array having the specified data type.
 
         Limitations
         -----------
@@ -837,9 +843,9 @@ class dpnp_array:
         Examples
         --------
         >>> import dpnp as np
-        >>> x = np.array([1, 2, 2.5])
-        >>> x
+        >>> x = np.array([1, 2, 2.5]); x
         array([1. , 2. , 2.5])
+
         >>> x.astype(int)
         array([1, 2, 2])
 
@@ -857,15 +863,15 @@ class dpnp_array:
     # 'base',
     # 'byteswap',
 
-    def choose(input, choices, out=None, mode="raise"):
+    def choose(self, /, choices, out=None, mode="wrap"):
         """
-        Construct an array from an index array and a set of arrays to choose from.
+        Use an array as index array to construct a new array from a set of choices.
 
         Refer to :obj:`dpnp.choose` for full documentation.
 
         """
 
-        return dpnp.choose(input, choices, out, mode)
+        return dpnp.choose(self, choices, out, mode)
 
     def clip(self, min=None, max=None, out=None, **kwargs):
         """
@@ -920,16 +926,17 @@ class dpnp_array:
 
         Parameters
         ----------
-        order : {"C", "F", "A", "K"}, optional
+        order : {None, "C", "F", "A", "K"}, optional
             Memory layout of the newly output array.
             Default: ``"C"``.
-        device : {None, string, SyclDevice, SyclQueue}, optional
+        device : {None, string, SyclDevice, SyclQueue, Device}, optional
             An array API concept of device where the output array is created.
-            The `device` can be ``None`` (the default), an OneAPI filter
-            selector string, an instance of :class:`dpctl.SyclDevice`
-            corresponding to a non-partitioned SYCL device, an instance of
-            :class:`dpctl.SyclQueue`, or a `Device` object returned by
-            :obj:`dpnp.dpnp_array.dpnp_array.device` property.
+            `device` can be ``None``, a oneAPI filter selector string,
+            an instance of :class:`dpctl.SyclDevice` corresponding to
+            a non-partitioned SYCL device, an instance of
+            :class:`dpctl.SyclQueue`, or a :class:`dpctl.tensor.Device` object
+            returned by :attr:`dpnp.ndarray.device`.
+
             Default: ``None``.
         usm_type : {None, "device", "shared", "host"}, optional
             The type of SYCL USM allocation for the output array.
@@ -1022,7 +1029,7 @@ class dpnp_array:
         Examples
         --------
         >>> import dpnp as np
-        >>> a = np.arange(4).reshape(2,2)
+        >>> a = np.arange(4).reshape(2, 2)
         >>> a.diagonal()
         array([0, 3])
 
@@ -1732,6 +1739,7 @@ class dpnp_array:
         *,
         where=True,
         mean=None,
+        correction=None,
     ):
         """
         Returns the standard deviation of the array elements, along given axis.
@@ -1741,7 +1749,15 @@ class dpnp_array:
         """
 
         return dpnp.std(
-            self, axis, dtype, out, ddof, keepdims, where=where, mean=mean
+            self,
+            axis,
+            dtype,
+            out,
+            ddof,
+            keepdims,
+            where=where,
+            mean=mean,
+            correction=correction,
         )
 
     @property
@@ -1810,12 +1826,13 @@ class dpnp_array:
 
         Parameters
         ----------
-        device : {string, SyclDevice, SyclQueue}
-            Array API concept of target device. It can be an OneAPI filter
-            selector string, an instance of :class:`dpctl.SyclDevice`
-            corresponding to a non-partitioned SYCL device, an instance of
+        device : {None, string, SyclDevice, SyclQueue, Device}, optional
+            An array API concept of device where the output array is created.
+            `device` can be ``None``, a oneAPI filter selector string,
+            an instance of :class:`dpctl.SyclDevice` corresponding to
+            a non-partitioned SYCL device, an instance of
             :class:`dpctl.SyclQueue`, or a :class:`dpctl.tensor.Device` object
-            returned by :obj:`dpnp.dpnp_array.dpnp_array.device` property.
+            returned by :attr:`dpnp.ndarray.device`.
         stream : {SyclQueue, None}, optional
             Execution queue to synchronize with. If ``None``, synchronization
             is not performed.
@@ -1849,7 +1866,6 @@ class dpnp_array:
     # 'tobytes',
     # 'tofile',
     # 'tolist',
-    # 'tostring',
 
     def trace(self, offset=0, axis1=0, axis2=1, dtype=None, out=None):
         """
@@ -1942,6 +1958,7 @@ class dpnp_array:
         *,
         where=True,
         mean=None,
+        correction=None,
     ):
         """
         Returns the variance of the array elements, along given axis.
@@ -1951,7 +1968,15 @@ class dpnp_array:
         """
 
         return dpnp.var(
-            self, axis, dtype, out, ddof, keepdims, where=where, mean=mean
+            self,
+            axis,
+            dtype,
+            out,
+            ddof,
+            keepdims,
+            where=where,
+            mean=mean,
+            correction=correction,
         )
 
 

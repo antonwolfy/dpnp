@@ -25,7 +25,7 @@
 # *****************************************************************************
 
 """
-Interface of the Binary operations of the DPNP
+Interface of the Bitwise part of the DPNP
 
 Notes
 -----
@@ -38,16 +38,18 @@ it contains:
 """
 
 # pylint: disable=protected-access
-
+# pylint: disable=no-name-in-module
 
 import dpctl.tensor._tensor_elementwise_impl as ti
 import numpy
 
+import dpnp.backend.extensions.ufunc._ufunc_impl as ufi
 from dpnp.dpnp_algo.dpnp_elementwise_common import DPNPBinaryFunc, DPNPUnaryFunc
 
 __all__ = [
     "binary_repr",
     "bitwise_and",
+    "bitwise_count",
     "bitwise_invert",
     "bitwise_left_shift",
     "bitwise_not",
@@ -84,6 +86,7 @@ def binary_repr(num, width=None):
         at least a sufficient number of bits for `num` to be represented in the
         designated form. If the `width` value is insufficient, an error is
         raised.
+
         Default: ``None``.
 
     Returns
@@ -127,27 +130,25 @@ def binary_repr(num, width=None):
 
 _BITWISE_AND_DOCSTRING = """
 Computes the bitwise AND of the underlying binary representation of each
-element `x1_i` of the input array `x1` with the respective element `x2_i`
-of the input array `x2`.
+element :math:`x1_i` of the input array `x1` with the respective element
+:math:`x2_i` of the input array `x2`.
 
 For full documentation refer to :obj:`numpy.bitwise_and`.
 
 Parameters
 ----------
 x1 : {dpnp.ndarray, usm_ndarray, scalar}
-    First input array, expected to have integer or boolean data type.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
+    First input array, expected to have an integer or boolean data type.
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
-    Second input array, also expected to have integer or boolean data
-    type. Both inputs `x1` and `x2` can not be scalars at the same time.
-    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
-    (which becomes the shape of the output).
+    Second input array, also expected to have an integer or boolean data type.
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 
 Returns
@@ -169,6 +170,13 @@ See Also
 :obj:`dpnp.bitwise_xor` : Compute the bit-wise XOR of two arrays element-wise.
 :obj:`dpnp.binary_repr` : Return the binary representation of the input number
                           as a string.
+
+Notes
+-----
+At least one of `x1` or `x2` must be an array.
+
+If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+(which becomes the shape of the output).
 
 Examples
 --------
@@ -201,6 +209,7 @@ array(12)
 '1100'
 >>> np.bitwise_and(np.array([14, 3]), 13)
 array([12,  1])
+
 """
 
 bitwise_and = DPNPBinaryFunc(
@@ -212,29 +221,80 @@ bitwise_and = DPNPBinaryFunc(
 )
 
 
+_BITWISE_COUNT_DOCSTRING = """
+Computes the number of 1-bits in the absolute value of `x`.
+
+For full documentation refer to :obj:`numpy.bitwise_count`.
+
+Parameters
+----------
+x : {dpnp.ndarray, usm_ndarray}
+    Input array, expected to have an integer data type.
+out : {None, dpnp.ndarray, usm_ndarray}, optional
+    Output array to populate.
+    Array must have the correct shape and the expected data type.
+
+    Default: ``None``.
+order : {None, "C", "F", "A", "K"}, optional
+    Memory layout of the newly output array, if parameter `out` is ``None``.
+
+    Default: ``"K"``.
+
+Returns
+-------
+out : dpnp.ndarray
+    The corresponding number of 1-bits in the input. Returns ``uint8`` for all
+    integer types.
+
+Limitations
+-----------
+Parameters `where` and `subok` are supported with their default values.
+Keyword argument `kwargs` is currently unsupported.
+Otherwise ``NotImplementedError`` exception will be raised.
+
+Examples
+--------
+>>> import dpnp as np
+>>> a = np.array(1023)
+>>> np.bitwise_count(a)
+array(10, dtype=uint8)
+
+>>> a = np.array([2**i - 1 for i in range(16)])
+>>> np.bitwise_count(a)
+array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15],
+      dtype=uint8)
+
+"""
+
+bitwise_count = DPNPUnaryFunc(
+    "bitwise_count",
+    ufi._bitwise_count_result_type,
+    ufi._bitwise_count,
+    _BITWISE_COUNT_DOCSTRING,
+)
+
+
 _BITWISE_OR_DOCSTRING = """
 Computes the bitwise OR of the underlying binary representation of each
-element `x1_i` of the input array `x1` with the respective element `x2_i`
-of the input array `x2`.
+element :math:`x1_i` of the input array `x1` with the respective element
+:math:`x2_i` of the input array `x2`.
 
 For full documentation refer to :obj:`numpy.bitwise_or`.
 
 Parameters
 ----------
 x1 : {dpnp.ndarray, usm_ndarray, scalar}
-    First input array, expected to have integer or boolean data type.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
+    First input array, expected to have an integer or boolean data type.
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
-    Second input array, also expected to have integer or boolean data
-    type. Both inputs `x1` and `x2` can not be scalars at the same time.
-    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
-    (which becomes the shape of the output).
+    Second input array, also expected to have an integer or boolean data type.
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 
 Returns
@@ -256,6 +316,13 @@ See Also
 :obj:`dpnp.bitwise_xor` : Compute the bit-wise XOR of two arrays element-wise.
 :obj:`dpnp.binary_repr` : Return the binary representation of the input number
                           as a string.
+
+Notes
+-----
+At least one of `x1` or `x2` must be an array.
+
+If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+(which becomes the shape of the output).
 
 Examples
 --------
@@ -279,6 +346,7 @@ or 29:
 array(29)
 >>> np.binary_repr(29)
 '11101'
+
 """
 
 bitwise_or = DPNPBinaryFunc(
@@ -292,27 +360,25 @@ bitwise_or = DPNPBinaryFunc(
 
 _BITWISE_XOR_DOCSTRING = """
 Computes the bitwise XOR of the underlying binary representation of each
-element `x1_i` of the input array `x1` with the respective element `x2_i`
-of the input array `x2`.
+element :math:`x1_i` of the input array `x1` with the respective element
+:math:`x2_i` of the input array `x2`.
 
 For full documentation refer to :obj:`numpy.bitwise_xor`.
 
 Parameters
 ----------
 x1 : {dpnp.ndarray, usm_ndarray, scalar}
-    First input array, expected to have integer or boolean data type.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
+    First input array, expected to have an integer or boolean data type.
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
-    Second input array, also expected to have integer or boolean data
-    type. Both inputs `x1` and `x2` can not be scalars at the same time.
-    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
-    (which becomes the shape of the output).
+    Second input array, also expected to have an integer or boolean data type.
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 
 Returns
@@ -334,6 +400,13 @@ See Also
 :obj:`dpnp.bitwise_or` : Compute the bit-wise OR of two arrays element-wise.
 :obj:`dpnp.binary_repr` : Return the binary representation of the input number
                           as a string.
+
+Notes
+-----
+At least one of `x1` or `x2` must be an array.
+
+If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+(which becomes the shape of the output).
 
 Examples
 --------
@@ -361,6 +434,7 @@ The number 13 is represented by ``00001101``. Likewise, 17 is represented by
 array(28)
 >>> np.binary_repr(28)
 '11100'
+
 """
 
 bitwise_xor = DPNPBinaryFunc(
@@ -373,7 +447,7 @@ bitwise_xor = DPNPBinaryFunc(
 
 
 _INVERT_DOCSTRING = """
-Inverts (flips) each bit for each element `x_i` of the input array `x`.
+Inverts (flips) each bit for each element :math:`x_i` of the input array `x`.
 
 Note that :obj:`dpnp.bitwise_invert` is an alias of :obj:`dpnp.invert`.
 
@@ -382,13 +456,15 @@ For full documentation refer to :obj:`numpy.invert`.
 Parameters
 ----------
 x : {dpnp.ndarray, usm_ndarray}
-    Input array, expected to have integer or boolean data type.
+    Input array, expected to have an integer or boolean data type.
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 
 Returns
@@ -450,9 +526,9 @@ bitwise_not = invert  # bitwise_not is an alias for invert
 bitwise_invert = invert  # bitwise_invert is an alias for invert
 
 _LEFT_SHIFT_DOCSTRING = """
-Shifts the bits of each element `x1_i` of the input array x1 to the left by
-appending `x2_i` (i.e., the respective element in the input array `x2`) zeros to
-the right of `x1_i`.
+Shifts the bits of each element :math:`x1_i` of the input array `x1` to the
+left by appending :math:`x2_i` (i.e., the respective element in the input array
+`x2`) zeros to the right of :math:`x1_i`.
 
 Note that :obj:`dpnp.bitwise_left_shift` is an alias of :obj:`dpnp.left_shift`.
 
@@ -461,20 +537,18 @@ For full documentation refer to :obj:`numpy.left_shift`.
 Parameters
 ----------
 x1 : {dpnp.ndarray, usm_ndarray, scalar}
-    First input array, expected to have integer data type.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
+    First input array, expected to have an integer data type.
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
-    Second input array, also expected to have integer data type.
+    Second input array, also expected to have an integer data type.
     Each element must be greater than or equal to ``0``.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
-    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
-    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 Returns
 -------
@@ -493,6 +567,13 @@ See Also
 :obj:`dpnp.right_shift` : Shift the bits of an integer to the right.
 :obj:`dpnp.binary_repr` : Return the binary representation of the input number
                           as a string.
+
+Notes
+-----
+At least one of `x1` or `x2` must be an array.
+
+If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+(which becomes the shape of the output).
 
 Examples
 --------
@@ -514,6 +595,7 @@ array([10, 20, 40])
 array(20)
 >>> np.binary_repr(20)
 '10100'
+
 """
 
 left_shift = DPNPBinaryFunc(
@@ -528,8 +610,8 @@ bitwise_left_shift = left_shift  # bitwise_left_shift is an alias for left_shift
 
 
 _RIGHT_SHIFT_DOCSTRING = """
-Shifts the bits of each element `x1_i` of the input array `x1` to the right
-according to the respective element `x2_i` of the input array `x2`.
+Shifts the bits of each element :math:`x1_i` of the input array `x1` to the
+right according to the respective element :math:`x2_i` of the input array `x2`.
 
 Note that :obj:`dpnp.bitwise_right_shift` is an alias of :obj:`dpnp.right_shift`.
 
@@ -538,20 +620,18 @@ For full documentation refer to :obj:`numpy.right_shift`.
 Parameters
 ----------
 x1 : {dpnp.ndarray, usm_ndarray, scalar}
-    First input array, expected to have integer data type.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
+    First input array, expected to have an integer data type.
 x2 : {dpnp.ndarray, usm_ndarray, scalar}
-    Second input array, also expected to have integer data type.
+    Second input array, also expected to have an integer data type.
     Each element must be greater than or equal to ``0``.
-    Both inputs `x1` and `x2` can not be scalars at the same time.
-    If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
-    (which becomes the shape of the output).
 out : {None, dpnp.ndarray, usm_ndarray}, optional
     Output array to populate.
     Array must have the correct shape and the expected data type.
+
     Default: ``None``.
-order : {"C", "F", "A", "K"}, optional
+order : {None, "C", "F", "A", "K"}, optional
     Memory layout of the newly output array, if parameter `out` is ``None``.
+
     Default: ``"K"``.
 
 Returns
@@ -571,6 +651,13 @@ See Also
 :obj:`dpnp.left_shift` : Shift the bits of an integer to the left.
 :obj:`dpnp.binary_repr` : Return the binary representation of the input number
                           as a string.
+
+Notes
+-----
+At least one of `x1` or `x2` must be an array.
+
+If ``x1.shape != x2.shape``, they must be broadcastable to a common shape
+(which becomes the shape of the output).
 
 Examples
 --------
@@ -592,6 +679,7 @@ array([5, 2, 1])
 array(5)
 >>> np.binary_repr(5)
 '101'
+
 """
 
 right_shift = DPNPBinaryFunc(
