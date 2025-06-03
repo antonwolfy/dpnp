@@ -37,8 +37,10 @@ requirements:
       - tbb-devel
     build:
       - {{ compiler('cxx') }}
+      - {{ stdlib('c') }}
       - {{ compiler('dpcpp') }} >={{ required_compiler_and_mkl_version }},<{{ max_compiler_and_mkl_version }}
-      - sysroot_linux-64 >=2.28 # [linux]
+      - vs_win-64 >=2022.13 # [win]
+      - vs2022_win-64 # [win]
     run:
       - python
       - {{ pin_compatible('dpctl', min_pin='x.x.x', max_pin=None) }}
