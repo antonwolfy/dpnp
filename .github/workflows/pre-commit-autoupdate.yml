@@ -32,8 +32,14 @@ jobs:
       - name: Run pre-commit autoupdate
         run: pre-commit autoupdate
 
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0 # v6.0.1
+      - name: Create a PR with autoupdate changes
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e #v7.0.8
         with:
-          commit_message: 'chore: update pre-commit hooks'
-          file_pattern: .pre-commit-config.yaml
+          commit-message: 'chore: update pre-commit hooks'
+          add-paths: .pre-commit-config.yaml
+          branch: 'bot/pre-commit-autoupdate'
+          delete-branch: true
+          title: Weekly pre-commit autoupdate
+          body: |
+            This PR updates the `.pre-commit-config.yaml` using `pre-commit autoupdate`.
+          labels: autoupdate
