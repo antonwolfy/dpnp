@@ -44,3 +44,4 @@ jobs:
           body: |
             This PR updates the `.pre-commit-config.yaml` using `pre-commit autoupdate`.
           labels: autoupdate
+          draft: true
