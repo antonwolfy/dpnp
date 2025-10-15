@@ -138,6 +138,26 @@ def run(
     )
 
     # export lcov
+    with open("dpnp_pytest.report", "w") as fh:
+        subprocess.check_call(
+            [
+                os.path.join(bin_llvm, "llvm-cov"),
+                "report",
+                "-format=lcov",
+                "-ignore-filename-regex=/tmp/icpx*",
+                r"-ignore-filename-regex='.*/elementwise_functions/.*'",
+                "-instr-profile=" + instr_profile_fn,
+            ]
+            + objects
+            + ["-sources", "dpnp"],
+            stdout=fh,
+        )
+
+    # trace the content of resulting report
+    with open("dpnp_pytest.report", "r") as fh:
+        print(fh.read())
+
+    # export lcov
     with open("dpnp_pytest.lcov", "w") as fh:
         subprocess.check_call(
             [
@@ -154,8 +174,8 @@ def run(
         )
 
     # trace the content of resulting profile file
-    with open("dpnp_pytest.lcov", "r") as fh:
-        print(fh.read())
+    # with open("dpnp_pytest.lcov", "r") as fh:
+    #     print(fh.read())
 
 
 if __name__ == "__main__":
