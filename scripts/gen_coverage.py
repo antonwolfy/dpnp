@@ -145,13 +145,17 @@ def run(
                 "export",
                 "-format=lcov",
                 "-ignore-filename-regex=/tmp/icpx*",
-                "-ignore-filename-regex=dpnp/backend/kernels/elementwise_functions/*.hpp",
+                r"-ignore-filename-regex='.*/backend/kernels/elementwise_functions/.*\.hpp$'",
                 "-instr-profile=" + instr_profile_fn,
             ]
             + objects
             + ["-sources", "dpnp"],
             stdout=fh,
         )
+
+    # trace the content of resulting profile file
+    with open("dpnp_pytest.lcov", "r") as fh:
+        print(fh.read())
 
 
 if __name__ == "__main__":
