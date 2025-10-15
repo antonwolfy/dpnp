@@ -145,6 +145,7 @@ def run(
                 "export",
                 "-format=lcov",
                 "-ignore-filename-regex=/tmp/icpx*",
+                "-ignore-filename-regex=dpnp/backend/kernels/elementwise_functions/*.hpp",
                 "-instr-profile=" + instr_profile_fn,
             ]
             + objects
