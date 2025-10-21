@@ -128,14 +128,14 @@ jobs:
         with:
           shell: bash
           timeout_minutes: 60
-          max_attempts: 5
+          max_attempts: 1
           retry_on: error
           command: |
             . $CONDA/etc/profile.d/conda.sh
             conda activate coverage
             [ -f /opt/intel/oneapi/setvars.sh ] && source /opt/intel/oneapi/setvars.sh
             git clean -fxd
-            python scripts/gen_coverage.py --verbose
+            python scripts/gen_coverage.py
 
       - name: Total number of coverage attempts
         run: |
@@ -153,6 +153,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dpnp_pytest.lcov
+          path: $DPNP_PYTEST_LCOV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pytest-dpnp-c-api-coverage.json
+          path: pytest-dpnp-c-api-coverage.json
 
   coveralls:
     name: Indicate completion to coveralls.io
