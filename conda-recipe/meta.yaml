@@ -65,7 +65,7 @@ test:
     requires:
       - pytest
       - setuptools
-      - scipy # [py>39 and py<314]
+      - scipy # [py<314]
 
 about:
     home: https://github.com/IntelPython/dpnp
