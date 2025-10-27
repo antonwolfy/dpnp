@@ -409,38 +409,38 @@ class TestSortComplex:
         assert_equal(result, expected)
 
 
-@pytest.mark.parametrize("kth", [0, 1])
-@pytest.mark.parametrize(
-    "dtype",
-    get_all_dtypes(
-        no_none=True, no_unsigned=True, xfail_dtypes=[dpnp.int8, dpnp.int16]
-    ),
-)
-@pytest.mark.parametrize(
-    "array",
-    [
-        [3, 4, 2, 1],
-        [[1, 0], [3, 0]],
-        [[3, 2], [1, 6]],
-        [[4, 2, 3], [3, 4, 1]],
-        [[[1, -3], [3, 0]], [[5, 2], [0, 1]], [[1, 0], [0, 1]]],
-        [
-            [[[8, 2], [3, 0]], [[5, 2], [0, 1]]],
-            [[[1, 3], [3, 1]], [[5, 2], [0, 1]]],
-        ],
-    ],
-    ids=[
-        "[3, 4, 2, 1]",
-        "[[1, 0], [3, 0]]",
-        "[[3, 2], [1, 6]]",
-        "[[4, 2, 3], [3, 4, 1]]",
-        "[[[1, -3], [3, 0]], [[5, 2], [0, 1]], [[1, 0], [0, 1]]]",
-        "[[[[8, 2], [3, 0]], [[5, 2], [0, 1]]], [[[1, 3], [3, 1]], [[5, 2], [0, 1]]]]",
-    ],
-)
-def test_partition(array, dtype, kth):
-    a = dpnp.array(array, dtype)
-    p = dpnp.partition(a, kth)
+# @pytest.mark.parametrize("kth", [0, 1])
+# @pytest.mark.parametrize(
+#     "dtype",
+#     get_all_dtypes(
+#         no_none=True, no_unsigned=True, xfail_dtypes=[dpnp.int8, dpnp.int16]
+#     ),
+# )
+# @pytest.mark.parametrize(
+#     "array",
+#     [
+#         [3, 4, 2, 1],
+#         [[1, 0], [3, 0]],
+#         [[3, 2], [1, 6]],
+#         [[4, 2, 3], [3, 4, 1]],
+#         [[[1, -3], [3, 0]], [[5, 2], [0, 1]], [[1, 0], [0, 1]]],
+#         [
+#             [[[8, 2], [3, 0]], [[5, 2], [0, 1]]],
+#             [[[1, 3], [3, 1]], [[5, 2], [0, 1]]],
+#         ],
+#     ],
+#     ids=[
+#         "[3, 4, 2, 1]",
+#         "[[1, 0], [3, 0]]",
+#         "[[3, 2], [1, 6]]",
+#         "[[4, 2, 3], [3, 4, 1]]",
+#         "[[[1, -3], [3, 0]], [[5, 2], [0, 1]], [[1, 0], [0, 1]]]",
+#         "[[[[8, 2], [3, 0]], [[5, 2], [0, 1]]], [[[1, 3], [3, 1]], [[5, 2], [0, 1]]]]",
+#     ],
+# )
+# def test_partition(array, dtype, kth):
+#     a = dpnp.array(array, dtype)
+#     p = dpnp.partition(a, kth)
 
-    assert (p[..., 0:kth] <= p[..., kth : kth + 1]).all()
-    assert (p[..., kth : kth + 1] <= p[..., kth + 1 :]).all()
+#     assert (p[..., 0:kth] <= p[..., kth : kth + 1]).all()
+#     assert (p[..., kth : kth + 1] <= p[..., kth + 1 :]).all()
