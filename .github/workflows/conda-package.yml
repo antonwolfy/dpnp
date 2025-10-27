@@ -243,7 +243,7 @@ jobs:
               export DPNP_TEST_ALL_INT_TYPES=1
               python -m pytest -ra --pyargs ${{ env.package-name }}.tests
             else
-              python -m pytest -n auto -ra --pyargs ${{ env.package-name }}.tests
+              python -m pytest -n auto -sv --pyargs ${{ env.package-name }}.tests
             fi
 
   test_windows:
