@@ -283,6 +283,10 @@ jobs:
               python -m pytest -n auto -ra --timeout=600 --timeout-method=thread --pyargs ${{ env.package-name }}.tests
             fi
 
+      - name: Check kernel logs
+        run: |
+          sudo dmesg | tail -n 30 || true
+
       - name: Run tests
         if: env.rerun-tests-on-failure == 'true'
         id: run_tests_linux
