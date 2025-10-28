@@ -27,6 +27,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # *****************************************************************************
 
+import faulthandler
 import os
 import sys
 import warnings
@@ -45,6 +46,8 @@ else:
 import dpnp
 
 from .helper import get_dev_id
+
+faulthandler.enable(file=sys.stderr, all_threads=True)
 
 skip_mark = pytest.mark.skip(reason="Skipping test.")
 
