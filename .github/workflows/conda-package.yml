@@ -269,7 +269,7 @@ jobs:
         uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           timeout_minutes: ${{ env.rerun-tests-timeout }}
-          max_attempts: ${{ env.rerun-tests-max-attempts }}
+          max_attempts: 1
           retry_on: any
           command: |
             . $CONDA/etc/profile.d/conda.sh
