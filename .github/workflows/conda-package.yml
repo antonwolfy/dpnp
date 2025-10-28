@@ -265,25 +265,22 @@ jobs:
       #         timeout 25m gdb --batch -ex run -ex 'info sharedlibrary' -ex 'set print elements 20000' -ex thread apply all bt --args python -m pytest -n auto -ra --pyargs ${{ env.package-name }}.tests || true
       #       fi
 
-      - name: Run tests with timeout
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
-        with:
-          timeout_minutes: ${{ env.rerun-tests-timeout }}
-          max_attempts: 1
-          retry_on: any
-          command: |
-            . $CONDA/etc/profile.d/conda.sh
-            . $CONDA/etc/profile.d/mamba.sh
-            mamba activate ${{ env.test-env-name }}
+      - name: Add swap space
+        run: |
+          sudo fallocate -l 2G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
 
-            if [[ "${{ matrix.python }}" == "${{ env.python-ver-test-all-dtypes }}" ]]; then
-              export DPNP_TEST_ALL_INT_TYPES=1
-            else
-              export PYTHONFAULTHANDLER=1
-              python -m pytest -n auto -ra --timeout=500 --timeout-method=thread --pyargs ${{ env.package-name }}.tests
-            fi
+      - name: Run tests with timeout
+        run: |
+          python -m pytest -n auto -ra --timeout=500 --timeout-method=thread --pyargs ${{ env.package-name }}.tests
+        env:
+          PYTHONFAULTHANDLER: 1
 
       - name: Check kernel logs
+        if: failure()
         run: |
           sudo dmesg | tail -n 30 || true
 
