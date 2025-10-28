@@ -267,10 +267,17 @@ jobs:
 
       - name: Add swap space
         run: |
+          echo "Current swap configuration:"
+          sudo swapon --show
+          free -h
+
           sudo fallocate -l 2G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
+
+          echo "New swap configuration:"
+          sudo swapon --show
           free -h
 
       - name: Run tests with timeout
