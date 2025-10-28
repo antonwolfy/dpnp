@@ -265,16 +265,35 @@ jobs:
       #         timeout 25m gdb --batch -ex run -ex 'info sharedlibrary' -ex 'set print elements 20000' -ex thread apply all bt --args python -m pytest -n auto -ra --pyargs ${{ env.package-name }}.tests || true
       #       fi
 
+      # - name: Add swap space
+      #   run: |
+      #     echo "Current swap configuration:"
+      #     sudo swapon --show
+      #     free -h
+
+      #     sudo fallocate -l 2G /swapfile
+      #     sudo chmod 600 /swapfile
+      #     sudo mkswap /swapfile
+      #     sudo swapon /swapfile
+
+      #     echo "New swap configuration:"
+      #     sudo swapon --show
+      #     free -h
+
       - name: Add swap space
         run: |
           echo "Current swap configuration:"
           sudo swapon --show
           free -h
 
-          sudo fallocate -l 2G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          echo "Disable swap temporarily:"
+          sudo swapoff /mnt/swapfile
+          sudo swapon --show
+
+          echo "Increase swap file up to 8G..."
+          sudo fallocate -l 8G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo swapon /mnt/swapfile
 
           echo "New swap configuration:"
           sudo swapon --show
