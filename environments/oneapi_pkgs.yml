@@ -7,3 +7,4 @@ dependencies:
   - mkl-devel>=2025.3 # w/a to intel_repack-feedstock#120 issue
   - onedpl-devel
   - tbb-devel
+  - numpy 2.3.2
