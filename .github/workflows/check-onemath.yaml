@@ -99,6 +99,7 @@ jobs:
         with:
           miniforge-version: latest
           use-mamba: 'true'
+          mamba-version: 2.1.1
           conda-remove-defaults: 'true'
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
@@ -110,6 +111,7 @@ jobs:
         with:
           miniforge-version: latest
           use-mamba: 'true'
+          mamba-version: 2.1.1
           conda-remove-defaults: 'true'
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
@@ -205,6 +207,7 @@ jobs:
         with:
           miniforge-version: latest
           use-mamba: 'true'
+          mamba-version: 2.1.1
           conda-remove-defaults: 'true'
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
@@ -216,6 +219,7 @@ jobs:
         with:
           miniforge-version: latest
           use-mamba: 'true'
+          mamba-version: 2.1.1
           conda-remove-defaults: 'true'
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
