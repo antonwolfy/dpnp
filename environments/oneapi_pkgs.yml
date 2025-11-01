@@ -10,3 +10,4 @@ dependencies:
   - numpy 2.3.2
   - numpy-base
   - mkl-service
+  - scipy 1.15.2
