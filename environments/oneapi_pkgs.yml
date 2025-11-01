@@ -3,7 +3,7 @@ channels:
   - https://software.repos.intel.com/python/conda/
 dependencies:
   - dpcpp_linux-64>=2025.3
-  - mkl-devel-dpcpp
-  - mkl-devel # w/a to intel_repack-feedstock#120 issue
+  - mkl-devel-dpcpp>=2025.3
+  - mkl-devel>=2025.3 # w/a to intel_repack-feedstock#120 issue
   - onedpl-devel
   - tbb-devel
