@@ -8,3 +8,4 @@ dependencies:
   - onedpl-devel
   - tbb-devel
   - numpy 2.3.2
+  - mkl-service
