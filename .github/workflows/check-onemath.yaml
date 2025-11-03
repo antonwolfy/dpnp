@@ -100,6 +100,7 @@ jobs:
           miniforge-version: latest
           use-mamba: 'true'
           conda-remove-defaults: 'true'
+          channel-priority: strict
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
           activate-environment: ${{ env.test-env-name }}
@@ -111,6 +112,7 @@ jobs:
           miniforge-version: latest
           use-mamba: 'true'
           conda-remove-defaults: 'true'
+          channel-priority: strict
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
           activate-environment: ${{ env.test-env-name }}
@@ -206,6 +208,7 @@ jobs:
           miniforge-version: latest
           use-mamba: 'true'
           conda-remove-defaults: 'true'
+          channel-priority: strict
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
           activate-environment: ${{ env.test-env-name }}
@@ -217,6 +220,7 @@ jobs:
           miniforge-version: latest
           use-mamba: 'true'
           conda-remove-defaults: 'true'
+          channel-priority: strict
           python-version: ${{ matrix.python }}
           environment-file: ${{ env.environment-file }}
           activate-environment: ${{ env.test-env-name }}
