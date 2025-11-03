@@ -50,8 +50,8 @@ jobs:
 
       - name: Merge conda env files
         run: |
-          conda-merge ${{ env.dpctl-pkg-env }}         \
-                      ${{ env.oneapi-pkgs-env }}       \
+          conda-merge ${{ env.oneapi-pkgs-env }}         \
+                      ${{ env.dpctl-pkg-env }}       \
                       ${{ env.build-with-oneapi-env }} \
                       ${{ env.test-pkg-env }} > ${{ env.environment-file }}
           cat ${{ env.environment-file }}
