@@ -349,7 +349,7 @@ jobs:
       - name: Install dpnp
         run: |
           @echo on
-          mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          mamba install -v ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.channels-list }}'
           MAMBA_NO_LOW_SPEED_LIMIT: 1
