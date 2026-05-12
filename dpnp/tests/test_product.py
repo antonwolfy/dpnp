@@ -1533,6 +1533,41 @@ class TestMatvec:
 
         result = dpnp.matvec(ia, ib, axes=axes)
         expected = numpy.matvec(a, b, axes=axes)
+
+        # Trace elements that contribute to expected[0,0,0,1]
+        print(f"\n{'='*70}")
+        print(f"Tracing expected[0,0,0,1] with axes={axes}")
+        print(f"{'='*70}")
+        print(f"a.shape = {a.shape}, b.shape = {b.shape}")
+        print(f"expected.shape = {expected.shape}")
+        print(f"expected[0,0,0,1] = {expected[0,0,0,1]}")
+        print(f"result[0,0,0,1] = {result[0,0,0,1]}")
+        print()
+
+        # Elements that contribute: a[0, k, 1, 0] * b[0, 0, k, 1] for k in 0..4
+        print("Elements that contribute:")
+        manual_sum = 0.0
+        for k in range(5):
+            a_val = a[0, k, 1, 0]
+            b_val = b[0, 0, k, 1]
+            product = a_val * b_val
+            manual_sum += product
+            print(
+                f"  k={k}: a[0,{k},1,0] = {a_val:12.6e}  *  b[0,0,{k},1] = {b_val:12.6e}  =  {product:12.6e}"
+            )
+
+        print()
+        print(f"Sum of products (manual) = {manual_sum:12.6e}")
+        print(f"expected[0,0,0,1]        = {expected[0,0,0,1]:12.6e}")
+        print(f"result[0,0,0,1]          = {result[0,0,0,1]:12.6e}")
+        print(
+            f"Difference (expected - manual) = {abs(expected[0,0,0,1] - manual_sum):12.6e}"
+        )
+        print(
+            f"Difference (result - expected) = {abs(result[0,0,0,1] - expected[0,0,0,1]):12.6e}"
+        )
+        print(f"{'='*70}\n")
+
         assert_dtype_allclose(result, expected)
 
     @pytest.mark.parametrize("xp", [numpy, dpnp])
