@@ -199,7 +199,7 @@ jobs:
         continue-on-error: true
         run: |
           mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist libblas=*=*_netlib python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
-          python -m pytest -sv --pyargs ${{ env.package-name }}.tests.test_product::TestMatvec::test_axes
+          python -m pytest -n auto -ra --pyargs ${{ env.package-name }}.tests -k TestMatvec
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.channels-list }}'
 
@@ -207,7 +207,7 @@ jobs:
         id: install_dpnp
         continue-on-error: true
         run: |
-          mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist libblas=*=*_openblas python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
           python -m pytest -sv --pyargs ${{ env.package-name }}.tests.test_product::TestMatvec::test_axes
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.channels-list }}'
@@ -215,7 +215,7 @@ jobs:
       - name: ReInstall dpnp
         if: steps.install_dpnp.outcome == 'failure'
         run: |
-          mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
+          mamba install ${{ env.package-name }}=${{ env.PACKAGE_VERSION }} pytest pytest-xdist libblas=*=*_openblas python=${{ matrix.python }} ${{ env.TEST_CHANNELS }}
         env:
           TEST_CHANNELS: '-c ${{ env.channel-path }} ${{ env.channels-list }}'
 
