@@ -31,8 +31,9 @@ import pytest
 
 import dpnp.tensor as dpt
 import dpnp.tensor._copy_utils as cu
+from dpnp.tests.third_party.cupy.testing import with_requires
 
-from .helper import get_queue_or_skip
+from .helper import get_queue_or_skip, skip_if_dtype_not_supported
 
 
 def test_copy_utils_empty_like_orderK():
@@ -96,6 +97,67 @@ def test_copy_utils_from_numpy_empty_like_orderK():
 def test_copy_utils_from_numpy_empty_like_orderK_invalid_args():
     with pytest.raises(TypeError):
         cu._from_numpy_empty_like_orderK([1, 2, 3], dpt.int32, "device", None)
+
+
+@with_requires("numpy>=2.4")
+@pytest.mark.parametrize(
+    "data, src_dt, dst_dt",
+    [
+        ([1, 2, 3], dpt.int32, dpt.int8),  # exact integer downcast
+        ([2.0, 3.0], dpt.float32, dpt.int64),  # float with integral values
+        ([1, 2, 3], dpt.int32, dpt.float32),  # exact int -> float
+        ([2, 0, 5], dpt.int32, dpt.bool),  # any numeric maps to bool
+    ],
+)
+def test_astype_same_value_preserved(data, src_dt, dst_dt):
+    q = get_queue_or_skip()
+    a = np.array(data, dtype=src_dt)
+    x = dpt.asarray(a, sycl_queue=q)
+    r = dpt.astype(x, dst_dt, casting="same_value")
+    assert r.dtype == dst_dt
+    assert (dpt.asnumpy(r) == a.astype(dst_dt)).all()
+
+
+@with_requires("numpy>=2.4")
+@pytest.mark.parametrize(
+    "data, src_dt, dst_dt",
+    [
+        ([1000], dpt.int32, dpt.int8),  # integer overflow
+        ([1.0, 2.5], dpt.float32, dpt.int64),  # rounding of floats
+        ([1e30], dpt.float32, dpt.int64),  # out-of-range float -> int
+    ],
+)
+def test_astype_same_value_raises(data, src_dt, dst_dt):
+    q = get_queue_or_skip()
+    x = dpt.asarray(np.array(data, dtype=src_dt), sycl_queue=q)
+    with pytest.raises(ValueError):
+        dpt.astype(x, dst_dt, casting="same_value")
+
+
+@with_requires("numpy>=2.4")
+def test_astype_same_value_nan_inf_preserved():
+    q = get_queue_or_skip()
+    skip_if_dtype_not_supported(dpt.float64, q)
+    a = np.array([np.nan, np.inf, -np.inf], dtype=np.float64)
+    x = dpt.asarray(a, sycl_queue=q)
+    r = dpt.astype(x, dpt.float32, casting="same_value")
+    assert np.array_equal(dpt.asnumpy(r), a.astype(np.float32), equal_nan=True)
+
+
+@with_requires("numpy>=2.4")
+def test_astype_same_value_non_numeric_target_raises():
+    q = get_queue_or_skip()
+    x = dpt.asarray([1, 2, 3], sycl_queue=q)
+    with pytest.raises(ValueError):
+        dpt.astype(x, "U4", casting="same_value")
+
+
+@with_requires("numpy>=2.4")
+def test_astype_same_value_copy_false_same_dtype():
+    q = get_queue_or_skip()
+    x = dpt.asarray([1, 2, 3], dtype=dpt.int32, sycl_queue=q)
+    r = dpt.astype(x, dpt.int32, casting="same_value", copy=False)
+    assert r is x
 
 
 def test_gh_2055():

@@ -1055,6 +1055,27 @@ def copy(usm_ary, /, *, order="K"):
     return R
 
 
+def _same_value_preserved(res, orig):
+    """
+    Return ``True`` if casting `orig` into `res` preserved every value.
+
+    Values are verified by casting `res` back to the original data type and
+    comparing element-wise, i.e. a value is preserved when it round-trips
+    exactly. NaNs round-trip to NaNs (but compare unequal), so they are
+    treated as preserved.
+    """
+
+    # numeric -> bool always preserves (any value maps to True/False)
+    if dpt.isdtype(res.dtype, "bool"):
+        return True
+
+    back = astype(res, orig.dtype, casting="unsafe", copy=True)
+    eq = back == orig
+    if dpt.isdtype(orig.dtype, ("real floating", "complex floating")):
+        eq = eq | (dpt.isnan(orig) & dpt.isnan(back))  # NaN != NaN, treat equal
+    return bool(dpt.all(eq))
+
+
 def astype(
     usm_ary, newdtype, /, *, order="K", casting="unsafe", copy=True, device=None
 ):
@@ -1074,9 +1095,14 @@ def astype(
         order ({"C", "F", "A", "K"}, optional):
             Controls memory layout of the resulting array if a copy
             is returned.
-        casting ({'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional):
+        casting ({'no', 'equiv', 'safe', 'same_kind', 'same_value', \
+                'unsafe'}, optional):
             Controls what kind of data casting may occur. Please see
             :meth:`numpy.ndarray.astype` for description of casting modes.
+            ``'same_value'`` permits any numeric conversion but raises a
+            ``ValueError`` if a value would change (e.g. by integer overflow
+            or by rounding of floating-point values). Verifying the values
+            forces host synchronization and may degrade performance.
         copy (bool, optional):
             By default, `astype` always returns a newly allocated array.
             If this keyword is set to `False`, a view of the input array
@@ -1125,7 +1151,11 @@ def astype(
     else:
         target_dtype = _get_dtype(newdtype, usm_ary.sycl_queue)
 
-    if not dpt.can_cast(ary_dtype, target_dtype, casting=casting):
+    # `same_value` isn't a can_cast rule; gate like `unsafe`
+    # and verify values after the cast
+    check_same_value = casting == "same_value"
+    gate_casting = "unsafe" if check_same_value else casting
+    if not dpt.can_cast(ary_dtype, target_dtype, casting=gate_casting):
         raise TypeError(
             f"Can not cast from {ary_dtype} to {newdtype} "
             f"according to rule {casting}."
@@ -1170,4 +1200,9 @@ def astype(
             buffer_ctor_kwargs={"queue": usm_ary.sycl_queue},
         )
     _copy_from_usm_ndarray_to_usm_ndarray(R, usm_ary)
+    if check_same_value and not _same_value_preserved(R, usm_ary):
+        raise ValueError(
+            f"could not cast 'same_value' from {ary_dtype} to {target_dtype}: "
+            "values would change"
+        )
     return R

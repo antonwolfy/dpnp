@@ -902,7 +902,8 @@ def astype(x, dtype, /, *, order="K", casting="unsafe", copy=True, device=None):
         as closely as possible.
 
         Default: ``"K"``.
-    casting : {"no", "equiv", "safe", "same_kind", "unsafe"}, optional
+    casting : {"no", "equiv", "safe", "same_kind", "same_value", "unsafe"}, \
+            optional
         Controls what kind of data casting may occur. Defaults to ``"unsafe"``
         for backwards compatibility.
 
@@ -911,6 +912,11 @@ def astype(x, dtype, /, *, order="K", casting="unsafe", copy=True, device=None):
             - "safe" means only casts which can preserve values are allowed.
             - "same_kind" means only safe casts or casts within a kind, like
               float64 to float32, are allowed.
+            - "same_value" means any numeric data conversions may be done, but
+              the values must not change, including rounding of floats or
+              overflow of ints.
+              Verifying the values forces host synchronization and may degrade
+              performance.
             - "unsafe" means any data conversions may be done.
 
         Default: ``"unsafe"``.

@@ -81,6 +81,27 @@ class TestAsType:
             None,
         )
 
+    @testing.with_requires("numpy>=2.4")
+    def test_same_value_preserved(self):
+        a = numpy.array([1, 2, 3])
+        ia = dpnp.array(a)
+
+        expected = a.astype(numpy.int8, casting="same_value")
+        assert_array_equal(
+            dpnp.astype(ia, dpnp.int8, casting="same_value"), expected
+        )
+        assert_array_equal(ia.astype(dpnp.int8, casting="same_value"), expected)
+
+    @testing.with_requires("numpy>=2.4")
+    @pytest.mark.parametrize("xp", [dpnp, numpy])
+    def test_same_value_raises(self, xp):
+        a = xp.array([1000], dtype=xp.int32)
+        assert_raises(ValueError, a.astype, xp.int8, casting="same_value")
+        if xp is dpnp:
+            assert_raises(
+                ValueError, dpnp.astype, a, dpnp.int8, casting="same_value"
+            )
+
 
 class TestGeomspace:
     @pytest.mark.parametrize("sign", [-1, 1])
